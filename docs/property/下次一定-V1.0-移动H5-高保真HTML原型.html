@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>下次一定 · 移动 H5 高保真原型</title>
+<style>
+:root{
+  --brand:#FF6F4E;
+  --brand-hover:#F55F3C;
+  --brand-soft:#FFF1EC;
+  --bg:#F7F7F4;
+  --surface:#FFFFFF;
+  --text:#1F2121;
+  --text2:#737878;
+  --text3:#A2A6A6;
+  --border:#E7E8E4;
+  --divider:#EFEFEB;
+  --tag:#F1F2EF;
+  --danger:#D84C42;
+  --danger-soft:#FFF0EF;
+  --shadow:0 8px 26px rgba(20,24,24,.06);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Arial,sans-serif}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
+body{min-width:320px}
+.app{min-height:100vh}
+.view{display:none;min-height:100vh;padding-bottom:calc(88px + env(safe-area-inset-bottom))}
+.view.active{display:block}
+.auth-view{padding-bottom:0}
+.mobile-shell{max-width:430px;margin:0 auto;min-height:100vh;position:relative}
+.home-head{
+  padding:22px 16px 12px;
+  background:linear-gradient(180deg,#fff8f4 0%,rgba(247,247,244,0) 100%)
+}
+.brand-line{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand-wrap{display:flex;align-items:center;gap:10px}
+.brand-mark{
+  width:38px;height:38px;border-radius:14px;background:var(--brand);
+  color:#fff;display:grid;place-items:center;font-weight:800;font-size:18px;
+  box-shadow:0 8px 18px rgba(255,111,78,.22)
+}
+.brand-cn{font-size:22px;font-weight:700;letter-spacing:-.3px}
+.brand-sub{font-size:12px;color:var(--text2);margin-top:2px}
+.avatar{
+  width:40px;height:40px;border:1px solid var(--border);background:#fff;border-radius:14px;
+  display:grid;place-items:center;font-weight:700
+}
+.search-box{position:relative;margin-top:18px}
+.search-box input{
+  width:100%;height:52px;border:1px solid var(--border);background:#fff;border-radius:17px;
+  padding:0 46px 0 44px;font-size:16px;outline:none;box-shadow:0 5px 18px rgba(20,24,24,.035)
+}
+.search-box input:focus{border-color:#ffb8a7;box-shadow:0 0 0 4px rgba(255,111,78,.07)}
+.search-icon{position:absolute;left:15px;top:14px;font-size:20px;color:var(--text2)}
+.clear{position:absolute;right:13px;top:11px;width:30px;height:30px;border:0;background:transparent;color:var(--text3);font-size:20px}
+.category-scroll{
+  display:flex;gap:8px;overflow:auto;padding:14px 0 4px;scrollbar-width:none
+}
+.category-scroll::-webkit-scrollbar{display:none}
+.chip{
+  flex:0 0 auto;border:1px solid var(--border);background:#fff;color:var(--text2);
+  padding:8px 12px;border-radius:999px;font-size:12px
+}
+.chip.active{background:var(--text);color:#fff;border-color:var(--text)}
+.content{padding:0 16px 22px}
+.section{margin-top:24px}
+.section-head{display:flex;align-items:end;justify-content:space-between;margin-bottom:12px;gap:10px}
+.section-title{font-size:17px;font-weight:700}
+.section-sub{font-size:11px;color:var(--text3);margin-top:3px}
+.link{border:0;background:transparent;color:var(--text2);font-size:12px;padding:6px}
+.cards{display:flex;flex-direction:column;gap:12px}
+.card{
+  background:#fff;border:1px solid var(--border);border-radius:20px;padding:17px;
+  box-shadow:0 4px 16px rgba(20,24,24,.03)
+}
+.card-top{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:20px}
+.pin{font-size:11px;color:#d76447;display:flex;align-items:center;gap:5px}
+.meta{font-size:11px;color:var(--text3)}
+.card-text{
+  margin-top:9px;font-size:16.5px;line-height:1.72;letter-spacing:.05px;
+  display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden
+}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:13px}
+.tag{font-size:12px;padding:6px 9px;background:var(--tag);color:#555A5A;border-radius:999px}
+.card-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--divider)}
+.copy-btn{
+  min-width:68px;height:40px;border:0;border-radius:12px;background:var(--brand-soft);color:#d85f40;font-weight:700
+}
+.bottom-nav{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:0;z-index:50;
+  width:min(430px,100%);height:calc(68px + env(safe-area-inset-bottom));
+  background:rgba(255,255,255,.96);backdrop-filter:blur(16px);
+  border-top:1px solid var(--border);
+  padding:0 22px env(safe-area-inset-bottom);
+  display:flex;align-items:center;justify-content:space-between
+}
+.nav-item{
+  width:72px;border:0;background:transparent;color:var(--text3);font-size:11px;
+  display:flex;flex-direction:column;align-items:center;gap:4px
+}
+.nav-item .ico{font-size:21px;line-height:1}
+.nav-item.active{color:var(--text);font-weight:700}
+.nav-plus{
+  width:54px;height:54px;border:0;border-radius:18px;background:var(--brand);color:#fff;
+  font-size:30px;line-height:1;box-shadow:0 10px 22px rgba(255,111,78,.26);margin-top:-16px
+}
+.topbar{
+  position:sticky;top:0;z-index:40;height:56px;background:rgba(247,247,244,.95);
+  backdrop-filter:blur(14px);border-bottom:1px solid rgba(231,232,228,.85);
+  display:flex;align-items:center;justify-content:space-between;padding:0 14px
+}
+.topbar-title{font-size:18px;font-weight:700}
+.topbar-btn{width:42px;height:42px;border:0;background:transparent;border-radius:12px;font-size:23px;color:var(--text)}
+.page{padding:18px 16px 28px}
+.form-card,.detail-card,.profile-card,.about-card{
+  background:#fff;border:1px solid var(--border);border-radius:22px;padding:18px
+}
+.field{margin-bottom:18px}
+.field:last-child{margin-bottom:0}
+.label{font-size:13px;font-weight:650;margin-bottom:8px}
+.input,.textarea,.select-row{
+  width:100%;border:1px solid var(--border);background:#fbfbf9;border-radius:14px;color:var(--text)
+}
+.input{height:48px;padding:0 14px;font-size:16px;outline:none}
+.textarea{min-height:190px;padding:14px;font-size:16px;line-height:1.72;resize:vertical;outline:none}
+.input:focus,.textarea:focus{border-color:#ffb8a7;box-shadow:0 0 0 4px rgba(255,111,78,.07)}
+.select-row{
+  min-height:48px;padding:0 14px;display:flex;align-items:center;justify-content:space-between
+}
+.selected-tags{display:flex;gap:7px;flex-wrap:wrap}
+.tag-selected{padding:7px 10px;background:var(--tag);border-radius:999px;font-size:12px}
+.more-row{
+  min-height:48px;display:flex;align-items:center;justify-content:space-between;
+  border-top:1px solid var(--divider);margin-top:6px;padding-top:10px;color:var(--text2);font-size:14px
+}
+.more-panel{display:none;padding-top:14px}
+.more-panel.open{display:block}
+.primary{
+  width:100%;height:50px;border:0;border-radius:14px;background:var(--brand);color:#fff;font-weight:700;
+  box-shadow:0 8px 18px rgba(255,111,78,.18)
+}
+.secondary{
+  width:100%;height:48px;border:1px solid var(--border);border-radius:14px;background:#fff;color:var(--text);font-weight:650
+}
+.danger{
+  width:100%;height:48px;border:0;border-radius:14px;background:var(--danger-soft);color:var(--danger);font-weight:650
+}
+.detail-text{font-size:21px;line-height:1.82;letter-spacing:.05px}
+.detail-copy{margin-top:20px}
+.info-list{margin-top:20px;border-top:1px solid var(--divider)}
+.info-row{display:flex;justify-content:space-between;gap:20px;padding:14px 0;border-bottom:1px solid var(--divider)}
+.info-k{font-size:13px;color:var(--text2)}
+.info-v{font-size:13px;text-align:right}
+.remark-box{margin-top:18px;background:#fafaf8;border-radius:15px;padding:15px}
+.remark-title{font-size:12px;color:var(--text3);margin-bottom:7px}
+.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.profile-head{display:flex;align-items:center;gap:14px}
+.profile-avatar{
+  width:58px;height:58px;border-radius:19px;background:linear-gradient(135deg,#ffccb9,#ff7b58);
+  display:grid;place-items:center;color:#fff;font-weight:800;font-size:21px
+}
+.profile-name{font-size:19px;font-weight:700}
+.profile-sub{font-size:12px;color:var(--text2);margin-top:4px}
+.menu{margin-top:14px;background:#fff;border:1px solid var(--border);border-radius:18px;overflow:hidden}
+.menu-item{min-height:54px;padding:0 16px;border-bottom:1px solid var(--divider);display:flex;align-items:center;justify-content:space-between}
+.menu-item:last-child{border-bottom:0}
+.auth-wrap{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px 20px;
+  background:linear-gradient(180deg,#fff7f2 0%,#F7F7F4 45%)
+}
+.auth-card{width:100%;max-width:390px}
+.auth-logo{text-align:center;margin-bottom:30px}
+.auth-logo .brand-mark{margin:0 auto 13px;width:48px;height:48px;border-radius:17px}
+.auth-title{font-size:28px;font-weight:700}
+.auth-sub{font-size:13px;color:var(--text2);margin-top:7px}
+.auth-switch{text-align:center;margin-top:17px;color:var(--text2);font-size:13px}
+.auth-switch span{color:#d85f40;font-weight:700}
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%) translateY(14px);bottom:calc(82px + env(safe-area-inset-bottom));
+  z-index:120;background:#1f2222;color:#fff;border-radius:999px;padding:11px 15px;font-size:13px;
+  opacity:0;pointer-events:none;transition:.2s ease;max-width:calc(100% - 32px);white-space:nowrap
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.sheet-mask{
+  position:fixed;inset:0;background:rgba(15,18,18,.34);z-index:90;display:none;align-items:flex-end;justify-content:center
+}
+.sheet-mask.show{display:flex}
+.sheet{
+  width:min(430px,100%);background:#fff;border-radius:24px 24px 0 0;
+  padding:10px 16px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -12px 40px rgba(20,24,24,.14)
+}
+.sheet-handle{width:42px;height:4px;background:#D7D9D6;border-radius:999px;margin:2px auto 14px}
+.sheet-title{font-size:18px;font-weight:700;margin-bottom:14px}
+.sheet-list{display:flex;flex-direction:column;gap:8px;max-height:50vh;overflow:auto}
+.sheet-option{
+  min-height:48px;border:1px solid var(--border);background:#fff;border-radius:14px;padding:0 14px;
+  display:flex;align-items:center;justify-content:space-between
+}
+.sheet-option.active{background:var(--brand-soft);border-color:#ffd3c7;color:#d65f40}
+.sheet-actions{display:flex;gap:10px;margin-top:16px}
+.empty{text-align:center;padding:70px 20px}
+.empty-title{font-size:19px;font-weight:700}
+.empty-sub{margin-top:8px;font-size:13px;color:var(--text2);line-height:1.6}
+.search-result-count{font-size:13px;color:var(--text2);margin:16px 0 10px}
+.about-card{text-align:center;padding:40px 20px}
+@media (min-width:431px){
+  body{background:#ecece8}
+  .mobile-shell{box-shadow:0 0 0 1px rgba(0,0,0,.03),0 0 40px rgba(20,24,24,.08);background:var(--bg)}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 登录 -->
+  <section id="login" class="view auth-view active">
+    <div class="mobile-shell">
+      <div class="auth-wrap">
+        <div class="auth-card">
+          <div class="auth-logo">
+            <div class="brand-mark">次</div>
+            <div class="auth-title">下次一定</div>
+            <div class="auth-sub">这次先留着，下次一定用得上。</div>
+          </div>
+          <div class="field"><div class="label">用户名</div><input class="input" value="xiaohzi" /></div>
+          <div class="field"><div class="label">密码</div><input class="input" type="password" value="12345678" /></div>
+          <button class="primary" onclick="go('home')">登录</button>
+          <div class="auth-switch">还没有账号？ <span onclick="go('register')">注册</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 注册 -->
+  <section id="register" class="view auth-view">
+    <div class="mobile-shell">
+      <div class="auth-wrap">
+        <div class="auth-card">
+          <div class="auth-logo">
+            <div class="brand-mark">次</div>
+            <div class="auth-title">注册下次一定</div>
+            <div class="auth-sub">先给以后留个地方。</div>
+          </div>
+          <div class="field"><div class="label">用户名</div><input class="input" placeholder="请输入用户名" /></div>
+          <div class="field"><div class="label">密码</div><input class="input" type="password" placeholder="至少 8 位" /></div>
+          <div class="field"><div class="label">确认密码</div><input class="input" type="password" placeholder="再次输入密码" /></div>
+          <button class="primary" onclick="toast('注册成功');setTimeout(()=>go('home'),500)">注册并登录</button>
+          <div class="auth-switch">已有账号？ <span onclick="go('login')">登录</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 首页 -->
+  <section id="home" class="view">
+    <div class="mobile-shell">
+      <div class="home-head">
+        <div class="brand-line">
+          <div class="brand-wrap">
+            <div class="brand-mark">次</div>
+            <div>
+              <div class="brand-cn">下次一定</div>
+              <div class="brand-sub">这次先留着，下次一定用得上。</div>
+            </div>
+          </div>
+          <button class="avatar" onclick="go('profile')">黑</button>
+        </div>
+
+        <div class="search-box">
+          <span class="search-icon">⌕</span>
+          <input id="homeSearch" placeholder="找找现在用得上的。" onfocus="goSearchFromHome()" />
+        </div>
+
+        <div class="category-scroll">
+          <button class="chip active">全部</button>
+          <button class="chip">搞笑</button>
+          <button class="chip">抽象</button>
+          <button class="chip">感情</button>
+          <button class="chip">文艺</button>
+          <button class="chip">治愈</button>
+          <button class="chip">清醒</button>
+          <button class="chip">阴阳</button>
+          <button class="chip">其他</button>
+        </div>
+      </div>
+
+      <main class="content">
+        <section class="section" style="margin-top:12px">
+          <div class="section-head">
+            <div><div class="section-title">最近使用</div><div class="section-sub">最近真正拿出去用过的</div></div>
+            <button class="link">更多</button>
+          </div>
+          <div class="cards">
+            <article class="card" onclick="openDetail('你的建议很好，下次不要建议了。')">
+              <div class="card-top"><div class="pin">⌖ 已置顶</div><div class="meta">刚刚用过</div></div>
+              <div class="card-text">你的建议很好，下次不要建议了。</div>
+              <div class="tags"><span class="tag">#评论</span><span class="tag">#阴阳</span></div>
+              <div class="card-foot"><div class="meta">已用 12 次</div><button class="copy-btn" onclick="event.stopPropagation();copyText('你的建议很好，下次不要建议了。')">复制</button></div>
+            </article>
+
+            <article class="card" onclick="openDetail('山高路远，看世界，也找自己。')">
+              <div class="card-top"><div></div><div class="meta">昨天用过</div></div>
+              <div class="card-text">山高路远，看世界，也找自己。</div>
+              <div class="tags"><span class="tag">#朋友圈</span><span class="tag">#旅行</span></div>
+              <div class="card-foot"><div class="meta">已用 7 次</div><button class="copy-btn" onclick="event.stopPropagation();copyText('山高路远，看世界，也找自己。')">复制</button></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <div><div class="section-title">全部内容</div><div class="section-sub">共留下 128 条</div></div>
+          </div>
+          <div class="cards">
+            <article class="card" onclick="openDetail('成年人的崩溃都是静音模式。')">
+              <div class="card-top"><div class="pin">⌖ 已置顶</div><div class="meta">2 天前</div></div>
+              <div class="card-text">成年人的崩溃都是静音模式。</div>
+              <div class="tags"><span class="tag">#朋友圈</span><span class="tag">#清醒</span></div>
+              <div class="card-foot"><div class="meta">已用 9 次</div><button class="copy-btn" onclick="event.stopPropagation();copyText('成年人的崩溃都是静音模式。')">复制</button></div>
+            </article>
+
+            <article class="card" onclick="openDetail('听君一席话，如听一席话。')">
+              <div class="card-top"><div></div><div class="meta">3 天前</div></div>
+              <div class="card-text">听君一席话，如听一席话。</div>
+              <div class="tags"><span class="tag">#搞笑</span><span class="tag">#抽象</span></div>
+              <div class="card-foot"><div class="meta">已用 4 次</div><button class="copy-btn" onclick="event.stopPropagation();copyText('听君一席话，如听一席话。')">复制</button></div>
+            </article>
+
+            <article class="card" onclick="openDetail('天气很好，只是我一般。')">
+              <div class="card-top"><div></div><div class="meta">5 天前</div></div>
+              <div class="card-text">天气很好，只是我一般。</div>
+              <div class="tags"><span class="tag">#文艺</span><span class="tag">#感情</span></div>
+              <div class="card-foot"><div class="meta">已用 2 次</div><button class="copy-btn" onclick="event.stopPropagation();copyText('天气很好，只是我一般。')">复制</button></div>
+            </article>
+
+            <article class="card" onclick="openDetail('别急，所有答案都在时间里。')">
+              <div class="card-top"><div></div><div class="meta">6 天前</div></div>
+              <div class="card-text">别急，所有答案都在时间里。</div>
+              <div class="tags"><span class="tag">#治愈</span><span class="tag">#清醒</span></div>
+              <div class="card-foot"><div class="meta">已用 6 次</div><button class="copy-btn" onclick="event.stopPropagation();copyText('别急，所有答案都在时间里。')">复制</button></div>
+            </article>
+          </div>
+        </section>
+      </main>
+
+      <nav class="bottom-nav">
+        <button class="nav-item active" onclick="go('home')"><span class="ico">⌂</span><span>首页</span></button>
+        <button class="nav-plus" onclick="go('create')">＋</button>
+        <button class="nav-item" onclick="go('profile')"><span class="ico">☺</span><span>我的</span></button>
+      </nav>
+    </div>
+  </section>
+
+  <!-- 搜索 -->
+  <section id="search" class="view">
+    <div class="mobile-shell">
+      <div class="topbar">
+        <button class="topbar-btn" onclick="go('home')">‹</button>
+        <div class="topbar-title">搜索</div>
+        <div style="width:42px"></div>
+      </div>
+      <main class="page">
+        <div class="search-box" style="margin-top:0">
+          <span class="search-icon">⌕</span>
+          <input id="searchInput" value="下雨" oninput="updateResult(this.value)" />
+          <button class="clear" onclick="document.getElementById('searchInput').value='';updateResult('')">×</button>
+        </div>
+
+        <div class="category-scroll">
+          <button class="chip active">全部</button><button class="chip">搞笑</button><button class="chip">抽象</button><button class="chip">感情</button><button class="chip">文艺</button><button class="chip">治愈</button><button class="chip">清醒</button><button class="chip">阴阳</button><button class="chip">其他</button>
+        </div>
+
+        <div id="resultCount" class="search-result-count">找到 6 条与“下雨”相关的内容</div>
+
+        <div class="cards">
+          <article class="card"><div class="card-top"><div class="pin">⌖ 已置顶</div><div class="meta">刚刚用过</div></div><div class="card-text">下雨天和睡觉更配，可惜我和上班更配。</div><div class="tags"><span class="tag">#搞笑</span><span class="tag">#朋友圈</span></div><div class="card-foot"><div class="meta">已用 8 次</div><button class="copy-btn" onclick="copyText('下雨天和睡觉更配，可惜我和上班更配。')">复制</button></div></article>
+          <article class="card"><div class="card-top"><div></div><div class="meta">昨天用过</div></div><div class="card-text">雨会停，天会晴，没有什么会一直糟糕。</div><div class="tags"><span class="tag">#治愈</span><span class="tag">#清醒</span></div><div class="card-foot"><div class="meta">已用 5 次</div><button class="copy-btn" onclick="copyText('雨会停，天会晴，没有什么会一直糟糕。')">复制</button></div></article>
+          <article class="card"><div class="card-top"><div></div><div class="meta">2 天前</div></div><div class="card-text">喜欢下雨，也喜欢雨停之后空气里那种重新开始的味道。</div><div class="tags"><span class="tag">#文艺</span><span class="tag">#生活</span></div><div class="card-foot"><div class="meta">已用 3 次</div><button class="copy-btn" onclick="copyText('喜欢下雨，也喜欢雨停之后空气里那种重新开始的味道。')">复制</button></div></article>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <!-- 新增 -->
+  <section id="create" class="view">
+    <div class="mobile-shell">
+      <div class="topbar">
+        <button class="topbar-btn" onclick="go('home')">‹</button>
+        <div class="topbar-title">先留一句</div>
+        <div style="width:42px"></div>
+      </div>
+      <main class="page">
+        <div class="form-card">
+          <div class="field">
+            <div class="label">正文 *</div>
+            <textarea id="createText" class="textarea" placeholder="粘贴你想以后再用的内容……"></textarea>
+          </div>
+
+          <div class="field">
+            <div class="label">分类</div>
+            <button class="select-row" onclick="showCategorySheet()"><span id="categoryText">不分类</span><span>›</span></button>
+          </div>
+
+          <div class="field">
+            <div class="label">标签</div>
+            <div class="selected-tags">
+              <span class="tag-selected">#朋友圈 ×</span>
+              <span class="tag-selected">#评论 ×</span>
+              <button class="chip" onclick="showTagSheet()">＋ 添加标签</button>
+            </div>
+          </div>
+
+          <button class="more-row" onclick="document.getElementById('morePanel').classList.toggle('open')">
+            <span>更多信息</span><span>›</span>
+          </button>
+
+          <div id="morePanel" class="more-panel">
+            <div class="field">
+              <div class="label">备注</div>
+              <textarea class="textarea" style="min-height:110px" placeholder="比如：适合回复朋友一些离谱建议。"></textarea>
+            </div>
+          </div>
+
+          <button class="primary" style="margin-top:18px" onclick="saveContent()">保存</button>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <!-- 详情 -->
+  <section id="detail" class="view">
+    <div class="mobile-shell">
+      <div class="topbar">
+        <button class="topbar-btn" onclick="go('home')">‹</button>
+        <div class="topbar-title">内容详情</div>
+        <button class="topbar-btn" onclick="showActionSheet()">•••</button>
+      </div>
+      <main class="page">
+        <div class="detail-card">
+          <div class="pin">⌖ 已置顶</div>
+          <div id="detailText" class="detail-text" style="margin-top:12px">你的建议很好，下次不要建议了。</div>
+          <div class="tags"><span class="tag">#评论</span><span class="tag">#阴阳</span></div>
+
+          <button class="primary detail-copy" onclick="copyText(document.getElementById('detailText').innerText)">复制</button>
+
+          <div class="info-list">
+            <div class="info-row"><div class="info-k">分类</div><div class="info-v">阴阳</div></div>
+            <div class="info-row"><div class="info-k">已经用过</div><div class="info-v">12 次</div></div>
+            <div class="info-row"><div class="info-k">最近使用</div><div class="info-v">刚刚</div></div>
+            <div class="info-row"><div class="info-k">创建时间</div><div class="info-v">2026-09-02 22:18</div></div>
+            <div class="info-row"><div class="info-k">修改时间</div><div class="info-v">2026-09-08 20:46</div></div>
+          </div>
+
+          <div class="remark-box">
+            <div class="remark-title">备注</div>
+            <div style="font-size:14px;line-height:1.65">适合回复朋友一些离谱建议。</div>
+          </div>
+
+          <div class="action-grid">
+            <button class="secondary" onclick="toast('已取消置顶')">取消置顶</button>
+            <button class="secondary" onclick="go('edit')">编辑</button>
+          </div>
+          <button class="danger" style="margin-top:10px" onclick="showDeleteSheet()">删除</button>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <!-- 编辑 -->
+  <section id="edit" class="view">
+    <div class="mobile-shell">
+      <div class="topbar">
+        <button class="topbar-btn" onclick="go('detail')">‹</button>
+        <div class="topbar-title">编辑</div>
+        <div style="width:42px"></div>
+      </div>
+      <main class="page">
+        <div class="form-card">
+          <div class="field"><div class="label">正文 *</div><textarea class="textarea">你的建议很好，下次不要建议了。</textarea></div>
+          <div class="field"><div class="label">分类</div><button class="select-row" onclick="showCategorySheet()"><span>阴阳</span><span>›</span></button></div>
+          <div class="field"><div class="label">标签</div><div class="selected-tags"><span class="tag-selected">#评论 ×</span><span class="tag-selected">#阴阳 ×</span><button class="chip" onclick="showTagSheet()">＋ 添加标签</button></div></div>
+          <div class="field"><div class="label">备注</div><textarea class="textarea" style="min-height:110px">适合回复朋友一些离谱建议。</textarea></div>
+          <button class="primary" onclick="toast('保存成功');setTimeout(()=>go('detail'),500)">保存</button>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <!-- 我的 -->
+  <section id="profile" class="view">
+    <div class="mobile-shell">
+      <div class="topbar">
+        <div style="width:42px"></div>
+        <div class="topbar-title">我的</div>
+        <div style="width:42px"></div>
+      </div>
+      <main class="page">
+        <div class="profile-card">
+          <div class="profile-head">
+            <div class="profile-avatar">黑</div>
+            <div>
+              <div class="profile-name">xiaohzi</div>
+              <div class="profile-sub">已经留下 128 条内容</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu">
+          <div class="menu-item"><span>内容总数</span><strong>128</strong></div>
+          <div class="menu-item" onclick="go('password')"><span>修改密码</span><span>›</span></div>
+          <div class="menu-item" onclick="go('about')"><span>关于下次一定</span><span>›</span></div>
+        </div>
+
+        <button class="secondary" style="margin-top:16px" onclick="go('login')">退出登录</button>
+      </main>
+
+      <nav class="bottom-nav">
+        <button class="nav-item" onclick="go('home')"><span class="ico">⌂</span><span>首页</span></button>
+        <button class="nav-plus" onclick="go('create')">＋</button>
+        <button class="nav-item active" onclick="go('profile')"><span class="ico">☺</span><span>我的</span></button>
+      </nav>
+    </div>
+  </section>
+
+  <!-- 修改密码 -->
+  <section id="password" class="view">
+    <div class="mobile-shell">
+      <div class="topbar">
+        <button class="topbar-btn" onclick="go('profile')">‹</button>
+        <div class="topbar-title">修改密码</div>
+        <div style="width:42px"></div>
+      </div>
+      <main class="page">
+        <div class="form-card">
+          <div class="field"><div class="label">原密码</div><input class="input" type="password" /></div>
+          <div class="field"><div class="label">新密码</div><input class="input" type="password" placeholder="至少 8 位" /></div>
+          <div class="field"><div class="label">确认新密码</div><input class="input" type="password" /></div>
+          <button class="primary" onclick="toast('密码已修改，请重新登录');setTimeout(()=>go('login'),700)">确认修改</button>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <!-- 关于 -->
+  <section id="about" class="view">
+    <div class="mobile-shell">
+      <div class="topbar">
+        <button class="topbar-btn" onclick="go('profile')">‹</button>
+        <div class="topbar-title">关于下次一定</div>
+        <div style="width:42px"></div>
+      </div>
+      <main class="page">
+        <div class="about-card">
+          <div class="brand-mark" style="margin:0 auto 15px;width:54px;height:54px;border-radius:19px;font-size:22px">次</div>
+          <div style="font-size:25px;font-weight:700">下次一定</div>
+          <div style="font-size:13px;color:var(--text2);margin-top:4px">For Next Time</div>
+          <div style="font-size:16px;margin-top:23px">这次先留着，下次一定用得上。</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:6px">Next Time, For Sure</div>
+          <div style="font-size:13px;line-height:1.75;color:var(--text2);margin-top:24px">一个用于收藏、搜索和快速复用句子与内容素材的私人小工具。</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:22px">V1.0</div>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <div id="toast" class="toast">就是这句。</div>
+
+  <!-- 分类 Sheet -->
+  <div id="categorySheet" class="sheet-mask" onclick="maskClose(event,'categorySheet')">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">选择分类</div>
+      <div class="sheet-list">
+        <button class="sheet-option active" onclick="chooseCategory('不分类')"><span>不分类</span><span>✓</span></button>
+        <button class="sheet-option" onclick="chooseCategory('搞笑')">搞笑</button>
+        <button class="sheet-option" onclick="chooseCategory('抽象')">抽象</button>
+        <button class="sheet-option" onclick="chooseCategory('感情')">感情</button>
+        <button class="sheet-option" onclick="chooseCategory('文艺')">文艺</button>
+        <button class="sheet-option" onclick="chooseCategory('治愈')">治愈</button>
+        <button class="sheet-option" onclick="chooseCategory('清醒')">清醒</button>
+        <button class="sheet-option" onclick="chooseCategory('阴阳')">阴阳</button>
+        <button class="sheet-option" onclick="chooseCategory('其他')">其他</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 标签 Sheet -->
+  <div id="tagSheet" class="sheet-mask" onclick="maskClose(event,'tagSheet')">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">添加标签</div>
+      <input class="input" placeholder="搜索已有标签，或输入新标签" />
+      <div class="tags" style="margin-top:14px">
+        <span class="tag">#朋友圈</span><span class="tag">#评论</span><span class="tag">#开心</span><span class="tag">#旅行</span><span class="tag">#程序员</span><span class="tag">#下雨</span>
+      </div>
+      <button class="primary" style="margin-top:18px" onclick="hideSheet('tagSheet')">完成</button>
+    </div>
+  </div>
+
+  <!-- 更多操作 -->
+  <div id="actionSheet" class="sheet-mask" onclick="maskClose(event,'actionSheet')">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">更多操作</div>
+      <div class="sheet-list">
+        <button class="sheet-option" onclick="hideSheet('actionSheet');toast('已取消置顶')">取消置顶</button>
+        <button class="sheet-option" onclick="hideSheet('actionSheet');go('edit')">编辑</button>
+        <button class="sheet-option" style="color:var(--danger)" onclick="hideSheet('actionSheet');showDeleteSheet()">删除</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 删除确认 -->
+  <div id="deleteSheet" class="sheet-mask" onclick="maskClose(event,'deleteSheet')">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">确定删除这条内容吗？</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.65">删除后 V1.0 中无法直接恢复。</div>
+      <div class="sheet-actions">
+        <button class="secondary" onclick="hideSheet('deleteSheet')">取消</button>
+        <button class="danger" onclick="hideSheet('deleteSheet');toast('已删除');setTimeout(()=>go('home'),500)">删除</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function go(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({top:0,behavior:'instant'});
+}
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),1600);
+}
+async function copyText(text){
+  try{
+    await navigator.clipboard.writeText(text);
+    toast('就是这句。');
+  }catch(e){
+    toast('已模拟复制成功');
+  }
+}
+function goSearchFromHome(){
+  go('search');
+  setTimeout(()=>document.getElementById('searchInput').focus(),80);
+}
+function updateResult(v){
+  const q=(v||'').trim();
+  document.getElementById('resultCount').textContent=q?`找到 6 条与“${q}”相关的内容`:'输入一个关键词开始找';
+}
+function openDetail(text){
+  document.getElementById('detailText').textContent=text;
+  go('detail');
+}
+function saveContent(){
+  const v=document.getElementById('createText').value.trim();
+  if(!v){toast('这句还没写呢');return}
+  toast('先留着，下次一定。');
+  setTimeout(()=>go('home'),700);
+}
+function showCategorySheet(){document.getElementById('categorySheet').classList.add('show')}
+function showTagSheet(){document.getElementById('tagSheet').classList.add('show')}
+function showActionSheet(){document.getElementById('actionSheet').classList.add('show')}
+function showDeleteSheet(){document.getElementById('deleteSheet').classList.add('show')}
+function hideSheet(id){document.getElementById(id).classList.remove('show')}
+function maskClose(e,id){if(e.target.id===id) hideSheet(id)}
+function chooseCategory(name){
+  document.getElementById('categoryText').textContent=name;
+  hideSheet('categorySheet');
+}
+document.querySelectorAll('.chip').forEach(btn=>{
+  if(btn.closest('.category-scroll')){
+    btn.addEventListener('click',()=>{
+      const parent=btn.parentElement;
+      parent.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  }
+});
+</script>
+</body>
+</html>
