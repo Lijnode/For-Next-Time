@@ -1,57 +1,31 @@
 package com.fornexttime.content.entity;
 
+import lombok.Data;
+
+/**
+ * 用户保存内容的数据库实体。
+ */
+@Data
 public class Content {
 
+    /** 内容主键。 */
     private Long id;
+
+    /** 所属用户主键，仅用于服务端数据隔离。 */
     private Long userId;
+
+    /** 用户保存的正文。 */
     private String content;
+
+    /** 固定分类编码，可为空。 */
     private String categoryCode;
+
+    /** 用户填写的补充备注，可为空。 */
     private String remark;
+
+    /** 是否置顶。 */
     private boolean pinned;
+
+    /** 已成功复制的次数。 */
     private int copyCount;
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public String getCategoryCode() {
-        return categoryCode;
-    }
-
-    public void setCategoryCode(String categoryCode) {
-        this.categoryCode = categoryCode;
-    }
-
-    public String getRemark() {
-        return remark;
-    }
-
-    public void setRemark(String remark) {
-        this.remark = remark;
-    }
-
-    public boolean isPinned() { return pinned; }
-    public void setPinned(boolean pinned) { this.pinned = pinned; }
-    public int getCopyCount() { return copyCount; }
-    public void setCopyCount(int copyCount) { this.copyCount = copyCount; }
 }

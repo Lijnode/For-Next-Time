@@ -757,6 +757,45 @@ Entity 可能包含：
 
 ---
 
+# 23.1 后端 Entity 与依赖注入规范
+
+后端数据库实体统一使用 Lombok：
+
+```java
+@Data
+public class Content {
+}
+```
+
+不得在 Entity 中重复手写 Lombok 已生成的 `getter`、`setter`、`equals`、`hashCode`、`toString`。
+
+Spring Bean 的业务依赖统一使用字段注入：
+
+```java
+@Resource
+private ContentService contentService;
+```
+
+使用 Spring Boot 3 时导入：
+
+```java
+import jakarta.annotation.Resource;
+```
+
+---
+
+# 23.2 Req / Res 注释与排版规范
+
+所有后端 `req/`、`res/` 下的 DTO 必须具备：
+
+- 类型前的 Javadoc，说明请求或响应的业务用途
+- 每个字段或 record 组件前的 Javadoc，说明字段含义、空值规则或安全边界（适用时）
+- 每个字段、校验注解和 record 组件独占一行；相邻字段之间保留空行，禁止压缩成单行或多字段同行
+
+DTO 仅承载数据时，可以不写方法体步骤注释；参数校验注解仍需紧贴对应字段。
+
+---
+
 # 24. 全局异常处理
 
 统一：
