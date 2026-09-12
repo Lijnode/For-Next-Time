@@ -13,4 +13,10 @@
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO tag (user_id, name) VALUES (#{userId}, #{name})
     </insert>
+    <select id="findByContentIds" resultType="com.fornexttime.content.res.ContentTagRes">
+        SELECT ct.content_id AS contentId, t.id, t.name
+        FROM content_tag ct INNER JOIN tag t ON t.id = ct.tag_id
+        WHERE ct.content_id IN
+        <foreach collection="contentIds" item="contentId" open="(" separator="," close=")">#{contentId}</foreach>
+    </select>
 </mapper>

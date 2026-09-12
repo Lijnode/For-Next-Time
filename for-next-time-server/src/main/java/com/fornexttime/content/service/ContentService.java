@@ -3,6 +3,7 @@ package com.fornexttime.content.service;
 import com.fornexttime.common.exception.BusinessException;
 import com.fornexttime.common.exception.ErrorCode;
 import com.fornexttime.common.security.UserContext;
+import com.fornexttime.common.model.PageResult;
 import com.fornexttime.content.CategoryCode;
 import com.fornexttime.content.entity.Content;
 import com.fornexttime.content.mapper.ContentMapper;
@@ -17,6 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import com.fornexttime.content.res.ContentTagRes;
 
 @Service
 public class ContentService {
@@ -150,5 +154,27 @@ public class ContentService {
         } catch (DuplicateKeyException exception) {
             return tagMapper.findByUserIdAndName(userId, tagName);
         }
+    }
+
+    /**
+     * 分页查询当前用户内容，并按置顶、更新时间和 ID 排序。
+     */
+    public PageResult<ContentListRes> list(int pageNum, int pageSize, String categoryCode, Boolean pinned) {
+        // 1. 校验可选分类并计算分页偏移量。
+        String normalizedCategory = normalizeCategory(categoryCode);
+        Long userId = UserContext.requireUserId();
+        long total = contentMapper.countPage(userId, normalizedCategory, pinned);
+        // 2. 只查询当前用户未删除的当前页内容。
+        List<Content> contents = contentMapper.findPage(userId, normalizedCategory, pinned,
+                (pageNum - 1) * pageSize, pageSize);
+        // 3. 一次性查询当前页标签并按内容 ID 分组，避免 N+1。
+        Map<Long, List<ContentTagRes>> tagsByContentId = contents.isEmpty() ? Map.of() : tagMapper
+                .findByContentIds(contents.stream().map(Content::getId).toList()).stream()
+                .collect(Collectors.groupingBy(ContentTagRes::contentId));
+        List<ContentListRes> list = contents.stream()
+                .map(content -> new ContentListRes(content.getId(), content.getContent(), content.getCategoryCode(),
+                        content.isPinned(), content.getCopyCount(), tagsByContentId.getOrDefault(content.getId(), List.of())))
+                .toList();
+        return PageResult.of(pageNum, pageSize, total, list);
     }
 }

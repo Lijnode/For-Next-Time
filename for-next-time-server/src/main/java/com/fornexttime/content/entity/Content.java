@@ -7,6 +7,8 @@ public class Content {
     private String content;
     private String categoryCode;
     private String remark;
+    private boolean pinned;
+    private int copyCount;
 
     public Long getId() {
         return id;
@@ -47,4 +49,9 @@ public class Content {
     public void setRemark(String remark) {
         this.remark = remark;
     }
+
+    public boolean isPinned() { return pinned; }
+    public void setPinned(boolean pinned) { this.pinned = pinned; }
+    public int getCopyCount() { return copyCount; }
+    public void setCopyCount(int copyCount) { this.copyCount = copyCount; }
 }

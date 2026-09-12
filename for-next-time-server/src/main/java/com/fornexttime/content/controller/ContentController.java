@@ -9,6 +9,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import com.fornexttime.common.model.PageResult;
+import com.fornexttime.content.res.ContentListRes;
 
 @RestController
 @RequestMapping("/api/v1/contents")
@@ -31,5 +37,18 @@ public class ContentController {
     public Result<ContentIdRes> create(@Valid @RequestBody ContentCreateReq request) {
         // 1. 参数校验通过后交由服务完成事务写入。
         return Result.success(contentService.create(request));
+    }
+
+    /**
+     * 分页获取当前用户内容列表。
+     */
+    @GetMapping
+    public Result<PageResult<ContentListRes>> list(
+            @RequestParam(defaultValue = "1") @Min(1) int pageNum,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int pageSize,
+            @RequestParam(required = false) String categoryCode,
+            @RequestParam(required = false) Boolean pinned) {
+        // 1. 使用当前登录用户范围查询分页内容。
+        return Result.success(contentService.list(pageNum, pageSize, categoryCode, pinned));
     }
 }
