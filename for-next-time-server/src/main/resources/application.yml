@@ -3,11 +3,6 @@ spring:
     name: for-next-time-server
   profiles:
     default: dev
-  datasource:
-    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:for_next_time}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
-    username: ${MYSQL_USER:for_next_time}
-    password: ${MYSQL_PASSWORD:}
-    driver-class-name: com.mysql.cj.jdbc.Driver
   flyway:
     enabled: true
     locations: classpath:db/migration
@@ -20,8 +15,3 @@ mybatis:
   mapper-locations: classpath*:mapper/**/*.xml
   configuration:
     map-underscore-to-camel-case: true
-
-app:
-  jwt:
-    secret: ${JWT_SECRET:}
-    expiration-seconds: 604800

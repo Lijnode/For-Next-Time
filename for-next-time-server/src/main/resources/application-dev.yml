@@ -3,6 +3,7 @@ spring:
     url: jdbc:mysql://127.0.0.1:3306/for_next_time?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
     username: root
     password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
 server:
   port: 6688
@@ -10,3 +11,4 @@ server:
 app:
   jwt:
     secret: local-development-jwt-secret-change-me-2026
+    expiration-seconds: 604800
