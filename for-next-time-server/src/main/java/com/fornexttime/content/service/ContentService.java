@@ -10,11 +10,13 @@ import com.fornexttime.content.mapper.ContentMapper;
 import com.fornexttime.content.mapper.ContentTagMapper;
 import com.fornexttime.content.req.ContentCreateReq;
 import com.fornexttime.content.res.ContentIdRes;
+import com.fornexttime.content.res.ContentListRes;
 import com.fornexttime.tag.entity.Tag;
 import com.fornexttime.tag.mapper.TagMapper;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.annotation.Resource;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -25,19 +27,15 @@ import com.fornexttime.content.res.ContentTagRes;
 @Service
 public class ContentService {
 
-    private final ContentMapper contentMapper;
-    private final TagMapper tagMapper;
-    private final ContentTagMapper contentTagMapper;
-
-    /**
-     * 注入内容、标签和关系表的数据访问组件。
-     */
-    public ContentService(ContentMapper contentMapper, TagMapper tagMapper, ContentTagMapper contentTagMapper) {
-        // 1. 保存同一新增事务所需的三个 Mapper。
-        this.contentMapper = contentMapper;
-        this.tagMapper = tagMapper;
-        this.contentTagMapper = contentTagMapper;
-    }
+    /** 内容主体数据访问组件。 */
+    @Resource
+    private ContentMapper contentMapper;
+    /** 用户标签数据访问组件。 */
+    @Resource
+    private TagMapper tagMapper;
+    /** 内容标签关系数据访问组件。 */
+    @Resource
+    private ContentTagMapper contentTagMapper;
 
     /**
      * 创建当前用户的内容，并在同一事务中处理标签与关系。

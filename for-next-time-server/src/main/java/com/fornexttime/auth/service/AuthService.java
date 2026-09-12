@@ -13,28 +13,25 @@ import com.fornexttime.common.security.JwtUtil;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import jakarta.annotation.Resource;
 
 @Service
 public class AuthService {
 
     private static final String TOKEN_TYPE = "Bearer";
 
-    private final UserAccountMapper userAccountMapper;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtUtil jwtUtil;
-    private final JwtProperties jwtProperties;
-
-    /**
-     * 组装认证服务依赖，集中处理账号、密码和令牌逻辑。
-     */
-    public AuthService(UserAccountMapper userAccountMapper, PasswordEncoder passwordEncoder, JwtUtil jwtUtil,
-                       JwtProperties jwtProperties) {
-        // 1. 保存数据访问与安全组件，供注册和登录流程复用。
-        this.userAccountMapper = userAccountMapper;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtUtil = jwtUtil;
-        this.jwtProperties = jwtProperties;
-    }
+    /** 用户账号数据访问组件。 */
+    @Resource
+    private UserAccountMapper userAccountMapper;
+    /** BCrypt 密码编码组件。 */
+    @Resource
+    private PasswordEncoder passwordEncoder;
+    /** JWT 签发与解析组件。 */
+    @Resource
+    private JwtUtil jwtUtil;
+    /** JWT 有效期配置。 */
+    @Resource
+    private JwtProperties jwtProperties;
 
     /**
      * 注册新账号并直接签发登录令牌，保证注册成功后无需再次登录。

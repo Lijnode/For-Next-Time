@@ -6,6 +6,7 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.annotation.Resource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -15,15 +16,9 @@ public class AuthInterceptor implements HandlerInterceptor {
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
 
-    private final JwtUtil jwtUtil;
-
-    /**
-     * 注入 JWT 工具，供受保护接口解析身份。
-     */
-    public AuthInterceptor(JwtUtil jwtUtil) {
-        // 1. 保存令牌解析工具。
-        this.jwtUtil = jwtUtil;
-    }
+    /** JWT 解析工具。 */
+    @Resource
+    private JwtUtil jwtUtil;
 
     /**
      * 在业务接口执行前校验 Bearer Token 并建立当前用户上下文。

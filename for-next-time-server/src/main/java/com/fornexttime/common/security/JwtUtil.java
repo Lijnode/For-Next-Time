@@ -8,6 +8,7 @@ import io.jsonwebtoken.security.SecurityException;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import jakarta.annotation.Resource;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
@@ -15,15 +16,9 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    private final JwtProperties properties;
-
-    /**
-     * 注入 JWT 配置，用于统一读取密钥和有效期。
-     */
-    public JwtUtil(JwtProperties properties) {
-        // 1. 保存不可变配置供签发和解析复用。
-        this.properties = properties;
-    }
+    /** JWT 密钥与有效期配置。 */
+    @Resource
+    private JwtProperties properties;
 
     /**
      * 为已认证用户生成带有效期的 JWT。

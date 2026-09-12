@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.annotation.Resource;
 import com.fornexttime.common.model.PageResult;
 import com.fornexttime.content.res.ContentListRes;
 
@@ -20,15 +21,9 @@ import com.fornexttime.content.res.ContentListRes;
 @RequestMapping("/api/v1/contents")
 public class ContentController {
 
-    private final ContentService contentService;
-
-    /**
-     * 注入内容业务服务。
-     */
-    public ContentController(ContentService contentService) {
-        // 1. 保存服务依赖，Controller 只负责请求编排。
-        this.contentService = contentService;
-    }
+    /** 内容业务服务。 */
+    @Resource
+    private ContentService contentService;
 
     /**
      * 创建当前登录用户的一条内容。
