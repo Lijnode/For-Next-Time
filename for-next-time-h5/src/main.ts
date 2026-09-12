@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import { Button } from 'vant'
+import { Button, CellGroup, Field, Form } from 'vant'
 import 'vant/lib/index.css'
 import App from './App.vue'
 import router from './router'
@@ -10,4 +10,7 @@ createApp(App)
   .use(createPinia())
   .use(router)
   .use(Button)
+  .use(CellGroup)
+  .use(Field)
+  .use(Form)
   .mount('#app')

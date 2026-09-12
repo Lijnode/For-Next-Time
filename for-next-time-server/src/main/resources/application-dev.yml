@@ -6,3 +6,7 @@ spring:
 
 server:
   port: 8080
+
+app:
+  jwt:
+    secret: local-development-jwt-secret-change-me-2026

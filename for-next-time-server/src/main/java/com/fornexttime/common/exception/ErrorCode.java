@@ -10,6 +10,9 @@ public enum ErrorCode {
     TOKEN_EXPIRED(40102, "Token 已过期", HttpStatus.UNAUTHORIZED),
     FORBIDDEN(40300, "无权操作", HttpStatus.FORBIDDEN),
     RESOURCE_NOT_FOUND(40400, "资源不存在", HttpStatus.NOT_FOUND),
+    USERNAME_EXISTS(10001, "用户名已存在", HttpStatus.BAD_REQUEST),
+    INVALID_CREDENTIALS(10002, "用户名或密码错误", HttpStatus.BAD_REQUEST),
+    PASSWORD_MISMATCH(10006, "两次输入的密码不一致", HttpStatus.BAD_REQUEST),
     SYSTEM_ERROR(50000, "系统异常", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final int code;

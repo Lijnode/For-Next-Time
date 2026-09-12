@@ -1,8 +1,22 @@
+<script setup lang="ts">
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '../../stores/auth'
+
+const router = useRouter()
+const authStore = useAuthStore()
+
+async function logout() {
+  authStore.logout()
+  await router.replace({ name: 'login' })
+}
+</script>
+
 <template>
   <main class="home-page">
     <p class="eyebrow">FOR NEXT TIME</p>
     <h1>下次一定</h1>
     <p class="description">先留下，找得到，用得上。</p>
+    <van-button plain type="primary" @click="logout">退出登录</van-button>
   </main>
 </template>
 

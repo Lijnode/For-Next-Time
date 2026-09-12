@@ -1,5 +1,6 @@
 import axios from 'axios'
-import { getToken } from '../platform/storage'
+import { replaceWithLogin } from '../platform/navigation'
+import { getToken, removeToken } from '../platform/storage'
 import type { ApiResult } from '../types/api'
 
 const request = axios.create({
@@ -22,6 +23,13 @@ request.interceptors.response.use((response) => {
   }
   response.data = result.data
   return response
+}, (error) => {
+  if (error.response?.status === 401) {
+    removeToken()
+    replaceWithLogin()
+  }
+  const message = error.response?.data?.message
+  return Promise.reject(new Error(typeof message === 'string' ? message : '请求失败，请稍后重试'))
 })
 
 export default request

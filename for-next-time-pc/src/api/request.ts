@@ -21,6 +21,15 @@ request.interceptors.response.use((response) => {
   }
   response.data = result.data
   return response
+}, (error) => {
+  if (error.response?.status === 401) {
+    localStorage.removeItem('for-next-time-token')
+    if (window.location.pathname !== '/login') {
+      window.location.assign('/login')
+    }
+  }
+  const message = error.response?.data?.message
+  return Promise.reject(new Error(typeof message === 'string' ? message : '请求失败，请稍后重试'))
 })
 
 export default request
