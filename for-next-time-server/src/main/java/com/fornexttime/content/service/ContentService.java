@@ -1,0 +1,154 @@
+package com.fornexttime.content.service;
+
+import com.fornexttime.common.exception.BusinessException;
+import com.fornexttime.common.exception.ErrorCode;
+import com.fornexttime.common.security.UserContext;
+import com.fornexttime.content.CategoryCode;
+import com.fornexttime.content.entity.Content;
+import com.fornexttime.content.mapper.ContentMapper;
+import com.fornexttime.content.mapper.ContentTagMapper;
+import com.fornexttime.content.req.ContentCreateReq;
+import com.fornexttime.content.res.ContentIdRes;
+import com.fornexttime.tag.entity.Tag;
+import com.fornexttime.tag.mapper.TagMapper;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.LinkedHashSet;
+import java.util.List;
+
+@Service
+public class ContentService {
+
+    private final ContentMapper contentMapper;
+    private final TagMapper tagMapper;
+    private final ContentTagMapper contentTagMapper;
+
+    /**
+     * 注入内容、标签和关系表的数据访问组件。
+     */
+    public ContentService(ContentMapper contentMapper, TagMapper tagMapper, ContentTagMapper contentTagMapper) {
+        // 1. 保存同一新增事务所需的三个 Mapper。
+        this.contentMapper = contentMapper;
+        this.tagMapper = tagMapper;
+        this.contentTagMapper = contentTagMapper;
+    }
+
+    /**
+     * 创建当前用户的内容，并在同一事务中处理标签与关系。
+     */
+    @Transactional
+    public ContentIdRes create(ContentCreateReq request) {
+        // 1. 清洗并校验正文、分类、标签和备注。
+        String contentText = normalizeContent(request.content());
+        String categoryCode = normalizeCategory(request.categoryCode());
+        List<String> tagNames = normalizeTagNames(request.tagNames());
+        String remark = normalizeRemark(request.remark());
+
+        // 2. 保存只属于当前登录用户的内容主体。
+        Content content = new Content();
+        content.setUserId(UserContext.requireUserId());
+        content.setContent(contentText);
+        content.setCategoryCode(categoryCode);
+        content.setRemark(remark);
+        contentMapper.insert(content);
+
+        // 3. 逐个复用或创建标签，并写入内容标签关系。
+        for (String tagName : tagNames) {
+            Tag tag = findOrCreateTag(content.getUserId(), tagName);
+            contentTagMapper.insert(content.getId(), tag.getId());
+        }
+        return new ContentIdRes(content.getId());
+    }
+
+    /**
+     * 清理正文两端空白，同时保留内部换行与空格。
+     */
+    private String normalizeContent(String content) {
+        // 1. 使用 strip 仅清理首尾无意义空白。
+        String normalized = content == null ? "" : content.strip();
+        // 2. 按固定内容边界返回业务错误。
+        if (normalized.isEmpty()) {
+            throw new BusinessException(ErrorCode.CONTENT_EMPTY);
+        }
+        if (normalized.length() > 5000) {
+            throw new BusinessException(ErrorCode.CONTENT_TOO_LONG);
+        }
+        return normalized;
+    }
+
+    /**
+     * 校验分类编码并将未分类统一为 null。
+     */
+    private String normalizeCategory(String categoryCode) {
+        // 1. 使用固定枚举校验分类。
+        try {
+            return CategoryCode.normalize(categoryCode);
+        } catch (IllegalArgumentException exception) {
+            // 2. 对外返回锁定的分类错误码。
+            throw new BusinessException(ErrorCode.CATEGORY_INVALID);
+        }
+    }
+
+    /**
+     * 清洗标签集合、去重并校验 V1 标签上限。
+     */
+    private List<String> normalizeTagNames(List<String> tagNames) {
+        // 1. 清理空白标签并保留输入顺序去重。
+        LinkedHashSet<String> normalized = new LinkedHashSet<>();
+        if (tagNames != null) {
+            for (String tagName : tagNames) {
+                String value = tagName == null ? "" : tagName.trim();
+                if (!value.isEmpty()) {
+                    normalized.add(value);
+                }
+            }
+        }
+        // 2. 校验数量和单个标签长度。
+        if (normalized.size() > 10) {
+            throw new BusinessException(ErrorCode.TAG_LIMIT_EXCEEDED);
+        }
+        if (normalized.stream().anyMatch(tagName -> tagName.length() > 20)) {
+            throw new BusinessException(ErrorCode.TAG_NAME_TOO_LONG);
+        }
+        return List.copyOf(normalized);
+    }
+
+    /**
+     * 清理可选备注，并校验其最大长度。
+     */
+    private String normalizeRemark(String remark) {
+        // 1. 将空白备注转换为数据库 null。
+        String normalized = remark == null ? null : remark.trim();
+        if (normalized != null && normalized.isEmpty()) {
+            return null;
+        }
+        // 2. 对非空备注执行长度校验。
+        if (normalized != null && normalized.length() > 1000) {
+            throw new BusinessException(ErrorCode.REMARK_TOO_LONG);
+        }
+        return normalized;
+    }
+
+    /**
+     * 在当前用户范围内查找标签，不存在时创建并处理并发重复。
+     */
+    private Tag findOrCreateTag(Long userId, String tagName) {
+        // 1. 优先复用当前用户已有的同名标签。
+        Tag tag = tagMapper.findByUserIdAndName(userId, tagName);
+        if (tag != null) {
+            return tag;
+        }
+        // 2. 不存在时创建标签，并处理唯一索引竞争。
+        tag = new Tag();
+        tag.setUserId(userId);
+        tag.setName(tagName);
+        try {
+            tagMapper.insert(tag);
+            return tag;
+        } catch (DuplicateKeyException exception) {
+            return tagMapper.findByUserIdAndName(userId, tagName);
+        }
+    }
+}

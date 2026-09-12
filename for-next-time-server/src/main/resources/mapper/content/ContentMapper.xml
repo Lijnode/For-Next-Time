@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.fornexttime.content.mapper.ContentMapper">
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO content (user_id, content, category_code, remark)
+        VALUES (#{userId}, #{content}, #{categoryCode}, #{remark})
+    </insert>
+</mapper>

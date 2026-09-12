@@ -9,7 +9,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class PasswordConfig {
 
     @Bean
+    /**
+     * 提供全局复用的 BCrypt 密码编码器。
+     */
     public PasswordEncoder passwordEncoder() {
+        // 1. 返回 Spring Security 标准 BCrypt 实现。
         return new BCryptPasswordEncoder();
     }
 }

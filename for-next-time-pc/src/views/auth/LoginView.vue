@@ -9,14 +9,21 @@ const form = reactive({ username: '', password: '' })
 const errorMessage = ref('')
 const loading = ref(false)
 
+/**
+ * 提交登录表单，成功后进入首页。
+ */
 async function submit() {
+  // 1. 清除上一次的错误并进入提交状态。
   errorMessage.value = ''
   loading.value = true
+  // 2. 请求登录并在成功后替换当前路由。
   try {
     await authStore.loginByPassword(form)
     await router.replace({ name: 'home' })
+  // 3. 将可读错误反馈到当前表单。
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '登录失败，请稍后重试'
+  // 4. 无论成功或失败都恢复按钮状态。
   } finally {
     loading.value = false
   }

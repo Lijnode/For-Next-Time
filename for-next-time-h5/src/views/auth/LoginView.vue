@@ -9,13 +9,19 @@ const authStore = useAuthStore()
 const form = reactive({ username: '', password: '' })
 const loading = ref(false)
 
+/**
+ * 提交登录表单，成功后进入首页。
+ */
 async function submit() {
+  // 1. 锁定提交按钮，防止重复请求。
   loading.value = true
   try {
     await authStore.loginByPassword(form)
     await router.replace({ name: 'home' })
+  // 2. 将认证失败原因通过平台反馈层展示。
   } catch (error) {
     showError(error instanceof Error ? error.message : '登录失败，请稍后重试')
+  // 3. 无论成功或失败都恢复按钮状态。
   } finally {
     loading.value = false
   }

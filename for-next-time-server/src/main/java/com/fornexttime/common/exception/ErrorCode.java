@@ -13,6 +13,12 @@ public enum ErrorCode {
     USERNAME_EXISTS(10001, "用户名已存在", HttpStatus.BAD_REQUEST),
     INVALID_CREDENTIALS(10002, "用户名或密码错误", HttpStatus.BAD_REQUEST),
     PASSWORD_MISMATCH(10006, "两次输入的密码不一致", HttpStatus.BAD_REQUEST),
+    CONTENT_EMPTY(20002, "内容正文不能为空", HttpStatus.BAD_REQUEST),
+    CONTENT_TOO_LONG(20003, "内容正文长度超限", HttpStatus.BAD_REQUEST),
+    CATEGORY_INVALID(20004, "分类不存在", HttpStatus.BAD_REQUEST),
+    TAG_LIMIT_EXCEEDED(20005, "标签数量超过限制", HttpStatus.BAD_REQUEST),
+    REMARK_TOO_LONG(20006, "备注长度超限", HttpStatus.BAD_REQUEST),
+    TAG_NAME_TOO_LONG(30002, "标签名称长度超限", HttpStatus.BAD_REQUEST),
     SYSTEM_ERROR(50000, "系统异常", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final int code;

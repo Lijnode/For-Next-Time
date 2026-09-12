@@ -9,18 +9,25 @@ const form = reactive({ username: '', password: '', confirmPassword: '' })
 const errorMessage = ref('')
 const loading = ref(false)
 
+/**
+ * 提交注册表单，注册成功后直接进入首页。
+ */
 async function submit() {
+  // 1. 清除旧错误并在前端先校验两次密码。
   errorMessage.value = ''
   if (form.password !== form.confirmPassword) {
     errorMessage.value = '两次输入的密码不一致'
     return
   }
+  // 2. 通过后端注册并保存自动签发的令牌。
   loading.value = true
   try {
     await authStore.registerAccount(form)
     await router.replace({ name: 'home' })
+  // 3. 将可读错误反馈到当前表单。
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '注册失败，请稍后重试'
+  // 4. 无论成功或失败都恢复按钮状态。
   } finally {
     loading.value = false
   }

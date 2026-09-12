@@ -5,8 +5,13 @@ import { useAuthStore } from '../../stores/auth'
 const router = useRouter()
 const authStore = useAuthStore()
 
+/**
+ * 清除登录状态并返回登录页。
+ */
 async function logout() {
+  // 1. 清理 Pinia 与本地存储中的认证信息。
   authStore.logout()
+  // 2. 替换路由，避免浏览器返回受保护页面。
   await router.replace({ name: 'login' })
 }
 </script>
