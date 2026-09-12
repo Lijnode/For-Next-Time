@@ -18,7 +18,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
      */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // 1. 保护业务 API，注册和登录保持匿名可访问。
+        // 保护业务 API，注册和登录保持匿名可访问。
         registry.addInterceptor(authInterceptor)
                 .addPathPatterns("/api/v1/**")
                 .excludePathPatterns("/api/v1/auth/register", "/api/v1/auth/login");

@@ -1,7 +1,9 @@
 package com.fornexttime.common.exception;
 
+import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 
+@AllArgsConstructor
 public enum ErrorCode {
     PARAM_ERROR(40000, "请求参数错误", HttpStatus.BAD_REQUEST),
     REQUEST_FORMAT_ERROR(40001, "请求数据格式错误", HttpStatus.BAD_REQUEST),
@@ -24,12 +26,6 @@ public enum ErrorCode {
     private final int code;
     private final String message;
     private final HttpStatus status;
-
-    ErrorCode(int code, String message, HttpStatus status) {
-        this.code = code;
-        this.message = message;
-        this.status = status;
-    }
 
     public int getCode() {
         return code;

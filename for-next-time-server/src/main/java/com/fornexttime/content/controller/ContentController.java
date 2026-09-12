@@ -30,7 +30,7 @@ public class ContentController {
      */
     @PostMapping
     public Result<ContentIdRes> create(@Valid @RequestBody ContentCreateReq request) {
-        // 1. 参数校验通过后交由服务完成事务写入。
+        // 参数校验通过后交由服务完成事务写入。
         return Result.success(contentService.create(request));
     }
 
@@ -43,7 +43,7 @@ public class ContentController {
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int pageSize,
             @RequestParam(required = false) String categoryCode,
             @RequestParam(required = false) Boolean pinned) {
-        // 1. 使用当前登录用户范围查询分页内容。
+        // 使用当前登录用户范围查询分页内容。
         return Result.success(contentService.list(pageNum, pageSize, categoryCode, pinned));
     }
 }

@@ -17,7 +17,7 @@ public class Content {
     /** 用户保存的正文。 */
     private String content;
 
-    /** 固定分类编码，可为空。 */
+    /** 固定分类编码，取值见 CategoryCode；未分类时为空。 */
     private String categoryCode;
 
     /** 用户填写的补充备注，可为空。 */

@@ -25,7 +25,7 @@ public class AuthController {
      */
     @PostMapping("/register")
     public Result<LoginRes> register(@Valid @RequestBody RegisterReq request) {
-        // 1. 参数校验通过后交由服务完成注册。
+        // 参数校验通过后交由服务完成注册。
         return Result.success(authService.register(request));
     }
 
@@ -34,7 +34,7 @@ public class AuthController {
      */
     @PostMapping("/login")
     public Result<LoginRes> login(@Valid @RequestBody LoginReq request) {
-        // 1. 参数校验通过后交由服务完成身份认证。
+        // 参数校验通过后交由服务完成身份认证。
         return Result.success(authService.login(request));
     }
 }

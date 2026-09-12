@@ -1,9 +1,51 @@
 package com.fornexttime.content;
 
+import lombok.Getter;
+
 import java.util.Arrays;
 
+/**
+ * V1 固定内容分类编码及其中文展示名称。
+ */
 public enum CategoryCode {
-    FUNNY, ABSTRACT, EMOTION, LITERARY, HEALING, SOBER, SARCASM, OTHER;
+
+    /** 搞笑。 */
+    FUNNY("搞笑"),
+
+    /** 抽象。 */
+    ABSTRACT("抽象"),
+
+    /** 感情。 */
+    EMOTION("感情"),
+
+    /** 文艺。 */
+    LITERARY("文艺"),
+
+    /** 治愈。 */
+    HEALING("治愈"),
+
+    /** 清醒。 */
+    SOBER("清醒"),
+
+    /** 阴阳。 */
+    SARCASM("阴阳"),
+
+    /** 其他。 */
+    OTHER("其他");
+
+    /** 与分类编码一一对应的中文展示名称。 */
+    @Getter
+    private final String label;
+
+    /**
+     * 创建携带中文展示名称的固定分类。
+     *
+     * @param label 分类中文展示名称
+     */
+    CategoryCode(String label) {
+        // 1. 保存与枚举编码固定对应的中文名称。
+        this.label = label;
+    }
 
     /**
      * 校验可选分类编码是否属于 V1 固定分类。
