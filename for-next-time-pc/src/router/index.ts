@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import LoginView from '../views/auth/LoginView.vue'
 import RegisterView from '../views/auth/RegisterView.vue'
+import ContentCreateView from '../views/content/ContentCreateView.vue'
 import HomeView from '../views/home/HomeView.vue'
 
 const router = createRouter({
@@ -23,6 +24,7 @@ const router = createRouter({
       name: 'register',
       component: RegisterView,
     },
+    { path: '/contents/new', name: 'content-create', component: ContentCreateView, meta: { requiresAuth: true } },
   ],
 })
 

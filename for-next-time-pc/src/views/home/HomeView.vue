@@ -14,6 +14,14 @@ async function logout() {
   // 2. 替换路由，避免浏览器返回受保护页面。
   await router.replace({ name: 'login' })
 }
+
+/**
+ * 进入新增内容页面。
+ */
+async function createContent() {
+  // 1. 进入受保护的内容编辑页。
+  await router.push({ name: 'content-create' })
+}
 </script>
 
 <template>
@@ -22,6 +30,7 @@ async function logout() {
       <p class="eyebrow">For Next Time</p>
       <h1>下次一定</h1>
       <p>这次先留着，下次一定用得上。</p>
+      <el-button type="primary" @click="createContent">先留一句</el-button>
       <el-button text type="primary" @click="logout">退出登录</el-button>
     </section>
   </main>
