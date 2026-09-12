@@ -1,0 +1,10 @@
+:root {
+  --color-brand: #ff6f4e;
+  --color-brand-dark: #e85a3c;
+  --color-text: #2d2926;
+  --color-muted: #8c827b;
+  --color-page: #fffaf6;
+  --color-card: #ffffff;
+  --color-border: #eee4dd;
+  --radius-card: 16px;
+}

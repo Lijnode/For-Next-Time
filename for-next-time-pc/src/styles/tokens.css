@@ -1,0 +1,22 @@
+:root {
+  --color-brand: #ff6f4e;
+  --color-brand-hover: #f55f3c;
+  --color-brand-soft: #fff1ec;
+  --color-bg: #f7f7f4;
+  --color-surface: #ffffff;
+  --color-text-primary: #1f2121;
+  --color-text-secondary: #737878;
+  --color-text-tertiary: #a2a6a6;
+  --color-border: #e7e8e4;
+  --color-divider: #efefeb;
+  --color-danger: #d84c42;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+}
