@@ -2,6 +2,9 @@
 .env.*
 !.env.example
 
+# 服务器本地生产配置，构建 JAR 时保留，但禁止提交到 Git。
+for-next-time-server/src/main/resources/application-prod.yml
+
 node_modules/
 dist/
 
