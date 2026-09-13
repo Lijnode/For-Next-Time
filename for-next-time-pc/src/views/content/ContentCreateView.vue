@@ -1,15 +1,47 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { createContent } from '../../api/content'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { createContent, getContentDetail, updateContent } from '../../api/content'
 
+const route = useRoute()
 const router = useRouter()
 const form = reactive({ content: '', categoryCode: null as string | null, tagNames: [] as string[], remark: '' })
 const tagInput = ref('')
 const showRemark = ref(false)
 const loading = ref(false)
+const initialLoading = ref(false)
 const errorMessage = ref('')
 const categories = [['FUNNY', '搞笑'], ['ABSTRACT', '抽象'], ['EMOTION', '感情'], ['LITERARY', '文艺'], ['HEALING', '治愈'], ['SOBER', '清醒'], ['SARCASM', '阴阳'], ['OTHER', '其他']]
+const editingId = computed(() => route.name === 'content-edit' ? Number(route.params.id) : null)
+const isEditing = computed(() => editingId.value !== null)
+
+/**
+ * 编辑模式下加载原内容并回填到与新增共用的表单。
+ */
+async function loadEditingContent() {
+  // 1. 新增模式无需读取已有内容。
+  if (!isEditing.value) return
+  // 2. 校验编辑路由中的内容主键。
+  if (!Number.isInteger(editingId.value) || editingId.value! < 1) {
+    errorMessage.value = '内容不存在或无权操作'
+    return
+  }
+  // 3. 读取详情并回填正文、分类、标签和备注。
+  initialLoading.value = true
+  try {
+    const detail = await getContentDetail(editingId.value!)
+    form.content = detail.content
+    form.categoryCode = detail.categoryCode
+    form.tagNames = detail.tags.map((tag) => tag.name)
+    form.remark = detail.remark ?? ''
+    showRemark.value = Boolean(detail.remark)
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : '加载内容失败，请稍后重试'
+  } finally {
+    // 4. 无论成功或失败都结束初始加载状态。
+    initialLoading.value = false
+  }
+}
 
 /**
  * 将输入框中的标签加入当前表单，最多保留十个。
@@ -32,16 +64,22 @@ function removeTag(tag: string) {
 }
 
 /**
- * 保存内容；失败时保持当前表单数据不变。
+ * 新增或更新内容；失败时保持当前表单数据不变。
  */
 async function submit() {
   // 1. 清理旧错误并启用提交状态。
   errorMessage.value = ''
   loading.value = true
   try {
-    // 2. 提交四个锁定字段，成功后返回首页。
-    await createContent({ ...form, remark: form.remark.trim() || null })
-    await router.replace({ name: 'home' })
+    // 2. 按当前模式提交同一份内容表单数据。
+    const payload = { ...form, remark: form.remark.trim() || null }
+    if (isEditing.value) {
+      await updateContent(editingId.value!, payload)
+      await router.replace({ name: 'content-detail', params: { id: editingId.value } })
+    } else {
+      await createContent(payload)
+      await router.replace({ name: 'home' })
+    }
   } catch (error) {
     // 3. 失败时只展示错误，不清空用户输入。
     errorMessage.value = error instanceof Error ? error.message : '保存失败，请稍后重试'
@@ -50,15 +88,18 @@ async function submit() {
     loading.value = false
   }
 }
+
+// 1. 编辑路由首次进入时回填现有内容。
+onMounted(loadEditingContent)
 </script>
 
 <template>
-  <main class="create-page"><section class="editor-card"><p class="eyebrow">FOR NEXT TIME</p><h1>先留一句</h1>
-    <el-form @submit.prevent="submit"><el-form-item label="正文 *"><el-input v-model="form.content" type="textarea" :rows="8" maxlength="5000" show-word-limit placeholder="粘贴你想以后再用的内容……" /></el-form-item>
+  <main class="create-page"><section class="editor-card"><p class="eyebrow">FOR NEXT TIME</p><h1>{{ isEditing ? '修改这一句' : '先留一句' }}</h1>
+    <p v-if="initialLoading">正在载入内容……</p><el-form v-else @submit.prevent="submit"><el-form-item label="正文 *"><el-input v-model="form.content" type="textarea" :rows="8" maxlength="5000" show-word-limit placeholder="粘贴你想以后再用的内容……" /></el-form-item>
       <el-form-item label="分类"><el-select v-model="form.categoryCode" clearable placeholder="请选择 / 不分类"><el-option v-for="category in categories" :key="category[0]" :label="category[1]" :value="category[0]" /></el-select></el-form-item>
       <el-form-item label="标签"><el-tag v-for="tag in form.tagNames" :key="tag" closable @close="removeTag(tag)">#{{ tag }}</el-tag><el-input v-model="tagInput" class="tag-input" placeholder="添加标签" @keyup.enter="addTag" /><el-button text type="primary" @click="addTag">添加</el-button></el-form-item>
       <el-button text @click="showRemark = !showRemark">更多信息</el-button><el-form-item v-if="showRemark" label="备注"><el-input v-model="form.remark" type="textarea" :rows="3" maxlength="1000" /></el-form-item>
-      <p v-if="errorMessage" class="error">{{ errorMessage }}</p><div class="actions"><el-button @click="router.back()">取消</el-button><el-button type="primary" native-type="submit" :loading="loading">保存</el-button></div>
+      <p v-if="errorMessage" class="error">{{ errorMessage }}</p><div class="actions"><el-button @click="router.back()">取消</el-button><el-button type="primary" native-type="submit" :loading="loading">{{ isEditing ? '保存修改' : '保存' }}</el-button></div>
     </el-form></section></main>
 </template>
 

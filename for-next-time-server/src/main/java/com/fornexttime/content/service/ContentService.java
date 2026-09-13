@@ -59,11 +59,48 @@ public class ContentService {
         contentMapper.insert(content);
 
         // 3. 逐个复用或创建标签，并写入内容标签关系。
-        for (String tagName : tagNames) {
-            Tag tag = findOrCreateTag(content.getUserId(), tagName);
-            contentTagMapper.insert(content.getId(), tag.getId());
-        }
+        saveContentTags(content.getId(), content.getUserId(), tagNames);
         return new ContentIdRes(content.getId());
+    }
+
+    /**
+     * 更新当前用户的一条内容，并在同一事务中替换全部标签关系。
+     *
+     * @param id      内容主键
+     * @param request 编辑请求参数
+     */
+    @Transactional
+    public void update(Long id, ContentCreateReq request) {
+        // 1. 清洗并校验正文、分类、标签和备注。
+        String contentText = normalizeContent(request.content());
+        String categoryCode = normalizeCategory(request.categoryCode());
+        List<String> tagNames = normalizeTagNames(request.tagNames());
+        String remark = normalizeRemark(request.remark());
+        Long userId = UserContext.requireUserId();
+
+        // 2. 仅更新属于当前用户且未删除的内容主体。
+        int affectedRows = contentMapper.update(id, userId, contentText, categoryCode, remark);
+        if (affectedRows == 0) {
+            throw new BusinessException(ErrorCode.CONTENT_NOT_FOUND);
+        }
+
+        // 3. 删除旧标签关系后，按新输入重新建立关系。
+        contentTagMapper.deleteByContentId(id);
+        saveContentTags(id, userId, tagNames);
+    }
+
+    /**
+     * 逻辑删除当前用户的一条内容，不物理删除标签关系。
+     *
+     * @param id 内容主键
+     */
+    public void delete(Long id) {
+        // 1. 仅在当前用户和未删除范围内更新删除标记。
+        int affectedRows = contentMapper.softDelete(id, UserContext.requireUserId());
+        if (affectedRows == 0) {
+            throw new BusinessException(ErrorCode.CONTENT_NOT_FOUND);
+        }
+        // 2. 保留 content_tag 历史关系，避免额外物理删除。
     }
 
     /**
@@ -176,6 +213,22 @@ public class ContentService {
             return tag;
         } catch (DuplicateKeyException exception) {
             return tagMapper.findByUserIdAndName(userId, tagName);
+        }
+    }
+
+    /**
+     * 为指定内容复用或创建标签，并建立全部内容标签关系。
+     *
+     * @param contentId 内容主键
+     * @param userId    当前登录用户主键
+     * @param tagNames  清洗后的标签名称列表
+     */
+    private void saveContentTags(Long contentId, Long userId, List<String> tagNames) {
+        // 1. 逐个复用或创建当前用户范围内的标签。
+        for (String tagName : tagNames) {
+            Tag tag = findOrCreateTag(userId, tagName);
+            // 2. 建立内容与标签的关系。
+            contentTagMapper.insert(contentId, tag.getId());
         }
     }
 

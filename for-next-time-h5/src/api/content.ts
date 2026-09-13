@@ -50,3 +50,19 @@ export async function getContentDetail(id: number) {
   // 2. 返回接口已解包的详情数据。
   return response.data
 }
+
+/**
+ * 更新当前用户的一条内容。
+ */
+export async function updateContent(id: number, data: ContentCreateReq) {
+  // 1. 提交与新增共用字段模型的编辑请求。
+  await request.put(`/contents/${id}`, data)
+}
+
+/**
+ * 逻辑删除当前用户的一条内容。
+ */
+export async function deleteContent(id: number) {
+  // 1. 请求后端在当前用户数据范围内执行逻辑删除。
+  await request.delete(`/contents/${id}`)
+}

@@ -26,6 +26,7 @@ const router = createRouter({
       component: RegisterView,
     },
     { path: '/contents/new', name: 'content-create', component: ContentCreateView, meta: { requiresAuth: true } },
+    { path: '/contents/:id/edit', name: 'content-edit', component: ContentCreateView, meta: { requiresAuth: true } },
     { path: '/contents/:id', name: 'content-detail', component: ContentDetailView, meta: { requiresAuth: true } },
   ],
 })

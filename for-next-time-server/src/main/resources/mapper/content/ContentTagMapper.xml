@@ -5,4 +5,8 @@
         INSERT INTO content_tag (content_id, tag_id)
         VALUES (#{contentId}, #{tagId})
     </insert>
+    <delete id="deleteByContentId">
+        DELETE FROM content_tag
+        WHERE content_id = #{contentId}
+    </delete>
 </mapper>

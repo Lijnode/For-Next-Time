@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getContentDetail, type ContentDetail } from '../../api/content'
+import { deleteContent, getContentDetail, type ContentDetail } from '../../api/content'
 
 const route = useRoute()
 const router = useRouter()
 const detail = ref<ContentDetail | null>(null)
 const loading = ref(true)
+const deleting = ref(false)
 const errorMessage = ref('')
 
 /**
@@ -31,6 +32,33 @@ async function loadDetail() {
   }
 }
 
+/**
+ * 跳转到当前内容的编辑页。
+ */
+async function editContent() {
+  // 1. 使用当前详情的内容主键进入共用表单编辑模式。
+  await router.push({ name: 'content-edit', params: { id: route.params.id } })
+}
+
+/**
+ * 确认后逻辑删除当前内容并回到首页。
+ */
+async function removeContent() {
+  // 1. 锁定删除按钮，避免重复发送删除请求。
+  deleting.value = true
+  try {
+    // 2. 请求删除成功后替换为首页路由。
+    await deleteContent(Number(route.params.id))
+    await router.replace({ name: 'home' })
+  } catch (error) {
+    // 3. 在当前页展示可读的删除失败原因。
+    errorMessage.value = error instanceof Error ? error.message : '删除失败，请稍后重试'
+  } finally {
+    // 4. 无论成功或失败都恢复删除按钮状态。
+    deleting.value = false
+  }
+}
+
 // 1. 页面首次进入时读取当前内容详情。
 onMounted(loadDetail)
 </script>
@@ -48,7 +76,7 @@ onMounted(loadDetail)
           <p class="eyebrow">FOR NEXT TIME</p>
           <h1>留住的这一句</h1>
         </div>
-        <el-button text @click="router.back()">返回</el-button>
+        <div class="header-actions"><el-button text @click="router.back()">返回</el-button><el-button text type="primary" @click="editContent">编辑</el-button><el-popconfirm title="确定删除这句话吗？" confirm-button-text="删除" cancel-button-text="取消" @confirm="removeContent"><template #reference><el-button text type="danger" :loading="deleting">删除</el-button></template></el-popconfirm></div>
       </header>
 
       <p class="content-text">{{ detail.content }}</p>
@@ -62,6 +90,8 @@ onMounted(loadDetail)
         <p class="section-label">备注</p>
         <p>{{ detail.remark }}</p>
       </section>
+
+      <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
 
       <dl class="meta-list">
         <div><dt>复制次数</dt><dd>{{ detail.copyCount }} 次</dd></div>
@@ -77,13 +107,14 @@ onMounted(loadDetail)
 .detail-page { width: min(860px, calc(100% - 64px)); margin: 0 auto; padding: 72px 0; }
 .detail-card, .state-card { padding: 42px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-xl); }
 .state-card { color: var(--color-text-secondary); text-align: center; }
-.detail-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+.detail-header, .header-actions { display: flex; align-items: flex-start; gap: 8px; }.detail-header { justify-content: space-between; gap: 24px; }
 .eyebrow, .section-label { margin: 0; color: var(--color-brand); font-size: 12px; font-weight: 700; letter-spacing: .14em; }
 h1 { margin: 10px 0 0; font-size: 28px; }
 .content-text { margin: 36px 0 24px; color: var(--color-text-primary); font-size: 18px; line-height: 1.8; white-space: pre-wrap; }
 .tag-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .remark-block { margin-top: 28px; padding: 20px; background: var(--color-brand-soft); border-radius: var(--radius-md); }
 .remark-block p:last-child { margin: 10px 0 0; color: var(--color-text-secondary); line-height: 1.7; white-space: pre-wrap; }
+.error-message { margin: 20px 0 0; color: var(--color-danger); }
 .meta-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px 32px; margin: 32px 0 0; padding-top: 24px; border-top: 1px solid var(--color-divider); }
 .meta-list div { display: flex; justify-content: space-between; gap: 16px; }
 dt { color: var(--color-text-tertiary); } dd { margin: 0; color: var(--color-text-secondary); text-align: right; }
