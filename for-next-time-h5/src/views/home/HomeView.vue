@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { CircleUserRound, Search } from 'lucide-vue-next'
+import { Search } from 'lucide-vue-next'
 import { getContentList, recordCopy, type ContentListItem } from '../../api/content'
 import { copyText } from '../../platform/clipboard'
 import { showError, showSuccess } from '../../platform/feedback'
@@ -124,10 +124,6 @@ onMounted(loadContents)
 <template>
   <main class="home-page">
     <header class="home-head">
-      <div class="brand-row">
-        <div class="brand-area"><span class="brand-mark">次</span><div><h1>下次一定</h1><p>先留下，找得到，用得上。</p></div></div>
-        <RouterLink class="profile-link" to="/profile" aria-label="我的"><CircleUserRound :size="21" /></RouterLink>
-      </div>
       <van-search v-model="keyword" class="home-search" placeholder="找找现在用得上的。" shape="round" @search="openSearch">
         <template #left-icon><Search :size="19" /></template>
       </van-search>
@@ -161,74 +157,29 @@ onMounted(loadContents)
 }
 
 .home-head {
-  padding: 22px 16px 12px;
+  padding: 14px 16px 12px;
   background: linear-gradient(180deg, #fff7f3 0%, var(--color-page) 100%);
 }
 
-.brand-row,
-.brand-area,
 .card-top,
 .card-footer {
   display: flex;
   align-items: center;
 }
 
-.brand-row,
 .card-top,
 .card-footer {
   justify-content: space-between;
 }
 
-.brand-area {
-  gap: 11px;
-}
-
-.brand-mark {
-  display: grid;
-  width: 38px;
-  height: 38px;
-  place-items: center;
-  border-radius: 14px;
-  background: var(--color-brand);
-  color: #fff;
-  font-size: 18px;
-  font-weight: 800;
-  box-shadow: 0 5px 12px rgb(255 111 78 / 22%);
-}
-
-h1 {
-  margin: 0;
-  color: var(--color-text-primary);
-  font-size: 22px;
-  letter-spacing: .04em;
-}
-
-.brand-area p {
-  margin: 4px 0 0;
-  color: var(--color-muted);
-  font-size: 12px;
-}
-
-.profile-link {
-  display: grid;
-  width: 40px;
-  height: 40px;
-  place-items: center;
-  border: 1px solid #f0dfd9;
-  border-radius: 14px;
-  background: #fff1ec;
-  color: var(--color-brand);
-  text-decoration: none;
-}
-
 .home-search {
-  margin: 12px -8px 0;
+  margin: 0 -8px;
   padding: 0;
   background: transparent;
 }
 
 .home-search :deep(.van-search__content) {
-  height: 52px;
+  height: 50px;
   padding: 0 13px;
   border: 1px solid var(--color-border);
   border-radius: 17px;
