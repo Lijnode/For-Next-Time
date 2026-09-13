@@ -20,7 +20,7 @@ public record UserProfileRes(
         /** 当前用户尚未删除的内容数量。 */
         long contentCount,
 
-        /** 账号创建时间，按统一时间协议序列化。 */
-        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Shanghai")
+        /** 账号加入日期，仅对外展示年月日。 */
+        @JsonFormat(pattern = "yyyy-MM-dd", timezone = "Asia/Shanghai")
         LocalDateTime createTime
 ) {}
