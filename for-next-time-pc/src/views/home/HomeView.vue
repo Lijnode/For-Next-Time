@@ -217,7 +217,7 @@ onMounted(() => {
             <span class="recent-rank">{{ String(index + 1).padStart(2, '0') }}</span>
             <div class="recent-item-body">
               <p class="recent-content">{{ item.content }}</p>
-              <div class="recent-item-footer"><span>{{ formatRecentTime(item.lastCopyTime) }} · {{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '刚刚用过' }}</span><div class="recent-item-actions"><span v-if="item.pinned" class="pinned-mark">已置顶</span><el-button text type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</el-button></div></div>
+              <div class="recent-item-footer"><span>{{ formatRecentTime(item.lastCopyTime) }} · {{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '刚刚用过' }}</span><div class="recent-item-actions"><el-button text type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</el-button></div></div>
             </div>
           </article>
         </div>
@@ -447,10 +447,6 @@ h1 {
   align-items: center;
   flex-shrink: 0;
   gap: 8px;
-  white-space: nowrap;
-}
-
-.recent-item-actions .pinned-mark {
   white-space: nowrap;
 }
 
