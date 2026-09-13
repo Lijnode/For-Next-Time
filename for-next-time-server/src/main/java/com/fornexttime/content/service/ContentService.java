@@ -9,10 +9,12 @@ import com.fornexttime.content.entity.Content;
 import com.fornexttime.content.mapper.ContentMapper;
 import com.fornexttime.content.mapper.ContentTagMapper;
 import com.fornexttime.content.req.ContentCreateReq;
+import com.fornexttime.content.res.ContentDetailRes;
 import com.fornexttime.content.res.ContentIdRes;
 import com.fornexttime.content.res.ContentListRes;
 import com.fornexttime.tag.entity.Tag;
 import com.fornexttime.tag.mapper.TagMapper;
+import com.fornexttime.tag.res.TagRes;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -62,6 +64,29 @@ public class ContentService {
             contentTagMapper.insert(content.getId(), tag.getId());
         }
         return new ContentIdRes(content.getId());
+    }
+
+    /**
+     * 查询当前登录用户的一条内容详情，并组装分类和标签展示数据。
+     *
+     * @param id 内容主键
+     * @return 当前用户可访问的内容详情
+     */
+    public ContentDetailRes getDetail(Long id) {
+        // 1. 以内容主键和当前用户主键共同查询未删除内容。
+        Content content = contentMapper.findDetail(UserContext.requireUserId(), id);
+        if (content == null) {
+            throw new BusinessException(ErrorCode.CONTENT_NOT_FOUND);
+        }
+        // 2. 查询内容标签，并转换为不携带内部 contentId 的对外结构。
+        List<TagRes> tags = tagMapper.findByContentIds(List.of(id)).stream()
+                .map(tag -> new TagRes(tag.id(), tag.name()))
+                .toList();
+        // 3. 由固定枚举解析中文分类名，组装完整详情响应。
+        CategoryCode category = CategoryCode.fromCode(content.getCategoryCode());
+        return new ContentDetailRes(content.getId(), content.getContent(), content.getCategoryCode(),
+                category == null ? null : category.getLabel(), tags, content.getRemark(), content.isPinned(),
+                content.getCopyCount(), content.getLastCopyTime(), content.getCreateTime(), content.getUpdateTime());
     }
 
     /**
@@ -171,7 +196,8 @@ public class ContentService {
                 .collect(Collectors.groupingBy(ContentTagRes::contentId));
         List<ContentListRes> list = contents.stream()
                 .map(content -> new ContentListRes(content.getId(), content.getContent(), content.getCategoryCode(),
-                        content.isPinned(), content.getCopyCount(), tagsByContentId.getOrDefault(content.getId(), List.of())))
+                        content.isPinned(), content.getCopyCount(), tagsByContentId.getOrDefault(content.getId(), List.of())
+                        .stream().map(tag -> new TagRes(tag.id(), tag.name())).toList()))
                 .toList();
         return PageResult.of(pageNum, pageSize, total, list);
     }

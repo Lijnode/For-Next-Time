@@ -3,6 +3,7 @@ import { useAuthStore } from '../stores/auth'
 import LoginView from '../views/auth/LoginView.vue'
 import RegisterView from '../views/auth/RegisterView.vue'
 import ContentCreateView from '../views/content/ContentCreateView.vue'
+import ContentDetailView from '../views/content/ContentDetailView.vue'
 import HomeView from '../views/home/HomeView.vue'
 
 const router = createRouter({
@@ -25,6 +26,7 @@ const router = createRouter({
       component: RegisterView,
     },
     { path: '/contents/new', name: 'content-create', component: ContentCreateView, meta: { requiresAuth: true } },
+    { path: '/contents/:id', name: 'content-detail', component: ContentDetailView, meta: { requiresAuth: true } },
   ],
 })
 

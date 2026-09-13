@@ -1,5 +1,7 @@
 package com.fornexttime.content.res;
 
+import com.fornexttime.tag.res.TagRes;
+
 import java.util.List;
 
 /**
@@ -22,6 +24,6 @@ public record ContentListRes(
     int copyCount,
 
     /** 当前内容关联的标签列表，未关联时返回空数组。 */
-    List<ContentTagRes> tags
+        List<TagRes> tags
 ) {
 }

@@ -2,6 +2,7 @@ package com.fornexttime.content.controller;
 
 import com.fornexttime.common.model.Result;
 import com.fornexttime.content.req.ContentCreateReq;
+import com.fornexttime.content.res.ContentDetailRes;
 import com.fornexttime.content.res.ContentIdRes;
 import com.fornexttime.content.service.ContentService;
 import jakarta.validation.Valid;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -32,6 +34,18 @@ public class ContentController {
     public Result<ContentIdRes> create(@Valid @RequestBody ContentCreateReq request) {
         // 参数校验通过后交由服务完成事务写入。
         return Result.success(contentService.create(request));
+    }
+
+    /**
+     * 获取当前登录用户可访问的一条内容详情。
+     *
+     * @param id 内容主键
+     * @return 内容详情
+     */
+    @GetMapping("/{id}")
+    public Result<ContentDetailRes> detail(@PathVariable @Min(1) Long id) {
+        // 1. 交由服务在当前用户数据范围内查询详情。
+        return Result.success(contentService.getDetail(id));
     }
 
     /**

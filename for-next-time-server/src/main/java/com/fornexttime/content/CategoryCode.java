@@ -48,6 +48,24 @@ public enum CategoryCode {
     }
 
     /**
+     * 根据可选分类编码获取对应枚举，未分类时返回 null。
+     *
+     * @param categoryCode 待解析的分类编码
+     * @return 匹配的固定分类，或 null
+     */
+    public static CategoryCode fromCode(String categoryCode) {
+        // 1. 将空白分类统一识别为未分类。
+        if (categoryCode == null || categoryCode.isBlank()) {
+            return null;
+        }
+        // 2. 在固定分类中查找完全匹配的编码。
+        return Arrays.stream(values())
+                .filter(category -> category.name().equals(categoryCode))
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
      * 校验可选分类编码是否属于 V1 固定分类。
      */
     public static String normalize(String categoryCode) {
@@ -56,10 +74,10 @@ public enum CategoryCode {
             return null;
         }
         // 2. 仅允许固定枚举中的分类编码。
-        return Arrays.stream(values())
-                .map(Enum::name)
-                .filter(categoryCode::equals)
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("分类不存在"));
+        CategoryCode category = fromCode(categoryCode);
+        if (category == null) {
+            throw new IllegalArgumentException("分类不存在");
+        }
+        return category.name();
     }
 }

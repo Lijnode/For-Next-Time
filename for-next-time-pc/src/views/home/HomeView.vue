@@ -27,6 +27,14 @@ async function createContent() {
 }
 
 /**
+ * 打开用户选中的内容详情。
+ */
+async function openDetail(id: number) {
+  // 1. 跳转至受保护的详情路由。
+  await router.push({ name: 'content-detail', params: { id } })
+}
+
+/**
  * 加载首页内容列表，失败时保留空状态。
  */
 async function loadContents() {
@@ -47,7 +55,7 @@ onMounted(loadContents)
       <el-button type="primary" @click="createContent">先留一句</el-button>
       <el-button text type="primary" @click="logout">退出登录</el-button>
     </section>
-    <section class="content-grid"><article v-for="item in contents" :key="item.id" class="content-card"><p>{{ item.content }}</p><el-tag v-for="tag in item.tags" :key="tag.id" size="small">#{{ tag.name }}</el-tag></article><p v-if="!contents.length">这里还空着，先留下一句。</p></section>
+    <section class="content-grid"><article v-for="item in contents" :key="item.id" class="content-card" tabindex="0" @click="openDetail(item.id)" @keydown.enter="openDetail(item.id)"><p>{{ item.content }}</p><el-tag v-for="tag in item.tags" :key="tag.id" size="small">#{{ tag.name }}</el-tag></article><p v-if="!contents.length">这里还空着，先留下一句。</p></section>
   </main>
 </template>
 
@@ -80,5 +88,5 @@ h1 {
 p {
   color: var(--color-text-secondary);
 }
-.content-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px}.content-card{padding:20px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg)}.content-card p{white-space:pre-wrap}
+.content-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px}.content-card{padding:20px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);cursor:pointer}.content-card:hover,.content-card:focus-visible{border-color:var(--color-brand);outline:none}.content-card p{white-space:pre-wrap}
 </style>

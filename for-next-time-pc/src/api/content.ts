@@ -16,6 +16,14 @@ export interface ContentListItem {
   tags: Array<{ id: number; name: string }>
 }
 
+export interface ContentDetail extends ContentListItem {
+  categoryName: string | null
+  remark: string | null
+  lastCopyTime: string | null
+  createTime: string
+  updateTime: string
+}
+
 export async function createContent(data: ContentCreateReq) {
   // 1. 提交新增内容请求。
   const response = await request.post<{ id: number }>('/contents', data)
@@ -31,4 +39,14 @@ export async function getContentList() {
   const response = await request.get<{ list: ContentListItem[] }>('/contents', { params: { pageNum: 1, pageSize: 20 } })
   // 2. 返回当前页内容数组。
   return response.data.list
+}
+
+/**
+ * 获取当前用户的一条内容详情。
+ */
+export async function getContentDetail(id: number) {
+  // 1. 请求受当前登录状态保护的内容详情接口。
+  const response = await request.get<ContentDetail>(`/contents/${id}`)
+  // 2. 返回接口已解包的详情数据。
+  return response.data
 }

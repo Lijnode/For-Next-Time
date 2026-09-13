@@ -5,6 +5,13 @@
         INSERT INTO content (user_id, content, category_code, remark)
         VALUES (#{userId}, #{content}, #{categoryCode}, #{remark})
     </insert>
+    <select id="findDetail" resultType="com.fornexttime.content.entity.Content">
+        SELECT id, user_id AS userId, content, category_code AS categoryCode, remark,
+               is_pinned AS pinned, copy_count AS copyCount, last_copy_time AS lastCopyTime,
+               create_time AS createTime, update_time AS updateTime
+        FROM content
+        WHERE id = #{id} AND user_id = #{userId} AND deleted = 0
+    </select>
     <select id="findPage" resultType="com.fornexttime.content.entity.Content">
         SELECT id, user_id AS userId, content, category_code AS categoryCode, remark,
                is_pinned AS pinned, copy_count AS copyCount

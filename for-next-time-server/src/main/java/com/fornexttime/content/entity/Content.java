@@ -2,6 +2,8 @@ package com.fornexttime.content.entity;
 
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 /**
  * 用户保存内容的数据库实体。
  */
@@ -28,4 +30,13 @@ public class Content {
 
     /** 已成功复制的次数。 */
     private int copyCount;
+
+    /** 最近一次成功复制的时间，从未复制时为空。 */
+    private LocalDateTime lastCopyTime;
+
+    /** 内容创建时间。 */
+    private LocalDateTime createTime;
+
+    /** 内容最后编辑时间。 */
+    private LocalDateTime updateTime;
 }

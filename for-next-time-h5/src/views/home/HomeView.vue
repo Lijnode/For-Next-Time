@@ -27,6 +27,14 @@ async function createContent() {
 }
 
 /**
+ * 打开用户轻触的内容详情。
+ */
+async function openDetail(id: number) {
+  // 1. 跳转至受保护的详情路由。
+  await router.push({ name: 'content-detail', params: { id } })
+}
+
+/**
  * 加载首页内容列表，失败时保留空状态。
  */
 async function loadContents() {
@@ -45,7 +53,7 @@ onMounted(loadContents)
     <p class="description">先留下，找得到，用得上。</p>
     <van-button type="primary" block @click="createContent">先留一句</van-button>
     <van-button plain type="primary" @click="logout">退出登录</van-button>
-    <section class="content-list"><article v-for="item in contents" :key="item.id" class="content-card"><p>{{ item.content }}</p><van-tag v-for="tag in item.tags" :key="tag.id" type="primary">#{{ tag.name }}</van-tag></article><p v-if="!contents.length" class="description">这里还空着，先留下一句。</p></section>
+    <section class="content-list"><article v-for="item in contents" :key="item.id" class="content-card" @click="openDetail(item.id)"><p>{{ item.content }}</p><van-tag v-for="tag in item.tags" :key="tag.id" type="primary">#{{ tag.name }}</van-tag></article><p v-if="!contents.length" class="description">这里还空着，先留下一句。</p></section>
   </main>
 </template>
 
@@ -74,5 +82,5 @@ h1 {
   margin-top: 16px;
   color: var(--color-muted);
 }
-.content-list{margin-top:24px}.content-card{margin-bottom:12px;padding:16px;background:var(--color-card);border:1px solid var(--color-border);border-radius:var(--radius-card)}.content-card p{white-space:pre-wrap}.content-card :deep(.van-tag){margin-right:6px}
+.content-list{margin-top:24px}.content-card{margin-bottom:12px;padding:16px;background:var(--color-card);border:1px solid var(--color-border);border-radius:var(--radius-card);cursor:pointer}.content-card p{white-space:pre-wrap}.content-card :deep(.van-tag){margin-right:6px}
 </style>
