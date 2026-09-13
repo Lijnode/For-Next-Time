@@ -195,9 +195,8 @@ onMounted(loadContents)
           <article v-for="(item, index) in recentContents.slice(0, 3)" :key="item.id" class="recent-quick-item" tabindex="0" @click="openDetail(item.id)" @keydown.enter="openDetail(item.id)">
             <span class="recent-rank">{{ String(index + 1).padStart(2, '0') }}</span>
             <div class="recent-item-body">
-              <div class="recent-item-top"><span>{{ formatRecentTime(item.lastCopyTime) }}</span><span v-if="item.pinned" class="pinned-mark">已置顶</span></div>
               <p class="recent-content">{{ item.content }}</p>
-              <div class="recent-item-footer"><span>{{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '刚刚用过' }}</span><el-button text type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</el-button></div>
+              <div class="recent-item-footer"><span>{{ formatRecentTime(item.lastCopyTime) }} · {{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '刚刚用过' }}</span><div class="recent-item-actions"><span v-if="item.pinned" class="pinned-mark">已置顶</span><el-button text type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</el-button></div></div>
             </div>
           </article>
         </div>
@@ -349,47 +348,41 @@ h1 {
 
 .recent-quick-item {
   display: grid;
-  grid-template-columns: 32px minmax(0, 1fr);
+  grid-template-columns: 26px minmax(0, 1fr);
   gap: 10px;
-  padding: 10px 0 14px 12px;
-  border-bottom: 1px solid #dfe3df;
-  border-left: 2px solid #e4e8e5;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--color-border);
   cursor: pointer;
-  transition: border-color .18s ease;
+  transition: color .18s ease;
 }
 
 .recent-quick-item + .recent-quick-item {
-  margin-top: 14px;
+  margin-top: 0;
 }
 
 .recent-quick-item:hover,
 .recent-quick-item:focus-visible {
-  border-color: #ffb29f;
+  color: var(--color-brand);
   outline: none;
 }
 
-.recent-quick-item:first-child {
-  border-left-color: var(--color-brand);
-}
-
 .recent-rank {
-  padding-top: 1px;
-  color: #e4a190;
-  font-size: 20px;
+  padding-top: 2px;
+  color: #b6bcba;
+  font-size: 14px;
   font-weight: 800;
-  letter-spacing: -.04em;
+  letter-spacing: -.02em;
   line-height: 1;
 }
 
 .recent-quick-item:first-child .recent-rank {
-  color: var(--color-brand);
+  color: #e9927d;
 }
 
 .recent-item-body {
   min-width: 0;
 }
 
-.recent-item-top,
 .recent-item-footer {
   display: flex;
   align-items: center;
@@ -401,13 +394,19 @@ h1 {
 .recent-content {
   display: -webkit-box;
   overflow: hidden;
-  margin: 8px 0 10px;
+  margin: 0 0 8px;
   color: var(--color-text-primary);
   font-size: 15px;
-  line-height: 1.65;
+  line-height: 1.5;
   white-space: pre-wrap;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
+}
+
+.recent-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .recent-item-footer :deep(.el-button) {
@@ -588,7 +587,7 @@ h1 {
 
   .recent-quick-item,
   .recent-quick-item + .recent-quick-item {
-    padding: 10px 0 12px 12px;
+    padding: 15px 0;
   }
 }
 
