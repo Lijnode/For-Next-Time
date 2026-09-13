@@ -176,33 +176,36 @@ onMounted(loadContents)
         <button v-for="category in categories" :key="category[0]" :class="{ active: categoryCode === category[0] }" type="button" @click="selectCategory(category[0])">{{ category[1] }}</button>
       </div>
     </section>
-    <section v-if="!isSearching" class="content-section recent-section">
-      <div class="section-heading">
-        <div><h2>最近使用</h2><p>最近真正拿出去用过的内容</p></div>
-      </div>
-      <div v-if="recentContents.length" class="recent-rail" aria-label="最近使用内容">
-        <article v-for="item in recentContents" :key="item.id" class="recent-quick-card" tabindex="0" @click="openDetail(item.id)" @keydown.enter="openDetail(item.id)">
-          <div class="recent-card-top"><span>{{ formatRecentTime(item.lastCopyTime) }}</span><span v-if="item.pinned" class="pinned-mark">已置顶</span></div>
-          <p class="recent-content">{{ item.content }}</p>
-          <div class="recent-card-footer"><span>{{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '刚刚用过' }}</span><el-button text type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</el-button></div>
-        </article>
-      </div>
-      <p v-else class="recent-empty">最近还没用上这里的内容。</p>
-    </section>
-    <section class="content-section all-content-section">
-      <div class="section-heading"><div><h2>{{ isSearching ? '搜索结果' : '全部内容' }}</h2><p v-if="isSearching">“{{ keyword.trim() }}”共翻到 {{ total }} 条。</p><p v-else>共留下 {{ total }} 条，慢慢翻，总能翻到。</p></div><el-button v-if="isSearching" text type="primary" @click="clearSearch">返回全部</el-button></div>
-      <div class="content-grid">
-        <article v-for="item in contents" :key="item.id" class="content-card" tabindex="0" @click="openDetail(item.id)" @keydown.enter="openDetail(item.id)">
-          <div class="card-top"><span v-if="item.pinned" class="pinned-mark">已置顶</span><span>{{ item.lastCopyTime ? '最近用过' : item.updateTime }}</span></div>
-          <p class="content-text">{{ item.content }}</p>
-          <div class="tag-row"><span v-if="item.categoryName" class="card-chip category-chip">{{ item.categoryName }}</span><span v-for="tag in item.tags.slice(0, 3)" :key="tag.id" class="card-chip">#{{ tag.name }}</span></div>
-          <div class="card-footer"><span>{{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '还没用过' }}</span><el-button text type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</el-button></div>
-        </article>
-      </div>
-      <p v-if="!contents.length" class="empty-state">这里还空着，先留下一句。</p>
-      <el-button v-if="!contents.length" class="empty-create" type="primary" @click="createContent">先留一句</el-button>
-      <el-pagination v-if="total > 20" class="pagination" background layout="prev, pager, next" :current-page="pageNum" :page-size="20" :total="total" @current-change="changePage" />
-    </section>
+    <div class="home-content-layout">
+      <section class="all-content-section">
+        <div class="section-heading"><div><h2>{{ isSearching ? '搜索结果' : '全部内容' }}</h2><p v-if="isSearching">“{{ keyword.trim() }}”共翻到 {{ total }} 条。</p><p v-else>共留下 {{ total }} 条，慢慢翻，总能翻到。</p></div><el-button v-if="isSearching" text type="primary" @click="clearSearch">返回全部</el-button></div>
+        <div class="content-grid">
+          <article v-for="item in contents" :key="item.id" class="content-card" tabindex="0" @click="openDetail(item.id)" @keydown.enter="openDetail(item.id)">
+            <div class="card-top"><span v-if="item.pinned" class="pinned-mark">已置顶</span><span>{{ item.lastCopyTime ? '最近用过' : item.updateTime }}</span></div>
+            <p class="content-text">{{ item.content }}</p>
+            <div class="tag-row"><span v-if="item.categoryName" class="card-chip category-chip">{{ item.categoryName }}</span><span v-for="tag in item.tags.slice(0, 3)" :key="tag.id" class="card-chip">#{{ tag.name }}</span></div>
+            <div class="card-footer"><span>{{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '还没用过' }}</span><el-button text type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</el-button></div>
+          </article>
+        </div>
+        <p v-if="!contents.length" class="empty-state">这里还空着，先留下一句。</p>
+        <el-button v-if="!contents.length" class="empty-create" type="primary" @click="createContent">先留一句</el-button>
+        <el-pagination v-if="total > 20" class="pagination" background layout="prev, pager, next" :current-page="pageNum" :page-size="20" :total="total" @current-change="changePage" />
+      </section>
+      <aside v-if="!isSearching" class="recent-panel">
+        <div class="section-heading"><h2>最近使用</h2><p>最近真正拿出去用过的内容</p></div>
+        <div v-if="recentContents.length" class="recent-list" aria-label="最近使用内容">
+          <article v-for="(item, index) in recentContents.slice(0, 3)" :key="item.id" class="recent-quick-item" tabindex="0" @click="openDetail(item.id)" @keydown.enter="openDetail(item.id)">
+            <span class="recent-rank">{{ String(index + 1).padStart(2, '0') }}</span>
+            <div class="recent-item-body">
+              <div class="recent-item-top"><span>{{ formatRecentTime(item.lastCopyTime) }}</span><span v-if="item.pinned" class="pinned-mark">已置顶</span></div>
+              <p class="recent-content">{{ item.content }}</p>
+              <div class="recent-item-footer"><span>{{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '刚刚用过' }}</span><el-button text type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</el-button></div>
+            </div>
+          </article>
+        </div>
+        <p v-else class="recent-empty">最近还没用上这里的内容。</p>
+      </aside>
+    </div>
   </main>
 </template>
 
@@ -324,7 +327,11 @@ h1 {
   color: #fff;
 }
 
-.content-section {
+.home-content-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  align-items: start;
+  gap: 40px;
   margin-top: 38px;
 }
 
@@ -342,46 +349,59 @@ h1 {
 
 .content-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   margin-top: 17px;
 }
 
-.recent-rail {
-  display: flex;
-  gap: 14px;
-  overflow-x: auto;
+.recent-panel {
+  padding-left: 22px;
+  border-left: 1px solid var(--color-border);
+}
+
+.recent-list {
   margin-top: 17px;
-  padding: 1px 1px 9px;
-  scrollbar-width: thin;
-  scrollbar-color: #d8dcda transparent;
 }
 
-.recent-quick-card {
-  display: flex;
-  min-width: min(330px, calc(100vw - 66px));
-  min-height: 132px;
-  flex: 0 0 330px;
-  flex-direction: column;
-  padding: 16px 17px;
-  border: 1px solid var(--color-border);
-  border-radius: 18px;
-  background: var(--color-surface);
-  box-shadow: 0 6px 16px rgb(31 33 33 / 3%);
+.recent-quick-item {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 10px;
+  padding: 0 0 14px;
+  border-bottom: 1px solid var(--color-border);
   cursor: pointer;
-  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+  transition: border-color .18s ease;
 }
 
-.recent-quick-card:hover,
-.recent-quick-card:focus-visible {
-  border-color: #ffc1b1;
+.recent-quick-item + .recent-quick-item {
+  padding-top: 14px;
+}
+
+.recent-quick-item:hover,
+.recent-quick-item:focus-visible {
+  border-color: #ffb29f;
   outline: none;
-  box-shadow: 0 10px 22px rgb(31 33 33 / 7%);
-  transform: translateY(-2px);
 }
 
-.recent-card-top,
-.recent-card-footer {
+.recent-rank {
+  padding-top: 1px;
+  color: #e4a190;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -.04em;
+  line-height: 1;
+}
+
+.recent-quick-item:first-child .recent-rank {
+  color: var(--color-brand);
+}
+
+.recent-item-body {
+  min-width: 0;
+}
+
+.recent-item-top,
+.recent-item-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -391,9 +411,8 @@ h1 {
 
 .recent-content {
   display: -webkit-box;
-  flex: 1;
   overflow: hidden;
-  margin: 12px 0;
+  margin: 8px 0 10px;
   color: var(--color-text-primary);
   font-size: 15px;
   line-height: 1.65;
@@ -402,7 +421,7 @@ h1 {
   -webkit-line-clamp: 2;
 }
 
-.recent-card-footer :deep(.el-button) {
+.recent-item-footer :deep(.el-button) {
   padding: 4px 0;
   font-weight: 700;
 }
@@ -501,12 +520,41 @@ h1 {
 }
 
 @media (max-width: 1180px) {
-  .content-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .home-content-layout {
+    grid-template-columns: minmax(0, 1fr) 250px;
+    gap: 28px;
   }
 
-  .recent-quick-card {
-    flex-basis: 300px;
+  .recent-panel {
+    padding-left: 18px;
+  }
+}
+
+@media (max-width: 900px) {
+  .home-content-layout {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .recent-panel {
+    padding: 0;
+    border-top: 1px solid var(--color-border);
+    border-left: 0;
+  }
+
+  .recent-panel .section-heading {
+    padding-top: 28px;
+  }
+
+  .recent-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  .recent-quick-item,
+  .recent-quick-item + .recent-quick-item {
+    padding: 0 0 12px;
   }
 }
 
@@ -519,8 +567,9 @@ h1 {
     grid-template-columns: 1fr;
   }
 
-  .recent-quick-card {
-    flex-basis: min(300px, calc(100vw - 66px));
+  .recent-list {
+    grid-template-columns: 1fr;
+    gap: 14px;
   }
 }
 </style>
