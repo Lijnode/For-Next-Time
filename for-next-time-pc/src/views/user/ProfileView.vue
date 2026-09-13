@@ -2,8 +2,10 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getUserProfile, type UserProfile } from '../../api/user'
+import { useAuthStore } from '../../stores/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const profile = ref<UserProfile>()
 const loading = ref(false)
 
@@ -37,6 +39,16 @@ async function backHome() {
   await router.push({ name: 'home' })
 }
 
+/**
+ * 清除当前账户登录状态并返回登录页。
+ */
+async function logout() {
+  // 1. 清理 Pinia 与浏览器本地存储中的认证信息。
+  authStore.logout()
+  // 2. 替换路由，避免浏览器返回受保护的资料页面。
+  await router.replace({ name: 'login' })
+}
+
 // 1. 页面进入时加载当前账户资料。
 onMounted(loadProfile)
 </script>
@@ -55,7 +67,9 @@ onMounted(loadProfile)
         <div class="actions">
           <el-button type="primary" @click="openPasswordForm">修改密码</el-button>
           <el-button @click="backHome">返回首页</el-button>
+          <el-button text type="danger" @click="logout">退出登录</el-button>
         </div>
+        <section class="about-section"><p class="section-label">关于下次一定</p><p>这次先留着，下次一定用得上。</p></section>
       </template>
     </section>
   </main>
@@ -70,4 +84,5 @@ dl { margin: 0; }
 dl div { display: flex; justify-content: space-between; padding: 18px 0; border-top: 1px solid var(--color-border); }
 dt { color: var(--color-text-secondary); } dd { margin: 0; font-weight: 600; }
 .actions { display: flex; gap: 12px; margin-top: 32px; }
+.about-section { margin-top: 38px; padding-top: 22px; border-top: 1px solid var(--color-divider); }.section-label { margin: 0; color: var(--color-text-primary); font-weight: 600; }.about-section p:last-child { margin: 8px 0 0; color: var(--color-text-secondary); }
 </style>
