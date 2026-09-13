@@ -4,10 +4,12 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { CircleUserRound, Plus, Search } from 'lucide-vue-next'
 import { getContentList, getRecentContents, recordCopy, searchContents, type ContentListItem } from '../../api/content'
+import { getUserProfile, type UserProfile } from '../../api/user'
 
 const router = useRouter()
 const contents = ref<ContentListItem[]>([])
 const recentContents = ref<ContentListItem[]>([])
+const userProfile = ref<UserProfile>()
 const keyword = ref('')
 const categoryCode = ref<string | null>(null)
 const copyingId = ref<number | null>(null)
@@ -150,15 +152,33 @@ async function loadContents() {
   recentContents.value = recent
 }
 
-// 1. 进入首页后加载内容列表。
-onMounted(loadContents)
+/**
+ * 读取当前用户资料，用于首页右上角展示已上传的头像。
+ */
+async function loadUserProfile() {
+  // 1. 请求当前用户资料，未上传头像时保留空地址。
+  try {
+    userProfile.value = await getUserProfile()
+  } catch {
+    // 2. 资料加载失败时保留默认图标，不影响首页内容使用。
+  }
+}
+
+// 1. 进入首页后并行加载内容和当前用户资料。
+onMounted(() => {
+  void loadContents()
+  void loadUserProfile()
+})
 </script>
 
 <template>
   <main class="home-shell">
     <div class="home-actions">
       <RouterLink class="create-link" to="/contents/new"><Plus :size="17" />先留一句</RouterLink>
-      <RouterLink class="profile-link" to="/profile" aria-label="我的"><CircleUserRound :size="21" /></RouterLink>
+      <RouterLink class="profile-link" to="/profile" aria-label="我的">
+        <img v-if="userProfile?.avatarUrl" :src="userProfile.avatarUrl" :alt="`${userProfile.username} 的头像`">
+        <CircleUserRound v-else :size="21" />
+      </RouterLink>
     </div>
     <section class="hero">
       <h1>这次先留着，下次一定用得上。</h1>
@@ -216,7 +236,7 @@ onMounted(loadContents)
 .home-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 14px;
+  gap: 18px;
 }
 
 .create-link {
@@ -242,7 +262,14 @@ onMounted(loadContents)
   border-radius: 14px;
   background: #fff1ec;
   color: var(--color-brand);
+  overflow: hidden;
   text-decoration: none;
+}
+
+.profile-link img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .hero {

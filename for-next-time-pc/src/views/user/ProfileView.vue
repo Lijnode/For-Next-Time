@@ -123,8 +123,8 @@ onMounted(loadProfile)
         </div>
         <section class="about-section"><p>关于下次一定</p><span>这次先留着，下次一定用得上。</span></section>
         <div class="actions">
-          <el-button @click="backHome"><House :size="16" />返回首页</el-button>
-          <el-button class="logout-button" text @click="logout"><LogOut :size="16" />退出登录</el-button>
+          <el-button @click="backHome"><span class="action-content"><House :size="16" /><span>返回首页</span></span></el-button>
+          <el-button class="logout-button" text @click="logout"><span class="action-content"><LogOut :size="16" /><span>退出登录</span></span></el-button>
         </div>
       </template>
     </section>
@@ -152,6 +152,7 @@ onMounted(loadProfile)
 .about-section p { margin: 0 0 7px; color: var(--color-text-tertiary); font-size: 12px; font-weight: 700; }
 .about-section span { color: var(--color-text-secondary); font-size: 14px; }
 .actions { display: flex; align-items: center; gap: 10px; margin-top: 22px; }
-.actions :deep(.el-button) { display: inline-flex; align-items: center; gap: 9px; min-height: 40px; border-radius: 12px; }
+.actions :deep(.el-button) { min-height: 40px; border-radius: 12px; }
+.action-content { display: inline-flex; align-items: center; gap: 9px; }
 .logout-button { margin-left: auto; color: var(--color-text-tertiary); }
 </style>
