@@ -161,9 +161,7 @@ onMounted(loadContents)
       <RouterLink class="profile-link" to="/profile" aria-label="我的"><CircleUserRound :size="21" /></RouterLink>
     </div>
     <section class="hero">
-      <p class="eyebrow">FOR NEXT TIME</p>
       <h1>这次先留着，下次一定用得上。</h1>
-      <p class="hero-description">以前留下的那些句子，需要的时候，都应该找得回来。</p>
       <div class="search-entry">
         <el-input v-model="keyword" size="large" placeholder="找找现在用得上的。" clearable :prefix-icon="Search" @clear="clearSearch" @keyup.enter="searchOnHome">
           <template #suffix>
@@ -249,34 +247,20 @@ onMounted(loadContents)
 }
 
 .hero {
-  padding: 48px 0 18px;
+  padding: 28px 0 14px;
   text-align: center;
 }
 
-.eyebrow {
-  margin: 0;
-  color: var(--color-brand);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: .2em;
-}
-
 h1 {
-  margin: 13px 0 0;
+  margin: 0;
   color: var(--color-text-primary);
-  font-size: clamp(29px, 3vw, 36px);
+  font-size: clamp(26px, 2.4vw, 32px);
   letter-spacing: .02em;
-}
-
-.hero-description {
-  margin: 13px 0 0;
-  color: var(--color-text-secondary);
-  font-size: 15px;
 }
 
 .search-entry {
   width: min(760px, 100%);
-  margin: 24px auto 15px;
+  margin: 18px auto 15px;
 }
 
 .search-entry :deep(.el-input__wrapper) {
