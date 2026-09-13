@@ -91,6 +91,23 @@ async function copyContent(item: ContentListItem) {
 }
 
 /**
+ * 将最近复制时间转换为首页快速取用区的简短相对时间。
+ */
+function formatRecentTime(value: string | null) {
+  // 1. 未记录复制时间时使用自然的兜底文案。
+  if (!value) return '刚刚用过'
+  // 2. 解析后端约定的本地日期时间，异常时避免向用户展示原始值。
+  const copiedAt = new Date(value.replace(' ', 'T'))
+  if (Number.isNaN(copiedAt.getTime())) return '最近用过'
+  // 3. 按时间间隔生成便于快速浏览的相对时间。
+  const elapsedMinutes = Math.max(0, Math.floor((Date.now() - copiedAt.getTime()) / 60000))
+  if (elapsedMinutes < 1) return '刚刚用过'
+  if (elapsedMinutes < 60) return elapsedMinutes + ' 分钟前用过'
+  if (elapsedMinutes < 1440) return Math.floor(elapsedMinutes / 60) + ' 小时前用过'
+  return Math.floor(elapsedMinutes / 1440) + ' 天前用过'
+}
+
+/**
  * 打开用户选中的内容详情。
  */
 async function openDetail(id: number) {
@@ -163,12 +180,11 @@ onMounted(loadContents)
       <div class="section-heading">
         <div><h2>最近使用</h2><p>最近真正拿出去用过的内容</p></div>
       </div>
-      <div v-if="recentContents.length" class="content-grid">
-        <article v-for="item in recentContents" :key="item.id" class="content-card" tabindex="0" @click="openDetail(item.id)" @keydown.enter="openDetail(item.id)">
-          <div class="card-top"><span v-if="item.pinned" class="pinned-mark">已置顶</span><span>{{ item.lastCopyTime || '刚刚留下' }}</span></div>
-          <p class="content-text">{{ item.content }}</p>
-          <div class="tag-row"><span v-if="item.categoryName" class="card-chip category-chip">{{ item.categoryName }}</span><span v-for="tag in item.tags.slice(0, 3)" :key="tag.id" class="card-chip">#{{ tag.name }}</span></div>
-          <div class="card-footer"><span>{{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '还没用过' }}</span><el-button text type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</el-button></div>
+      <div v-if="recentContents.length" class="recent-rail" aria-label="最近使用内容">
+        <article v-for="item in recentContents" :key="item.id" class="recent-quick-card" tabindex="0" @click="openDetail(item.id)" @keydown.enter="openDetail(item.id)">
+          <div class="recent-card-top"><span>{{ formatRecentTime(item.lastCopyTime) }}</span><span v-if="item.pinned" class="pinned-mark">已置顶</span></div>
+          <p class="recent-content">{{ item.content }}</p>
+          <div class="recent-card-footer"><span>{{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '刚刚用过' }}</span><el-button text type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</el-button></div>
         </article>
       </div>
       <p v-else class="recent-empty">最近还没用上这里的内容。</p>
@@ -331,6 +347,66 @@ h1 {
   margin-top: 17px;
 }
 
+.recent-rail {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  margin-top: 17px;
+  padding: 1px 1px 9px;
+  scrollbar-width: thin;
+  scrollbar-color: #d8dcda transparent;
+}
+
+.recent-quick-card {
+  display: flex;
+  min-width: min(330px, calc(100vw - 66px));
+  min-height: 132px;
+  flex: 0 0 330px;
+  flex-direction: column;
+  padding: 16px 17px;
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  background: var(--color-surface);
+  box-shadow: 0 6px 16px rgb(31 33 33 / 3%);
+  cursor: pointer;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+.recent-quick-card:hover,
+.recent-quick-card:focus-visible {
+  border-color: #ffc1b1;
+  outline: none;
+  box-shadow: 0 10px 22px rgb(31 33 33 / 7%);
+  transform: translateY(-2px);
+}
+
+.recent-card-top,
+.recent-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--color-text-tertiary);
+  font-size: 12px;
+}
+
+.recent-content {
+  display: -webkit-box;
+  flex: 1;
+  overflow: hidden;
+  margin: 12px 0;
+  color: var(--color-text-primary);
+  font-size: 15px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.recent-card-footer :deep(.el-button) {
+  padding: 4px 0;
+  font-weight: 700;
+}
+
 .content-card {
   display: flex;
   min-height: 196px;
@@ -428,6 +504,10 @@ h1 {
   .content-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .recent-quick-card {
+    flex-basis: 300px;
+  }
 }
 
 @media (max-width: 680px) {
@@ -437,6 +517,10 @@ h1 {
 
   .content-grid {
     grid-template-columns: 1fr;
+  }
+
+  .recent-quick-card {
+    flex-basis: min(300px, calc(100vw - 66px));
   }
 }
 </style>
