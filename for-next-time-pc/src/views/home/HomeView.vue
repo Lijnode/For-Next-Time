@@ -3,10 +3,8 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getContentList, getRecentContents, recordCopy, type ContentListItem } from '../../api/content'
-import { useAuthStore } from '../../stores/auth'
 
 const router = useRouter()
-const authStore = useAuthStore()
 const contents = ref<ContentListItem[]>([])
 const recentContents = ref<ContentListItem[]>([])
 const keyword = ref('')
@@ -17,29 +15,11 @@ const total = ref(0)
 const categories: Array<[string, string]> = [['FUNNY', '搞笑'], ['ABSTRACT', '抽象'], ['EMOTION', '感情'], ['LITERARY', '文艺'], ['HEALING', '治愈'], ['SOBER', '清醒'], ['SARCASM', '阴阳'], ['OTHER', '其他']]
 
 /**
- * 清除登录状态并返回登录页。
- */
-async function logout() {
-  // 1. 清理 Pinia 与本地存储中的认证信息。
-  authStore.logout()
-  // 2. 替换路由，避免浏览器返回受保护页面。
-  await router.replace({ name: 'login' })
-}
-
-/**
  * 进入新增内容页面。
  */
 async function createContent() {
   // 1. 进入受保护的内容编辑页。
   await router.push({ name: 'content-create' })
-}
-
-/**
- * 进入当前登录用户的个人资料页。
- */
-async function openProfile() {
-  // 1. 进入受保护的个人资料路由。
-  await router.push({ name: 'profile' })
 }
 
 /**
@@ -148,10 +128,8 @@ onMounted(loadContents)
       <p>这次先留着，下次一定用得上。</p>
       <div class="search-entry"><el-input v-model="keyword" placeholder="找找现在用得上的。" clearable @keyup.enter="openSearch"><template #append><el-button @click="openSearch">搜索</el-button></template></el-input></div>
       <el-button type="primary" @click="createContent">先留一句</el-button>
-      <el-button text type="primary" @click="openProfile">我的</el-button>
-      <el-button text type="primary" @click="logout">退出登录</el-button>
     </section>
-    <section v-if="recentContents.length" class="recent-section"><h2>最近使用</h2><div class="recent-list"><button v-for="item in recentContents" :key="item.id" type="button" @click="openDetail(item.id)">{{ item.content }}</button></div></section>
+    <section class="recent-section"><h2>最近使用</h2><div v-if="recentContents.length" class="recent-list"><article v-for="item in recentContents" :key="item.id" class="recent-card" @click="openDetail(item.id)"><p>{{ item.content }}</p><el-button text type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</el-button></article></div><p v-else class="recent-empty">最近还没用上这里的内容。</p></section>
     <section class="all-content-section"><div class="section-heading"><h2>全部内容</h2><div class="category-filter"><el-button :type="categoryCode === null ? 'primary' : 'default'" size="small" round @click="selectCategory(null)">全部</el-button><el-button v-for="category in categories" :key="category[0]" :type="categoryCode === category[0] ? 'primary' : 'default'" size="small" round @click="selectCategory(category[0])">{{ category[1] }}</el-button></div></div><div class="content-grid"><article v-for="item in contents" :key="item.id" class="content-card" tabindex="0" @click="openDetail(item.id)" @keydown.enter="openDetail(item.id)"><div class="card-top"><el-tag v-if="item.pinned" size="small" type="warning" effect="plain">置顶</el-tag><span>{{ item.lastCopyTime ? '最近用过' : item.updateTime }}</span></div><p>{{ item.content }}</p><div class="card-footer"><div class="tag-row"><el-tag v-if="item.categoryName" size="small" type="warning" effect="plain">{{ item.categoryName }}</el-tag><el-tag v-for="tag in item.tags.slice(0, 3)" :key="tag.id" size="small" effect="plain">#{{ tag.name }}</el-tag></div><el-button text type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</el-button></div></article></div><p v-if="!contents.length">这里还空着，先留下一句。</p><el-pagination v-if="total > 20" class="pagination" background layout="prev, pager, next" :current-page="pageNum" :page-size="20" :total="total" @current-change="changePage" /></section>
   </main>
 </template>
@@ -177,7 +155,7 @@ onMounted(loadContents)
   font-size: 13px;
 }
 .search-entry { width: min(560px, 100%); margin: 28px 0 18px; }
-.recent-section,.all-content-section{margin-top:32px}.recent-section h2,.all-content-section h2{font-size:18px}.recent-list{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.recent-list button{overflow:hidden;padding:14px;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface);color:var(--color-text-secondary);text-align:left;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}.section-heading{display:flex;align-items:center;justify-content:space-between;gap:16px}.category-filter{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px}
+.recent-section,.all-content-section{margin-top:32px}.recent-section h2,.all-content-section h2{font-size:18px}.recent-list{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.recent-card{display:flex;align-items:center;gap:8px;padding:12px 14px;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface);cursor:pointer}.recent-card p{flex:1;overflow:hidden;margin:0;color:var(--color-text-secondary);text-overflow:ellipsis;white-space:nowrap}.recent-empty{margin:8px 0 0;color:var(--color-text-tertiary);font-size:14px}.section-heading{display:flex;align-items:center;justify-content:space-between;gap:16px}.category-filter{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px}
 
 h1 {
   margin: var(--space-2) 0;
