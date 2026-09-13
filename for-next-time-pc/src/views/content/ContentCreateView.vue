@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
-import { ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { createContent, getContentDetail, updateContent } from '../../api/content'
 import { getTagList, type TagItem } from '../../api/tag'
 
@@ -156,8 +156,8 @@ async function submit() {
       await router.replace({ name: 'home' })
     }
   } catch (error) {
-    // 3. 失败时只展示错误，不清空用户输入。
-    errorMessage.value = error instanceof Error ? error.message : '保存失败，请稍后重试'
+    // 3. 用 Element Plus 消息提示保存错误，并保留用户输入。
+    ElMessage.error(error instanceof Error ? error.message : '保存失败，请稍后重试')
   } finally {
     // 4. 恢复提交按钮状态。
     loading.value = false
