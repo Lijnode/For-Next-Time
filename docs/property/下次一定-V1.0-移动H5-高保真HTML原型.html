@@ -566,7 +566,7 @@ body{min-width:320px}
     </div>
   </section>
 
-  <div id="toast" class="toast">就是这句。</div>
+  <div id="toast" class="toast">就是这句</div>
 
   <!-- 分类 Sheet -->
   <div id="categorySheet" class="sheet-mask" onclick="maskClose(event,'categorySheet')">
@@ -642,7 +642,7 @@ function toast(msg){
 async function copyText(text){
   try{
     await navigator.clipboard.writeText(text);
-    toast('就是这句。');
+    toast('就是这句');
   }catch(e){
     toast('已模拟复制成功');
   }

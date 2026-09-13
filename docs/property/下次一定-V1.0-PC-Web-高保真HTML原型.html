@@ -156,13 +156,13 @@ nav{display:flex;gap:8px}.nav{border:0;background:transparent;padding:10px 14px;
 <header><div class="hin"><div class="brand" onclick="go('home')" style="cursor:pointer"><div class="mark">次</div><div><div class="bcn">下次一定</div><div class="ben">For Next Time</div></div></div><nav><button class="nav" onclick="go('home')">首页</button></nav><div class="actions"><button class="avatar" onclick="go('account')">黑</button></div></div></header>
 <main class="wrap narrow"><div class="titlebar"><button class="back" onclick="go('account')">‹</button><div class="pt">关于下次一定</div></div><div class="panel" style="text-align:center;padding:48px"><div class="mark" style="margin:auto;width:54px;height:54px;border-radius:18px;font-size:22px">次</div><h2 style="margin:16px 0 4px">下次一定</h2><div style="color:var(--muted)">For Next Time</div><div style="font-size:17px;margin-top:24px">这次先留着，下次一定用得上。</div><div style="color:var(--muted2);margin-top:6px">Next Time, For Sure</div><p style="color:var(--muted);line-height:1.8;margin-top:28px">一个用于收藏、搜索和快速复用句子与内容素材的私人小工具。</p><div class="sd">V1.0</div></div></main></section>
 
-<div id="toast" class="toast">就是这句。</div>
+<div id="toast" class="toast">就是这句</div>
 <div id="modal" class="modalbg"><div class="modal"><h3>确定删除这条内容吗？</h3><p>删除后 V1.0 中无法直接恢复。</p><div class="ma"><button class="btn secondary" onclick="hideModal()">取消</button><button class="btn danger" onclick="hideModal();toast('已删除');setTimeout(()=>go('home'),500)">删除</button></div></div></div>
 </div>
 <script>
 function go(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(id).classList.add('active');scrollTo(0,0)}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600)}
-async function copyIt(text){try{await navigator.clipboard.writeText(text);toast('就是这句。')}catch(e){toast('就是这句。')}}
+async function copyIt(text){try{await navigator.clipboard.writeText(text);toast('就是这句')}catch(e){toast('就是这句')}}
 function focusSearch(){go('home');setTimeout(()=>document.getElementById('homeSearch').focus(),50)}
 function doSearch(q){q=(q||'').trim();if(!q){toast('先输入一个关键词');return}document.getElementById('searchInput').value=q;document.getElementById('searchLabel').textContent='“'+q+'”';go('search')}
 function detail(t){document.getElementById('detailText').textContent=t;go('detail')}

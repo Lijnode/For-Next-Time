@@ -74,7 +74,7 @@ async function copyContent(item: ContentListItem) {
   try {
     await navigator.clipboard.writeText(item.content)
     // 2. 复制完成后显示品牌化成功反馈。
-    ElMessage.success('就是这句。')
+    ElMessage.success('就是这句')
     // 3. 统计接口失败不影响已经成功的复制操作。
     try {
       const stat = await recordCopy(item.id)

@@ -52,7 +52,7 @@ async function copyContent(item: ContentListItem) {
   try {
     await copyText(item.content)
     // 2. 告知用户复制成功，再异步同步本次使用统计。
-    showSuccess('就是这句。')
+    showSuccess('就是这句')
     try {
       const stat = await recordCopy(item.id)
       item.copyCount = stat.copyCount
@@ -83,17 +83,16 @@ onMounted(loadRecentContents)
 
 <template>
   <main class="recent-page">
-    <header class="recent-header"><h1>最近使用</h1><p>最近真正拿出去用过的内容</p></header>
+    <header class="recent-header"><h1>最近使用</h1></header>
 
     <section class="recent-content" aria-label="最近使用内容">
       <van-loading v-if="loading" class="loading-state" vertical>正在翻找最近用过的内容</van-loading>
       <template v-else>
         <p v-if="!recentContents.length" class="empty-state">最近还没用上这里的内容。</p>
         <div v-else class="recent-list">
-          <article v-for="(item, index) in recentContents" :key="item.id" class="recent-item" @click="openDetail(item.id)">
-            <div class="item-heading"><span class="item-index">{{ String(index + 1).padStart(2, '0') }}</span><span class="item-time"><Clock3 :size="14" />{{ formatRecentTime(item.lastCopyTime) }}</span><span v-if="item.pinned" class="pinned-mark">已置顶</span></div>
+          <article v-for="item in recentContents" :key="item.id" class="recent-item" @click="openDetail(item.id)">
+            <div class="item-heading"><span class="item-time"><Clock3 :size="14" />{{ formatRecentTime(item.lastCopyTime) }}</span><span v-if="item.pinned" class="pinned-mark">已置顶</span></div>
             <p class="item-content">{{ item.content }}</p>
-            <div v-if="item.tags.length" class="tag-row"><span v-for="tag in item.tags.slice(0, 3)" :key="tag.id" class="tag-chip">#{{ tag.name }}</span></div>
             <footer class="item-footer"><span>已用 {{ item.copyCount }} 次</span><van-button plain size="small" type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</van-button></footer>
           </article>
         </div>
@@ -104,8 +103,8 @@ onMounted(loadRecentContents)
 
 <style scoped>
 .recent-page { min-height: 100vh; background: var(--color-page); }
-.recent-header { padding: 22px 16px 16px; border-bottom: 1px solid var(--color-border); background: #fffaf7; }
-h1 { margin: 0; color: var(--color-text-primary); font-size: 20px; letter-spacing: .02em; }.recent-header p { margin: 4px 0 0; color: var(--color-muted); font-size: 12px; }
+.recent-header { padding: 18px 16px 14px; border-bottom: 1px solid var(--color-border); background: #fffaf7; }
+h1 { margin: 0; color: var(--color-text-primary); font-size: 20px; letter-spacing: .02em; }
 .recent-content { padding: 20px 16px 30px; }.loading-state { padding-top: 88px; color: var(--color-muted); }.empty-state { margin: 48px 0; color: var(--color-muted); font-size: 14px; text-align: center; }
-.recent-list { border-top: 1px solid var(--color-border); }.recent-item { padding: 17px 0 16px; border-bottom: 1px solid var(--color-border); cursor: pointer; }.item-heading, .item-footer { display: flex; align-items: center; }.item-heading { gap: 9px; }.item-index { color: var(--color-brand); font-size: 17px; font-weight: 800; }.item-time, .item-footer { color: var(--color-muted); font-size: 11px; }.item-time { display: inline-flex; gap: 4px; align-items: center; }.pinned-mark { margin-left: auto; color: var(--color-brand); font-size: 11px; font-weight: 700; }.item-content { display: -webkit-box; overflow: hidden; margin: 11px 0; color: var(--color-text-primary); font-size: 16px; line-height: 1.65; white-space: pre-wrap; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }.tag-row { display: flex; flex-wrap: wrap; gap: 6px; }.tag-chip { padding: 4px 7px; border-radius: 999px; background: #f1f2ef; color: #737878; font-size: 11px; }.item-footer { justify-content: space-between; margin-top: 13px; }.item-footer :deep(.van-button) { min-width: 68px; height: 38px; border-radius: 12px; font-weight: 700; }
+.recent-list { border-top: 1px solid var(--color-border); }.recent-item { padding: 17px 0 16px; border-bottom: 1px solid var(--color-border); cursor: pointer; }.item-heading, .item-footer { display: flex; align-items: center; }.item-time, .item-footer { color: var(--color-muted); font-size: 11px; }.item-time { display: inline-flex; gap: 4px; align-items: center; }.pinned-mark { margin-left: auto; color: var(--color-brand); font-size: 11px; font-weight: 700; }.item-content { display: -webkit-box; overflow: hidden; margin: 11px 0; color: var(--color-text-primary); font-size: 16px; line-height: 1.65; white-space: pre-wrap; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }.item-footer { justify-content: space-between; margin-top: 13px; }.item-footer :deep(.van-button) { min-width: 68px; height: 38px; border-radius: 12px; font-weight: 700; }
 </style>
