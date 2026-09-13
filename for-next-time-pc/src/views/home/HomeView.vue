@@ -11,13 +11,14 @@ const contents = ref<ContentListItem[]>([])
 const recentContents = ref<ContentListItem[]>([])
 const userProfile = ref<UserProfile>()
 const keyword = ref('')
+const submittedKeyword = ref('')
 const categoryCode = ref<string | null>(null)
 const copyingId = ref<number | null>(null)
 const pageNum = ref(1)
 const total = ref(0)
 const pageSize = 10
 const categories: Array<[string, string]> = [['FUNNY', '搞笑'], ['ABSTRACT', '抽象'], ['EMOTION', '感情'], ['LITERARY', '文艺'], ['HEALING', '治愈'], ['SOBER', '清醒'], ['SARCASM', '阴阳'], ['OTHER', '其他']]
-const isSearching = computed(() => Boolean(keyword.value.trim()))
+const isSearching = computed(() => Boolean(submittedKeyword.value))
 
 /**
  * 进入新增内容页面。
@@ -55,7 +56,7 @@ async function loadContentPage() {
   // 1. 按首页当前模式请求普通列表或关键词搜索结果。
   try {
     const page = isSearching.value
-      ? await searchContents(keyword.value.trim(), pageNum.value, categoryCode.value, pageSize)
+      ? await searchContents(submittedKeyword.value, pageNum.value, categoryCode.value, pageSize)
       : await getContentList(pageNum.value, categoryCode.value, pageSize)
     // 2. 用接口分页结果更新首页卡片区域。
     contents.value = page.list
@@ -122,10 +123,14 @@ async function openDetail(id: number) {
  * 在首页原地加载当前关键词对应的搜索结果。
  */
 async function searchOnHome() {
-  // 1. 清理空白关键词，避免发起无效搜索。
+  // 1. 清理输入关键词；空输入时恢复普通内容列表。
   const normalizedKeyword = keyword.value.trim()
-  if (!normalizedKeyword) return
-  // 2. 从第一页加载当前关键词和分类的结果。
+  if (!normalizedKeyword) {
+    await clearSearch()
+    return
+  }
+  // 2. 仅在用户确认搜索后提交关键词并从第一页查询。
+  submittedKeyword.value = normalizedKeyword
   pageNum.value = 1
   await loadContentPage()
 }
@@ -134,8 +139,9 @@ async function searchOnHome() {
  * 清空首页关键词并恢复当前分类下的普通内容列表。
  */
 async function clearSearch() {
-  // 1. 清空输入内容并将分页回到第一页。
+  // 1. 清空输入内容、已提交关键词并将分页回到第一页。
   keyword.value = ''
+  submittedKeyword.value = ''
   pageNum.value = 1
   // 2. 重新加载当前分类下的普通列表。
   await loadContentPage()
@@ -197,7 +203,7 @@ onMounted(() => {
     </section>
     <div :class="['home-content-layout', { 'search-layout': isSearching }]">
       <section class="all-content-section">
-        <div class="section-heading"><div><h2>{{ isSearching ? '搜索结果' : '全部内容' }}</h2><p v-if="isSearching">“{{ keyword.trim() }}”共翻到 {{ total }} 条。</p></div><el-button v-if="isSearching" text type="primary" @click="clearSearch">返回全部</el-button></div>
+        <div class="section-heading"><div><h2>{{ isSearching ? '搜索结果' : '全部内容' }}</h2><p v-if="isSearching">“{{ submittedKeyword }}”共翻到 {{ total }} 条。</p></div><el-button v-if="isSearching" text type="primary" @click="clearSearch">返回全部</el-button></div>
         <div class="content-grid">
           <article v-for="item in contents" :key="item.id" class="content-card" tabindex="0" @click="openDetail(item.id)" @keydown.enter="openDetail(item.id)">
             <div class="card-top"><span v-if="item.pinned" class="pinned-mark">已置顶</span><span>{{ item.lastCopyTime ? '最近用过' : item.updateTime }}</span></div>
@@ -304,8 +310,19 @@ h1 {
   box-shadow: 0 0 0 3px rgb(255 111 78 / 10%);
 }
 
+.search-entry :deep(.el-input__suffix-inner) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.search-entry :deep(.el-input__clear) {
+  margin: 0;
+}
+
 .search-button {
   display: grid;
+  flex: 0 0 auto;
   width: 38px;
   height: 38px;
   place-items: center;
