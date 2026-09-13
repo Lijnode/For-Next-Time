@@ -415,11 +415,19 @@ h1 {
 }
 
 .recent-item-footer {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   color: var(--color-text-tertiary);
   font-size: 12px;
+}
+
+.recent-item-footer > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .recent-content {
@@ -437,7 +445,13 @@ h1 {
 .recent-item-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  flex-shrink: 0;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.recent-item-actions .pinned-mark {
+  white-space: nowrap;
 }
 
 .recent-item-footer :deep(.el-button) {
