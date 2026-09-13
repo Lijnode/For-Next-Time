@@ -195,7 +195,7 @@ onMounted(() => {
         <button v-for="category in categories" :key="category[0]" :class="{ active: categoryCode === category[0] }" type="button" @click="selectCategory(category[0])">{{ category[1] }}</button>
       </div>
     </section>
-    <div class="home-content-layout">
+    <div :class="['home-content-layout', { 'search-layout': isSearching }]">
       <section class="all-content-section">
         <div class="section-heading"><div><h2>{{ isSearching ? '搜索结果' : '全部内容' }}</h2><p v-if="isSearching">“{{ keyword.trim() }}”共翻到 {{ total }} 条。</p></div><el-button v-if="isSearching" text type="primary" @click="clearSearch">返回全部</el-button></div>
         <div class="content-grid">
@@ -352,6 +352,19 @@ h1 {
   font-size: 19px;
 }
 
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.section-heading :deep(.el-button) {
+  margin-top: 1px;
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
 .section-heading p {
   margin: 7px 0 0;
   color: var(--color-text-tertiary);
@@ -363,6 +376,14 @@ h1 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   margin-top: 17px;
+}
+
+.search-layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.search-layout .content-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .recent-panel {
@@ -642,6 +663,10 @@ h1 {
     padding: 20px;
   }
 
+  .search-layout .content-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .recent-panel .section-heading {
     padding-top: 0;
   }
@@ -664,6 +689,10 @@ h1 {
   }
 
   .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .search-layout .content-grid {
     grid-template-columns: 1fr;
   }
 
