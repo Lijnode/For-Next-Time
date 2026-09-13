@@ -351,20 +351,25 @@ h1 {
   display: grid;
   grid-template-columns: 32px minmax(0, 1fr);
   gap: 10px;
-  padding: 0 0 14px;
-  border-bottom: 1px solid var(--color-border);
+  padding: 10px 0 14px 12px;
+  border-bottom: 1px solid #dfe3df;
+  border-left: 2px solid #e4e8e5;
   cursor: pointer;
   transition: border-color .18s ease;
 }
 
 .recent-quick-item + .recent-quick-item {
-  padding-top: 14px;
+  margin-top: 14px;
 }
 
 .recent-quick-item:hover,
 .recent-quick-item:focus-visible {
   border-color: #ffb29f;
   outline: none;
+}
+
+.recent-quick-item:first-child {
+  border-left-color: var(--color-brand);
 }
 
 .recent-rank {
@@ -583,7 +588,7 @@ h1 {
 
   .recent-quick-item,
   .recent-quick-item + .recent-quick-item {
-    padding: 0 0 12px;
+    padding: 10px 0 12px 12px;
   }
 }
 
