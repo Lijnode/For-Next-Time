@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { getContentList, getRecentContents, type ContentListItem } from '../../api/content'
+import { getContentList, getRecentContents, recordCopy, type ContentListItem } from '../../api/content'
+import { copyText } from '../../platform/clipboard'
+import { showError, showSuccess } from '../../platform/feedback'
 import { useAuthStore } from '../../stores/auth'
 
 const router = useRouter()
@@ -9,6 +11,9 @@ const authStore = useAuthStore()
 const contents = ref<ContentListItem[]>([])
 const recentContents = ref<ContentListItem[]>([])
 const keyword = ref('')
+const categoryCode = ref<string | null>(null)
+const copyingId = ref<number | null>(null)
+const categories: Array<[string, string]> = [['FUNNY', '搞笑'], ['ABSTRACT', '抽象'], ['EMOTION', '感情'], ['LITERARY', '文艺'], ['HEALING', '治愈'], ['SOBER', '清醒'], ['SARCASM', '阴阳'], ['OTHER', '其他']]
 
 /**
  * 清除登录状态并返回登录页。
@@ -37,6 +42,48 @@ async function openProfile() {
 }
 
 /**
+ * 切换首页分类，并按当前用户范围重新加载内容。
+ */
+async function selectCategory(value: string | null) {
+  // 1. 保存用户轻触选择的固定分类编码。
+  categoryCode.value = value
+  // 2. 只刷新列表，最近使用区域保持独立。
+  try {
+    contents.value = await getContentList(categoryCode.value)
+  } catch (error) {
+    // 3. 分类切换失败时保留当前内容并提示用户。
+    showError(error instanceof Error ? error.message : '加载内容失败，请稍后重试')
+  }
+}
+
+/**
+ * 通过平台剪贴板复制卡片正文并记录一次使用统计。
+ */
+async function copyContent(item: ContentListItem) {
+  // 1. 在剪贴板写入成功前不更新后端统计。
+  copyingId.value = item.id
+  try {
+    await copyText(item.content)
+    // 2. 复制完成后显示品牌化成功反馈。
+    showSuccess('就是这句。')
+    // 3. 统计接口失败不影响已经成功的复制操作。
+    try {
+      const stat = await recordCopy(item.id)
+      item.copyCount = stat.copyCount
+      item.lastCopyTime = stat.lastCopyTime
+    } catch {
+      // 4. 接受少量统计误差，避免自动重试导致重复计数。
+    }
+  } catch (error) {
+    // 5. 仅在平台复制失败时提示用户。
+    showError(error instanceof Error ? error.message : '复制失败，请稍后重试')
+  } finally {
+    // 6. 恢复当前卡片的复制按钮状态。
+    copyingId.value = null
+  }
+}
+
+/**
  * 打开用户轻触的内容详情。
  */
 async function openDetail(id: number) {
@@ -60,7 +107,7 @@ async function openSearch() {
  */
 async function loadContents() {
   // 1. 并行请求当前用户内容列表和最近成功复制内容。
-  const [list, recent] = await Promise.all([getContentList(), getRecentContents()])
+  const [list, recent] = await Promise.all([getContentList(categoryCode.value), getRecentContents()])
   // 2. 写入首页两个独立展示区域。
   contents.value = list
   recentContents.value = recent
@@ -80,7 +127,7 @@ onMounted(loadContents)
     <van-button plain type="primary" @click="openProfile">我的</van-button>
     <van-button plain type="primary" @click="logout">退出登录</van-button>
     <section v-if="recentContents.length" class="recent-section"><h2>最近使用</h2><button v-for="item in recentContents" :key="item.id" type="button" class="recent-item" @click="openDetail(item.id)">{{ item.content }}</button></section>
-    <section class="content-list"><article v-for="item in contents" :key="item.id" class="content-card" @click="openDetail(item.id)"><p>{{ item.content }}</p><van-tag v-for="tag in item.tags" :key="tag.id" type="primary">#{{ tag.name }}</van-tag></article><p v-if="!contents.length" class="description">这里还空着，先留下一句。</p></section>
+    <section class="all-content-section"><h2>全部内容</h2><div class="category-scroller"><button :class="{ active: categoryCode === null }" type="button" @click="selectCategory(null)">全部</button><button v-for="category in categories" :key="category[0]" :class="{ active: categoryCode === category[0] }" type="button" @click="selectCategory(category[0])">{{ category[1] }}</button></div><div class="content-list"><article v-for="item in contents" :key="item.id" class="content-card" @click="openDetail(item.id)"><div class="card-top"><van-tag v-if="item.pinned" plain type="warning">置顶</van-tag><span>{{ item.lastCopyTime ? '最近用过' : item.updateTime }}</span></div><p>{{ item.content }}</p><div class="card-footer"><div class="tag-row"><van-tag v-if="item.categoryName" plain type="warning">{{ item.categoryName }}</van-tag><van-tag v-for="tag in item.tags.slice(0, 3)" :key="tag.id" plain type="primary">#{{ tag.name }}</van-tag></div><van-button plain size="small" type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</van-button></div></article></div><p v-if="!contents.length" class="description">这里还空着，先留下一句。</p></section>
   </main>
 </template>
 
@@ -109,6 +156,6 @@ h1 {
   margin-top: 16px;
   color: var(--color-muted);
 }
-.recent-section{margin-top:28px}.recent-section h2{font-size:17px}.recent-item{display:block;width:100%;overflow:hidden;margin:8px 0;padding:13px;border:1px solid var(--color-border);border-radius:var(--radius-card);background:var(--color-card);color:var(--color-muted);text-align:left;text-overflow:ellipsis;white-space:nowrap}
-.content-list{margin-top:24px}.content-card{margin-bottom:12px;padding:16px;background:var(--color-card);border:1px solid var(--color-border);border-radius:var(--radius-card);cursor:pointer}.content-card p{white-space:pre-wrap}.content-card :deep(.van-tag){margin-right:6px}
+.recent-section,.all-content-section{margin-top:28px}.recent-section h2,.all-content-section h2{font-size:17px}.recent-item{display:block;width:100%;overflow:hidden;margin:8px 0;padding:13px;border:1px solid var(--color-border);border-radius:var(--radius-card);background:var(--color-card);color:var(--color-muted);text-align:left;text-overflow:ellipsis;white-space:nowrap}.category-scroller{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px}.category-scroller button{flex:0 0 auto;padding:7px 12px;border:1px solid var(--color-border);border-radius:999px;background:var(--color-card);color:var(--color-muted)}.category-scroller button.active{border-color:var(--color-brand);background:#fff1ec;color:var(--color-brand)}
+.content-list{margin-top:4px}.content-card{margin-bottom:12px;padding:16px;background:var(--color-card);border:1px solid var(--color-border);border-radius:var(--radius-card);cursor:pointer}.content-card p{min-height:48px;white-space:pre-wrap}.card-top,.card-footer,.tag-row{display:flex;align-items:center;gap:6px}.card-top{justify-content:space-between;color:var(--color-muted);font-size:12px}.card-footer{justify-content:space-between}.tag-row{flex-wrap:wrap}
 </style>

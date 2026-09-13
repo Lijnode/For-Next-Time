@@ -37,11 +37,13 @@ export async function createContent(data: ContentCreateReq) {
 }
 
 /**
- * 获取当前用户的第一页内容。
+ * 获取当前用户指定分类的第一页内容。
  */
-export async function getContentList() {
-  // 1. 请求首页所需的默认分页数据。
-  const response = await request.get<{ list: ContentListItem[] }>('/contents', { params: { pageNum: 1, pageSize: 20 } })
+export async function getContentList(categoryCode: string | null = null) {
+  // 1. 请求首页所需的默认分页与可选分类数据。
+  const response = await request.get<{ list: ContentListItem[] }>('/contents', {
+    params: { pageNum: 1, pageSize: 20, categoryCode: categoryCode ?? undefined },
+  })
   // 2. 返回当前页内容数组。
   return response.data.list
 }

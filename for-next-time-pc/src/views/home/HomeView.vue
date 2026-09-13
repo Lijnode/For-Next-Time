@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { getContentList, getRecentContents, type ContentListItem } from '../../api/content'
+import { ElMessage } from 'element-plus'
+import { getContentList, getRecentContents, recordCopy, type ContentListItem } from '../../api/content'
 import { useAuthStore } from '../../stores/auth'
 
 const router = useRouter()
@@ -9,6 +10,9 @@ const authStore = useAuthStore()
 const contents = ref<ContentListItem[]>([])
 const recentContents = ref<ContentListItem[]>([])
 const keyword = ref('')
+const categoryCode = ref<string | null>(null)
+const copyingId = ref<number | null>(null)
+const categories: Array<[string, string]> = [['FUNNY', '搞笑'], ['ABSTRACT', '抽象'], ['EMOTION', '感情'], ['LITERARY', '文艺'], ['HEALING', '治愈'], ['SOBER', '清醒'], ['SARCASM', '阴阳'], ['OTHER', '其他']]
 
 /**
  * 清除登录状态并返回登录页。
@@ -37,6 +41,48 @@ async function openProfile() {
 }
 
 /**
+ * 切换首页分类，并按当前用户范围重新加载内容。
+ */
+async function selectCategory(value: string | null) {
+  // 1. 保存用户选择的固定分类编码。
+  categoryCode.value = value
+  // 2. 只刷新列表，最近使用区域保持独立。
+  try {
+    contents.value = await getContentList(categoryCode.value)
+  } catch (error) {
+    // 3. 分类切换失败时保留当前内容并提示用户。
+    ElMessage.error(error instanceof Error ? error.message : '加载内容失败，请稍后重试')
+  }
+}
+
+/**
+ * 复制卡片正文成功后记录一次使用统计。
+ */
+async function copyContent(item: ContentListItem) {
+  // 1. 在剪贴板写入成功前不更新后端统计。
+  copyingId.value = item.id
+  try {
+    await navigator.clipboard.writeText(item.content)
+    // 2. 复制完成后显示品牌化成功反馈。
+    ElMessage.success('就是这句。')
+    // 3. 统计接口失败不影响已经成功的复制操作。
+    try {
+      const stat = await recordCopy(item.id)
+      item.copyCount = stat.copyCount
+      item.lastCopyTime = stat.lastCopyTime
+    } catch {
+      // 4. 接受少量统计误差，避免自动重试导致重复计数。
+    }
+  } catch (error) {
+    // 5. 仅在浏览器复制失败时提示用户。
+    ElMessage.error(error instanceof Error ? error.message : '复制失败，请稍后重试')
+  } finally {
+    // 6. 恢复当前卡片的复制按钮状态。
+    copyingId.value = null
+  }
+}
+
+/**
  * 打开用户选中的内容详情。
  */
 async function openDetail(id: number) {
@@ -60,7 +106,7 @@ async function openSearch() {
  */
 async function loadContents() {
   // 1. 并行请求当前用户内容列表和最近成功复制内容。
-  const [list, recent] = await Promise.all([getContentList(), getRecentContents()])
+  const [list, recent] = await Promise.all([getContentList(categoryCode.value), getRecentContents()])
   // 2. 写入首页两个独立展示区域。
   contents.value = list
   recentContents.value = recent
@@ -82,7 +128,7 @@ onMounted(loadContents)
       <el-button text type="primary" @click="logout">退出登录</el-button>
     </section>
     <section v-if="recentContents.length" class="recent-section"><h2>最近使用</h2><div class="recent-list"><button v-for="item in recentContents" :key="item.id" type="button" @click="openDetail(item.id)">{{ item.content }}</button></div></section>
-    <section class="content-grid"><article v-for="item in contents" :key="item.id" class="content-card" tabindex="0" @click="openDetail(item.id)" @keydown.enter="openDetail(item.id)"><p>{{ item.content }}</p><el-tag v-for="tag in item.tags" :key="tag.id" size="small">#{{ tag.name }}</el-tag></article><p v-if="!contents.length">这里还空着，先留下一句。</p></section>
+    <section class="all-content-section"><div class="section-heading"><h2>全部内容</h2><div class="category-filter"><el-button :type="categoryCode === null ? 'primary' : 'default'" size="small" round @click="selectCategory(null)">全部</el-button><el-button v-for="category in categories" :key="category[0]" :type="categoryCode === category[0] ? 'primary' : 'default'" size="small" round @click="selectCategory(category[0])">{{ category[1] }}</el-button></div></div><div class="content-grid"><article v-for="item in contents" :key="item.id" class="content-card" tabindex="0" @click="openDetail(item.id)" @keydown.enter="openDetail(item.id)"><div class="card-top"><el-tag v-if="item.pinned" size="small" type="warning" effect="plain">置顶</el-tag><span>{{ item.lastCopyTime ? '最近用过' : item.updateTime }}</span></div><p>{{ item.content }}</p><div class="card-footer"><div class="tag-row"><el-tag v-if="item.categoryName" size="small" type="warning" effect="plain">{{ item.categoryName }}</el-tag><el-tag v-for="tag in item.tags.slice(0, 3)" :key="tag.id" size="small" effect="plain">#{{ tag.name }}</el-tag></div><el-button text type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</el-button></div></article></div><p v-if="!contents.length">这里还空着，先留下一句。</p></section>
   </main>
 </template>
 
@@ -107,7 +153,7 @@ onMounted(loadContents)
   font-size: 13px;
 }
 .search-entry { width: min(560px, 100%); margin: 28px 0 18px; }
-.recent-section{margin-top:32px}.recent-section h2{font-size:18px}.recent-list{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.recent-list button{overflow:hidden;padding:14px;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface);color:var(--color-text-secondary);text-align:left;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.recent-section,.all-content-section{margin-top:32px}.recent-section h2,.all-content-section h2{font-size:18px}.recent-list{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.recent-list button{overflow:hidden;padding:14px;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface);color:var(--color-text-secondary);text-align:left;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}.section-heading{display:flex;align-items:center;justify-content:space-between;gap:16px}.category-filter{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px}
 
 h1 {
   margin: var(--space-2) 0;
@@ -117,5 +163,5 @@ h1 {
 p {
   color: var(--color-text-secondary);
 }
-.content-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px}.content-card{padding:20px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);cursor:pointer}.content-card:hover,.content-card:focus-visible{border-color:var(--color-brand);outline:none}.content-card p{white-space:pre-wrap}
+.content-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:20px}.content-card{padding:20px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);cursor:pointer}.content-card:hover,.content-card:focus-visible{border-color:var(--color-brand);outline:none}.content-card p{min-height:76px;white-space:pre-wrap}.card-top,.card-footer,.tag-row{display:flex;align-items:center;gap:8px}.card-top{justify-content:space-between;color:var(--color-text-tertiary);font-size:12px}.card-footer{justify-content:space-between}.tag-row{flex-wrap:wrap}
 </style>
