@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ElMessage } from 'element-plus'
+import type { UploadProps, UploadRequestOptions } from 'element-plus'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { House, KeyRound, LogOut } from 'lucide-vue-next'
@@ -11,7 +12,6 @@ const authStore = useAuthStore()
 const profile = ref<UserProfile>()
 const loading = ref(false)
 const uploadingAvatar = ref(false)
-const avatarInput = ref<HTMLInputElement>()
 
 /**
  * 加载当前登录用户的个人资料。
@@ -28,42 +28,38 @@ async function loadProfile() {
 }
 
 /**
- * 打开系统文件选择器以选择新的头像。
+ * 在 Element Plus 提交前校验头像格式和大小。
  */
-function chooseAvatar() {
-  // 1. 通过隐藏的文件输入框触发系统文件选择器。
-  avatarInput.value?.click()
+const beforeAvatarUpload: UploadProps['beforeUpload'] = (file) => {
+  // 1. 检查文件是否符合后端允许的 JPEG、PNG 与 2MB 限制。
+  const valid = ['image/jpeg', 'image/png'].includes(file.type) && file.size <= 2 * 1024 * 1024
+  // 2. 阻止不合格文件进入上传流程并展示一致的错误提示。
+  if (!valid) {
+    ElMessage.error('头像仅支持 JPG 或 PNG，且不能超过 2MB')
+  }
+  return valid
 }
 
 /**
- * 校验并上传用户刚选择的头像文件。
+ * 通过 Element Plus 的自定义请求钩子上传头像并刷新页面资料。
  *
- * @param event 文件输入框的变更事件
+ * @param options Element Plus 提供的本次上传文件与回调信息
  */
-async function handleAvatarChange(event: Event) {
-  // 1. 读取本次选择的首个文件，并忽略取消选择的情况。
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) {
-    return
-  }
-  // 2. 在请求前提示不符合服务端约束的文件。
-  if (!['image/jpeg', 'image/png'].includes(file.type) || file.size > 2 * 1024 * 1024) {
-    ElMessage.error('头像仅支持 JPG 或 PNG，且不能超过 2MB')
-    input.value = ''
-    return
-  }
-  // 3. 上传文件并用服务端返回的最新资料更新页面。
+async function uploadAvatarRequest(options: UploadRequestOptions) {
+  // 1. 锁定头像入口，避免用户在前一次上传未完成时重复提交。
   uploadingAvatar.value = true
   try {
-    profile.value = await uploadAvatar(file)
+    // 2. 复用 API 层上传方法，并使用后端返回的资料更新页面。
+    profile.value = await uploadAvatar(options.file)
     ElMessage.success('头像已更新')
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '头像上传失败，请稍后重试')
+    // 3. 将后端的可读错误交给 Element Plus 的失败状态处理。
+    const message = error instanceof Error ? error.message : '头像上传失败，请稍后重试'
+    ElMessage.error(message)
+    throw new Error(message)
   } finally {
-    // 4. 恢复选择控件，允许连续选择同一个文件。
+    // 4. 上传完成后恢复头像入口的交互能力。
     uploadingAvatar.value = false
-    input.value = ''
   }
 }
 
@@ -102,25 +98,19 @@ onMounted(loadProfile)
     <section class="profile-card" v-loading="loading">
       <template v-if="profile">
         <div class="profile-head">
-          <div class="avatar-wrapper">
-            <button
-              class="profile-mark"
-              type="button"
-              :disabled="uploadingAvatar"
-              :title="uploadingAvatar ? '正在上传头像' : '更换头像'"
-              @click="chooseAvatar"
-            >
+          <el-upload
+            class="avatar-uploader"
+            action="#"
+            :show-file-list="false"
+            :disabled="uploadingAvatar"
+            :before-upload="beforeAvatarUpload"
+            :http-request="uploadAvatarRequest"
+          >
+            <span class="profile-mark" :class="{ 'is-uploading': uploadingAvatar }">
               <img v-if="profile.avatarUrl" :src="profile.avatarUrl" :alt="`${profile.username} 的头像`">
               <span v-else>{{ profile.username.slice(0, 1) }}</span>
-            </button>
-            <input
-              ref="avatarInput"
-              class="avatar-input"
-              type="file"
-              accept="image/jpeg,image/png"
-              @change="handleAvatarChange"
-            >
-          </div>
+            </span>
+          </el-upload>
           <div>
             <h1>{{ profile.username }}</h1>
             <p>已经留下 {{ profile.contentCount }} 条内容</p>
@@ -145,11 +135,12 @@ onMounted(loadProfile)
 .profile-page { width: min(760px, calc(100% - 64px)); margin: 0 auto; padding: 42px 0 72px; }
 .profile-card { padding: 32px; border: 1px solid var(--color-border); border-radius: 22px; background: var(--color-surface); box-shadow: 0 10px 25px rgb(31 33 33 / 4%); }
 .profile-head { display: flex; align-items: center; gap: 16px; }
-.profile-mark { display: grid; width: 62px; height: 62px; padding: 0; place-items: center; overflow: hidden; border: 0; border-radius: 20px; background: var(--color-brand); color: #fff; cursor: pointer; font: inherit; font-size: 22px; font-weight: 800; box-shadow: 0 7px 15px rgb(255 111 78 / 18%); transition: transform 0.2s ease, box-shadow 0.2s ease; }
-.profile-mark:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 19px rgb(255 111 78 / 27%); }
-.profile-mark:disabled { cursor: wait; opacity: 0.75; }
+.avatar-uploader :deep(.el-upload) { display: block; border-radius: 20px; cursor: pointer; outline: none; }
+.avatar-uploader :deep(.el-upload:focus-visible) { outline: 2px solid var(--color-brand); outline-offset: 3px; }
+.profile-mark { display: grid; width: 62px; height: 62px; place-items: center; overflow: hidden; border-radius: 20px; background: var(--color-brand); color: #fff; font-size: 22px; font-weight: 800; box-shadow: 0 7px 15px rgb(255 111 78 / 18%); transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease; }
+.avatar-uploader:hover .profile-mark:not(.is-uploading) { transform: translateY(-1px); box-shadow: 0 10px 19px rgb(255 111 78 / 27%); }
+.profile-mark.is-uploading { cursor: wait; opacity: 0.75; }
 .profile-mark img { width: 100%; height: 100%; object-fit: cover; }
-.avatar-input { display: none; }
 .profile-head h1 { margin: 0; color: var(--color-text-primary); font-size: 21px; }
 .profile-head p { margin: 6px 0 0; color: var(--color-text-tertiary); font-size: 13px; }
 .menu { overflow: hidden; margin-top: 26px; border: 1px solid var(--color-border); border-radius: 18px; }

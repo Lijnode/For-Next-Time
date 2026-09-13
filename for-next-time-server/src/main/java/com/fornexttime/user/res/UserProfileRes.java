@@ -1,4 +1,7 @@
 package com.fornexttime.user.res;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import java.time.LocalDateTime;
 /**
  * 当前已登录用户的个人资料响应。
@@ -18,5 +21,6 @@ public record UserProfileRes(
         long contentCount,
 
         /** 账号创建时间，按统一时间协议序列化。 */
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Shanghai")
         LocalDateTime createTime
 ) {}
