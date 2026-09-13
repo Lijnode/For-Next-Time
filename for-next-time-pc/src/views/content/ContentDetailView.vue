@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { deleteContent, getContentDetail, recordCopy, setPinned, type ContentDetail } from '../../api/content'
+import { ArrowLeft, Copy, Pencil, Pin, Trash2 } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -118,54 +119,50 @@ onMounted(loadDetail)
       <p>{{ errorMessage }}</p>
       <el-button type="primary" @click="router.replace({ name: 'home' })">回到首页</el-button>
     </section>
-    <article v-else-if="detail" class="detail-card">
-      <header class="detail-header">
-        <div>
-          <p class="eyebrow">FOR NEXT TIME</p>
-          <h1>留住的这一句</h1>
-        </div>
-        <div class="header-actions"><el-button text @click="router.back()">返回</el-button><el-button text type="primary" :loading="copying" @click="copyContent">复制</el-button><el-button text type="primary" :loading="pinning" @click="togglePinned">{{ detail.pinned ? '取消置顶' : '置顶' }}</el-button><el-button text type="primary" @click="editContent">编辑</el-button><el-popconfirm title="确定删除这句话吗？" confirm-button-text="删除" cancel-button-text="取消" @confirm="removeContent"><template #reference><el-button text type="danger" :loading="deleting">删除</el-button></template></el-popconfirm></div>
+    <template v-else-if="detail">
+      <header class="page-title-bar">
+        <button type="button" aria-label="返回" @click="router.back()"><ArrowLeft :size="20" /></button>
+        <h1>内容详情</h1>
+        <span aria-hidden="true"></span>
       </header>
-
+    <article class="detail-card">
+      <p v-if="detail.pinned" class="pinned-mark"><Pin :size="14" fill="currentColor" />已置顶</p>
       <p class="content-text">{{ detail.content }}</p>
-
-      <div class="tag-row">
-        <el-tag v-if="detail.categoryName" effect="plain" type="warning">{{ detail.categoryName }}</el-tag>
-        <el-tag v-for="tag in detail.tags" :key="tag.id" effect="plain">#{{ tag.name }}</el-tag>
+      <div class="tag-row"><span v-if="detail.categoryName" class="tag category-tag">{{ detail.categoryName }}</span><span v-for="tag in detail.tags" :key="tag.id" class="tag">#{{ tag.name }}</span></div>
+      <div class="detail-actions">
+        <el-button type="primary" :loading="copying" @click="copyContent"><Copy :size="16" />复制</el-button>
+        <el-button :loading="pinning" @click="togglePinned"><Pin :size="16" />{{ detail.pinned ? '取消置顶' : '置顶' }}</el-button>
+        <el-button @click="editContent"><Pencil :size="16" />编辑</el-button>
+        <el-popconfirm title="确定删除这句话吗？" confirm-button-text="删除" cancel-button-text="取消" @confirm="removeContent"><template #reference><el-button class="delete-button" text type="danger" :loading="deleting"><Trash2 :size="16" />删除</el-button></template></el-popconfirm>
       </div>
-
-      <section v-if="detail.remark" class="remark-block">
-        <p class="section-label">备注</p>
-        <p>{{ detail.remark }}</p>
-      </section>
-
-      <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
       <p v-if="copyMessage" class="copy-message">{{ copyMessage }}</p>
-
-      <dl class="meta-list">
-        <div><dt>复制次数</dt><dd>{{ detail.copyCount }} 次</dd></div>
-        <div><dt>最近使用</dt><dd>{{ detail.lastCopyTime ?? '还没有复制过' }}</dd></div>
-        <div><dt>创建时间</dt><dd>{{ detail.createTime }}</dd></div>
-        <div><dt>修改时间</dt><dd>{{ detail.updateTime }}</dd></div>
-      </dl>
+      <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+      <div class="info-grid">
+        <div><span>分类</span><strong>{{ detail.categoryName ?? '未分类' }}</strong></div>
+        <div><span>已用</span><strong>{{ detail.copyCount }} 次</strong></div>
+        <div><span>最近使用</span><strong>{{ detail.lastCopyTime ?? '还没有复制过' }}</strong></div>
+        <div><span>创建时间</span><strong>{{ detail.createTime }}</strong></div>
+        <div><span>修改时间</span><strong>{{ detail.updateTime }}</strong></div>
+      </div>
+      <section v-if="detail.remark" class="remark-block"><p>备注</p><span>{{ detail.remark }}</span></section>
     </article>
+    </template>
   </main>
 </template>
 
 <style scoped>
-.detail-page { width: min(860px, calc(100% - 64px)); margin: 0 auto; padding: 72px 0; }
-.detail-card, .state-card { padding: 42px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-xl); }
+.detail-page { width: min(760px, calc(100% - 64px)); margin: 0 auto; padding: 32px 0 72px; }
+.detail-card, .state-card { padding: 30px; border: 1px solid var(--color-border); border-radius: 22px; background: var(--color-surface); box-shadow: 0 10px 25px rgb(31 33 33 / 4%); }
 .state-card { color: var(--color-text-secondary); text-align: center; }
-.detail-header, .header-actions { display: flex; align-items: flex-start; gap: 8px; }.detail-header { justify-content: space-between; gap: 24px; }
-.eyebrow, .section-label { margin: 0; color: var(--color-brand); font-size: 12px; font-weight: 700; letter-spacing: .14em; }
-h1 { margin: 10px 0 0; font-size: 28px; }
-.content-text { margin: 36px 0 24px; color: var(--color-text-primary); font-size: 18px; line-height: 1.8; white-space: pre-wrap; }
-.tag-row { display: flex; flex-wrap: wrap; gap: 8px; }
-.remark-block { margin-top: 28px; padding: 20px; background: var(--color-brand-soft); border-radius: var(--radius-md); }
-.remark-block p:last-child { margin: 10px 0 0; color: var(--color-text-secondary); line-height: 1.7; white-space: pre-wrap; }
-.error-message { margin: 20px 0 0; color: var(--color-danger); }
-.copy-message { margin: 20px 0 0; color: var(--color-brand); }
-.meta-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px 32px; margin: 32px 0 0; padding-top: 24px; border-top: 1px solid var(--color-divider); }
-.meta-list div { display: flex; justify-content: space-between; gap: 16px; }
-dt { color: var(--color-text-tertiary); } dd { margin: 0; color: var(--color-text-secondary); text-align: right; }
+.page-title-bar { display: grid; grid-template-columns: 42px 1fr 42px; align-items: center; margin-bottom: 18px; }
+.page-title-bar button { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid var(--color-border); border-radius: 12px; background: #fff; color: var(--color-text-primary); }
+.page-title-bar h1 { margin: 0; color: var(--color-text-primary); font-size: 20px; text-align: center; }
+.pinned-mark { display: flex; align-items: center; gap: 5px; margin: 0; color: var(--color-brand); font-size: 13px; font-weight: 700; }
+.content-text { margin: 16px 0 22px; color: var(--color-text-primary); font-size: 25px; line-height: 1.85; white-space: pre-wrap; }
+.tag-row { display: flex; flex-wrap: wrap; gap: 8px; }.tag { padding: 6px 10px; border-radius: 999px; background: #f1f2ef; color: #737878; font-size: 12px; }.category-tag { background: #fff1ec; color: #cf5a41; }
+.detail-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 25px; }.detail-actions :deep(.el-button) { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; border-radius: 12px; font-weight: 700; }.detail-actions .delete-button { margin-left: auto; color: var(--color-text-tertiary); }
+.remark-block { margin-top: 16px; padding: 18px; border: 1px solid var(--color-border); border-radius: 16px; background: #fafaf8; }.remark-block p { margin: 0 0 8px; color: var(--color-text-tertiary); font-size: 12px; font-weight: 700; }.remark-block span { color: var(--color-text-secondary); line-height: 1.75; white-space: pre-wrap; }
+.error-message, .copy-message { margin: 16px 0 0; font-size: 14px; }.error-message { color: var(--color-danger); }.copy-message { color: var(--color-brand); }
+.info-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 24px; }.info-grid div { min-height: 76px; padding: 14px; border-radius: 15px; background: #f8f8f5; }.info-grid span, .info-grid strong { display: block; }.info-grid span { color: var(--color-text-tertiary); font-size: 11px; }.info-grid strong { margin-top: 6px; color: var(--color-text-secondary); font-size: 13px; font-weight: 500; line-height: 1.4; overflow-wrap: anywhere; }
+@media (max-width: 600px) { .detail-page { width: min(100% - 32px, 760px); }.detail-card { padding: 22px; }.content-text { font-size: 21px; }.info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 </style>
