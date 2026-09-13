@@ -3,7 +3,7 @@ import { ElMessage } from 'element-plus'
 import type { UploadProps, UploadRequestOptions } from 'element-plus'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { House, KeyRound, LogOut } from 'lucide-vue-next'
+import { ChevronRight, House, Info, KeyRound, LogOut } from 'lucide-vue-next'
 import { getUserProfile, uploadAvatar, type UserProfile } from '../../api/user'
 import { useAuthStore } from '../../stores/auth'
 
@@ -12,6 +12,7 @@ const authStore = useAuthStore()
 const profile = ref<UserProfile>()
 const loading = ref(false)
 const uploadingAvatar = ref(false)
+const aboutDialogVisible = ref(false)
 
 /**
  * 加载当前登录用户的个人资料。
@@ -72,6 +73,14 @@ async function openPasswordForm() {
 }
 
 /**
+ * 打开产品介绍弹窗，展示与移动端一致的应用说明。
+ */
+function openAboutDialog() {
+  // 1. 仅切换本页弹窗状态，不离开当前个人页。
+  aboutDialogVisible.value = true
+}
+
+/**
  * 返回内容首页继续浏览已保存的内容。
  */
 async function backHome() {
@@ -121,13 +130,26 @@ onMounted(loadProfile)
           <button class="menu-item" type="button" @click="openPasswordForm"><span>修改密码</span><KeyRound :size="17" /></button>
           <div class="menu-item"><span>加入时间</span><strong>{{ profile.createTime }}</strong></div>
         </div>
-        <section class="about-section"><p>关于下次一定</p><span>这次先留着，下次一定用得上。</span></section>
+        <section class="about-menu" aria-label="产品信息">
+          <button class="menu-item about-row" type="button" @click="openAboutDialog"><span><Info :size="17" />关于下次一定</span><ChevronRight :size="17" /></button>
+        </section>
         <div class="actions">
           <el-button @click="backHome"><span class="action-content"><House :size="16" /><span>返回首页</span></span></el-button>
           <el-button class="logout-button" text @click="logout"><span class="action-content"><LogOut :size="16" /><span>退出登录</span></span></el-button>
         </div>
       </template>
     </section>
+    <el-dialog v-model="aboutDialogVisible" title="关于下次一定" width="440px" align-center class="about-dialog">
+      <section class="about-dialog-content">
+        <div class="brand-mark" aria-hidden="true">次</div>
+        <h2>下次一定</h2>
+        <p class="english-name">FOR NEXT TIME</p>
+        <p class="slogan">这次先留着，下次一定用得上</p>
+        <p class="intro">一个用于收藏、搜索和快速复用句子与内容素材的私人小工具</p>
+        <p class="version">V1.0</p>
+      </section>
+      <template #footer><el-button type="primary" @click="aboutDialogVisible = false">知道了</el-button></template>
+    </el-dialog>
   </main>
 </template>
 
@@ -148,11 +170,21 @@ onMounted(loadProfile)
 .menu-item:last-child { border-bottom: 0; }
 .menu-item strong { color: var(--color-text-primary); font-weight: 700; }
 .menu-item button { cursor: pointer; }
-.about-section { margin-top: 16px; padding: 18px; border: 1px solid var(--color-border); border-radius: 16px; background: #fafaf8; }
-.about-section p { margin: 0 0 7px; color: var(--color-text-tertiary); font-size: 12px; font-weight: 700; }
-.about-section span { color: var(--color-text-secondary); font-size: 14px; }
+.about-menu { overflow: hidden; margin-top: 16px; border: 1px solid var(--color-border); border-radius: 18px; }
+.about-row { cursor: pointer; color: var(--color-text-primary); }
+.about-row > span { display: inline-flex; align-items: center; gap: 9px; }
+.about-row > svg { color: var(--color-text-tertiary); }
 .actions { display: flex; align-items: center; gap: 10px; margin-top: 22px; }
 .actions :deep(.el-button) { min-height: 40px; border-radius: 12px; }
 .action-content { display: inline-flex; align-items: center; gap: 9px; }
 .logout-button { margin-left: auto; color: var(--color-text-tertiary); }
+.about-dialog-content { padding: 20px 16px 8px; text-align: center; }
+.brand-mark { display: grid; width: 68px; height: 68px; margin: 0 auto 17px; place-items: center; border-radius: 23px; background: var(--color-brand); color: #fff; font-size: 27px; font-weight: 800; box-shadow: 0 9px 20px rgb(255 111 78 / 22%); }
+.about-dialog-content h2 { margin: 0; color: var(--color-text-primary); font-size: 24px; }.english-name { margin: 7px 0 30px; color: var(--color-brand); font-size: 11px; font-weight: 750; letter-spacing: .16em; }.slogan { margin: 0; color: var(--color-text-primary); font-size: 16px; font-weight: 600; }.intro { max-width: 270px; margin: 16px auto 0; color: var(--color-text-tertiary); font-size: 13px; line-height: 1.75; }.version { display: inline-block; margin: 30px 0 0; padding: 5px 10px; border-radius: 999px; background: #fff0eb; color: var(--color-brand); font-size: 12px; font-weight: 700; }
+:global(.about-dialog) { border-radius: 20px; }
+:global(.about-dialog .el-dialog__header) { margin-right: 0; padding: 20px 24px 0; }
+:global(.about-dialog .el-dialog__title) { color: var(--color-text-primary); font-weight: 700; }
+:global(.about-dialog .el-dialog__body) { padding: 0 24px; }
+:global(.about-dialog .el-dialog__footer) { padding: 8px 24px 22px; text-align: center; }
+:global(.about-dialog .el-dialog__footer .el-button) { min-width: 106px; height: 40px; border-radius: 12px; font-weight: 700; }
 </style>
