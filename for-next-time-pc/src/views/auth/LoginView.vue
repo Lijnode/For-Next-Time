@@ -36,7 +36,7 @@ async function submit() {
       <p class="eyebrow">FOR NEXT TIME</p>
       <h1>下次一定</h1>
       <p class="subtitle">这次先留着，下次一定用得上。</p>
-      <el-form :model="form" @submit.prevent="submit">
+      <el-form :model="form" label-position="top" @submit.prevent="submit">
         <el-form-item label="用户名">
           <el-input v-model="form.username" maxlength="50" autocomplete="username" />
         </el-form-item>
@@ -57,7 +57,7 @@ async function submit() {
 .eyebrow { margin: 0; color: var(--color-brand); font-size: 11px; font-weight: 700; letter-spacing: .18em; }
 h1 { margin: 14px 0 10px; color: var(--color-text-primary); font-size: 34px; font-weight: 700; letter-spacing: -.03em; }
 .subtitle { margin: 0 0 34px; color: var(--color-text-secondary); line-height: 1.7; }
-.auth-card :deep(.el-form-item) { margin-bottom: 22px; }.auth-card :deep(.el-form-item__label) { padding-bottom: 8px; color: var(--color-text-primary); font-weight: 600; }.auth-card :deep(.el-input__wrapper) { min-height: 46px; padding: 1px 14px; border-radius: 14px; box-shadow: 0 0 0 1px var(--color-border) inset; transition: box-shadow .2s ease; }.auth-card :deep(.el-input__wrapper.is-focus) { box-shadow: 0 0 0 1px var(--color-brand) inset, 0 0 0 4px rgb(255 111 78 / 12%); }
+.auth-card :deep(.el-form-item) { display: block; margin-bottom: 22px; }.auth-card :deep(.el-form-item__label) { display: block; height: auto; padding: 0 0 8px; color: var(--color-text-primary); font-weight: 600; line-height: 1.4; }.auth-card :deep(.el-form-item__content) { display: block; margin-left: 0 !important; line-height: 1; }.auth-card :deep(.el-input) { width: 100%; }.auth-card :deep(.el-input__wrapper) { min-height: 46px; padding: 1px 14px; border-radius: 14px; box-shadow: 0 0 0 1px var(--color-border) inset; transition: box-shadow .2s ease; }.auth-card :deep(.el-input__wrapper.is-focus) { box-shadow: 0 0 0 1px var(--color-brand) inset, 0 0 0 4px rgb(255 111 78 / 12%); }
 .submit-button { width: 100%; min-height: 46px; margin-top: 4px; border-radius: 14px; font-weight: 600; }
 .error-message { margin: -6px 0 14px; color: var(--color-danger); font-size: 13px; }
 .switch-link { margin: 28px 0 0; color: var(--color-text-secondary); text-align: center; }.switch-link a { color: var(--color-brand); font-weight: 600; text-decoration: none; }
