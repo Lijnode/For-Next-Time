@@ -78,13 +78,13 @@ export async function deleteContent(id: number) {
 /**
  * 按关键词搜索当前用户内容。
  */
-export async function searchContents(keyword: string, categoryCode: string | null = null) {
+export async function searchContents(keyword: string, pageNum = 1, categoryCode: string | null = null) {
   // 1. 请求默认分页大小的内容搜索接口。
-  const response = await request.get<{ list: ContentListItem[] }>('/contents/search', {
-    params: { keyword, pageNum: 1, pageSize: 20, categoryCode: categoryCode ?? undefined },
+  const response = await request.get<PageResult<ContentListItem>>('/contents/search', {
+    params: { keyword, pageNum, pageSize: 20, categoryCode: categoryCode ?? undefined },
   })
-  // 2. 返回当前页搜索结果数组。
-  return response.data.list
+  // 2. 返回带总数和页码信息的统一搜索分页结果。
+  return response.data
 }
 
 /**

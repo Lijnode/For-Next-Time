@@ -12,6 +12,9 @@ const categoryCode = ref<string | null>(null)
 const contents = ref<ContentListItem[]>([])
 const loading = ref(false)
 const copyingId = ref<number | null>(null)
+const pageNum = ref(1)
+const hasMore = ref(false)
+const loadingMore = ref(false)
 const categories: Array<[string, string]> = [['FUNNY', '搞笑'], ['ABSTRACT', '抽象'], ['EMOTION', '感情'], ['LITERARY', '文艺'], ['HEALING', '治愈'], ['SOBER', '清醒'], ['SARCASM', '阴阳'], ['OTHER', '其他']]
 let searchTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -23,17 +26,45 @@ async function executeSearch() {
   const normalizedKeyword = keyword.value.trim()
   if (!normalizedKeyword) {
     contents.value = []
+    hasMore.value = false
     return
   }
+  // 2. 关键词或分类变动后从第一页开始查询。
+  pageNum.value = 1
+  await loadSearchPage(false)
+}
+
+/**
+ * 请求下一页搜索结果并追加到当前移动端列表。
+ */
+async function loadMore() {
+  // 1. 没有下一页或正在加载时不重复请求。
+  if (!hasMore.value || loadingMore.value) return
+  // 2. 请求下一页，只有成功后才更新当前页码。
+  await loadSearchPage(true, pageNum.value + 1)
+}
+
+/**
+ * 加载当前关键词、分类和页码对应的搜索结果。
+ */
+async function loadSearchPage(append: boolean, targetPage = pageNum.value) {
+  // 1. 空关键词不请求接口，保持搜索结果为空。
+  const normalizedKeyword = keyword.value.trim()
+  if (!normalizedKeyword) return
   // 2. 调用统一搜索接口，并通过平台层反馈搜索失败原因。
-  loading.value = true
+  loading.value = !append
+  loadingMore.value = append
   try {
-    contents.value = await searchContents(normalizedKeyword, categoryCode.value)
+    const page = await searchContents(normalizedKeyword, targetPage, categoryCode.value)
+    contents.value = append ? [...contents.value, ...page.list] : page.list
+    pageNum.value = page.pageNum
+    hasMore.value = page.pageNum < page.pages
   } catch (error) {
     showError(error instanceof Error ? error.message : '搜索失败，请稍后重试')
   } finally {
-    // 3. 请求完成后恢复搜索状态。
+    // 3. 请求完成后恢复首屏和加载更多状态。
     loading.value = false
+    loadingMore.value = false
   }
 }
 
@@ -96,10 +127,10 @@ onBeforeUnmount(() => { if (searchTimer) clearTimeout(searchTimer) })
     <van-search v-model="keyword" placeholder="搜索正文、备注、标签或分类" shape="round" show-action @search="executeSearch"><template #action><button type="button" @click="executeSearch">搜索</button></template></van-search>
     <div class="category-scroller"><button :class="{ active: categoryCode === null }" type="button" @click="categoryCode = null">全部</button><button v-for="category in categories" :key="category[0]" :class="{ active: categoryCode === category[0] }" type="button" @click="categoryCode = category[0]">{{ category[1] }}</button></div>
     <van-loading v-if="loading" class="loading" vertical>正在翻找……</van-loading><p v-else-if="keyword.trim() && !contents.length" class="empty-message">这次没翻到合适的。</p>
-    <section class="content-list"><article v-for="item in contents" :key="item.id" class="content-card" @click="openDetail(item.id)"><p>{{ item.content }}</p><div class="card-footer"><div class="tag-row"><van-tag v-if="item.categoryName" plain type="warning">{{ item.categoryName }}</van-tag><van-tag v-for="tag in item.tags.slice(0, 3)" :key="tag.id" plain type="primary">#{{ tag.name }}</van-tag></div><van-button plain size="small" type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</van-button></div></article></section>
+    <section class="content-list"><article v-for="item in contents" :key="item.id" class="content-card" @click="openDetail(item.id)"><p>{{ item.content }}</p><div class="card-footer"><div class="tag-row"><van-tag v-if="item.categoryName" plain type="warning">{{ item.categoryName }}</van-tag><van-tag v-for="tag in item.tags.slice(0, 3)" :key="tag.id" plain type="primary">#{{ tag.name }}</van-tag></div><van-button plain size="small" type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</van-button></div></article><van-button v-if="hasMore" class="load-more" block plain round type="primary" :loading="loadingMore" @click="loadMore">加载更多</van-button></section>
   </main>
 </template>
 
 <style scoped>
-.search-page{min-height:100vh;padding:calc(10px + env(safe-area-inset-top)) 0 32px}.top-bar{display:flex;align-items:center;padding:0 16px 8px}.top-bar button{border:0;background:none;color:var(--color-brand);font-size:28px;line-height:1}.top-bar h1{margin:0 auto;font-size:18px;transform:translateX(-14px)}.top-bar+ :deep(.van-search__action button){border:0;background:none;color:var(--color-brand);font:inherit}.category-scroller{display:flex;gap:8px;overflow-x:auto;padding:4px 16px 16px}.category-scroller button{flex:0 0 auto;padding:7px 12px;border:1px solid var(--color-border);border-radius:999px;background:var(--color-card);color:var(--color-muted)}.category-scroller button.active{border-color:var(--color-brand);background:#fff1ec;color:var(--color-brand)}.loading{padding:64px 0}.empty-message{margin:48px 0;color:var(--color-muted);text-align:center}.content-list{padding:0 16px}.content-card{margin-bottom:12px;padding:16px;background:var(--color-card);border:1px solid var(--color-border);border-radius:var(--radius-card)}.content-card p{margin:0 0 14px;line-height:1.7;white-space:pre-wrap}.card-footer{display:flex;align-items:center;justify-content:space-between;gap:6px}.tag-row{display:flex;flex-wrap:wrap;gap:6px}
+.search-page{min-height:100vh;padding:calc(10px + env(safe-area-inset-top)) 0 32px}.top-bar{display:flex;align-items:center;padding:0 16px 8px}.top-bar button{border:0;background:none;color:var(--color-brand);font-size:28px;line-height:1}.top-bar h1{margin:0 auto;font-size:18px;transform:translateX(-14px)}.top-bar+ :deep(.van-search__action button){border:0;background:none;color:var(--color-brand);font:inherit}.category-scroller{display:flex;gap:8px;overflow-x:auto;padding:4px 16px 16px}.category-scroller button{flex:0 0 auto;padding:7px 12px;border:1px solid var(--color-border);border-radius:999px;background:var(--color-card);color:var(--color-muted)}.category-scroller button.active{border-color:var(--color-brand);background:#fff1ec;color:var(--color-brand)}.loading{padding:64px 0}.empty-message{margin:48px 0;color:var(--color-muted);text-align:center}.content-list{padding:0 16px}.content-card{margin-bottom:12px;padding:16px;background:var(--color-card);border:1px solid var(--color-border);border-radius:var(--radius-card)}.content-card p{margin:0 0 14px;line-height:1.7;white-space:pre-wrap}.card-footer{display:flex;align-items:center;justify-content:space-between;gap:6px}.tag-row{display:flex;flex-wrap:wrap;gap:6px}.load-more{margin-top:20px}
 </style>
