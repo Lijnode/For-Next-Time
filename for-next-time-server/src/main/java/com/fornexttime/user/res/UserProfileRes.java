@@ -11,6 +11,9 @@ public record UserProfileRes(
         /** 当前用户登录名。 */
         String username,
 
+        /** 已上传头像的公开访问地址；尚未上传时为 null。 */
+        String avatarUrl,
+
         /** 当前用户尚未删除的内容数量。 */
         long contentCount,
 

@@ -12,3 +12,5 @@ app:
   jwt:
     secret: local-development-jwt-secret-change-me-2026
     expiration-seconds: 604800
+  file:
+    storage-dir: ../files

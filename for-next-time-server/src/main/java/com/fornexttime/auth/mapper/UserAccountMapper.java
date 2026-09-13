@@ -33,6 +33,15 @@ public interface UserAccountMapper {
     int updatePasswordHash(@Param("id") Long id, @Param("passwordHash") String passwordHash);
 
     /**
+     * 更新指定账号的头像相对存储路径。
+     *
+     * @param id         用户主键
+     * @param avatarPath 文件存储根目录下的相对路径
+     * @return 实际更新行数
+     */
+    int updateAvatarPath(@Param("id") Long id, @Param("avatarPath") String avatarPath);
+
+    /**
      * 新增账号并回填数据库生成的主键。
      *
      * @param userAccount 待保存的账号

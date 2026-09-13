@@ -1,14 +1,17 @@
 <script setup lang="ts">
+import { ElMessage } from 'element-plus'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { House, KeyRound, LogOut } from 'lucide-vue-next'
-import { getUserProfile, type UserProfile } from '../../api/user'
+import { getUserProfile, uploadAvatar, type UserProfile } from '../../api/user'
 import { useAuthStore } from '../../stores/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const profile = ref<UserProfile>()
 const loading = ref(false)
+const uploadingAvatar = ref(false)
+const avatarInput = ref<HTMLInputElement>()
 
 /**
  * 加载当前登录用户的个人资料。
@@ -21,6 +24,46 @@ async function loadProfile() {
   // 2. 请求结束后恢复页面交互状态。
   } finally {
     loading.value = false
+  }
+}
+
+/**
+ * 打开系统文件选择器以选择新的头像。
+ */
+function chooseAvatar() {
+  // 1. 通过隐藏的文件输入框触发系统文件选择器。
+  avatarInput.value?.click()
+}
+
+/**
+ * 校验并上传用户刚选择的头像文件。
+ *
+ * @param event 文件输入框的变更事件
+ */
+async function handleAvatarChange(event: Event) {
+  // 1. 读取本次选择的首个文件，并忽略取消选择的情况。
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) {
+    return
+  }
+  // 2. 在请求前提示不符合服务端约束的文件。
+  if (!['image/jpeg', 'image/png'].includes(file.type) || file.size > 2 * 1024 * 1024) {
+    ElMessage.error('头像仅支持 JPG 或 PNG，且不能超过 2MB')
+    input.value = ''
+    return
+  }
+  // 3. 上传文件并用服务端返回的最新资料更新页面。
+  uploadingAvatar.value = true
+  try {
+    profile.value = await uploadAvatar(file)
+    ElMessage.success('头像已更新')
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '头像上传失败，请稍后重试')
+  } finally {
+    // 4. 恢复选择控件，允许连续选择同一个文件。
+    uploadingAvatar.value = false
+    input.value = ''
   }
 }
 
@@ -58,15 +101,66 @@ onMounted(loadProfile)
   <main class="profile-page">
     <section class="profile-card" v-loading="loading">
       <template v-if="profile">
-        <div class="profile-head"><span class="profile-mark">{{ profile.username.slice(0, 1) }}</span><div><h1>{{ profile.username }}</h1><p>已经留下 {{ profile.contentCount }} 条内容</p></div></div>
-        <div class="menu"><div class="menu-item"><span>内容总数</span><strong>{{ profile.contentCount }}</strong></div><button class="menu-item" type="button" @click="openPasswordForm"><span>修改密码</span><KeyRound :size="17" /></button><div class="menu-item"><span>加入时间</span><strong>{{ profile.createTime }}</strong></div></div>
+        <div class="profile-head">
+          <div class="avatar-wrapper">
+            <button
+              class="profile-mark"
+              type="button"
+              :disabled="uploadingAvatar"
+              :title="uploadingAvatar ? '正在上传头像' : '更换头像'"
+              @click="chooseAvatar"
+            >
+              <img v-if="profile.avatarUrl" :src="profile.avatarUrl" :alt="`${profile.username} 的头像`">
+              <span v-else>{{ profile.username.slice(0, 1) }}</span>
+            </button>
+            <input
+              ref="avatarInput"
+              class="avatar-input"
+              type="file"
+              accept="image/jpeg,image/png"
+              @change="handleAvatarChange"
+            >
+          </div>
+          <div>
+            <h1>{{ profile.username }}</h1>
+            <p>已经留下 {{ profile.contentCount }} 条内容</p>
+          </div>
+        </div>
+        <div class="menu">
+          <div class="menu-item"><span>内容总数</span><strong>{{ profile.contentCount }}</strong></div>
+          <button class="menu-item" type="button" @click="openPasswordForm"><span>修改密码</span><KeyRound :size="17" /></button>
+          <div class="menu-item"><span>加入时间</span><strong>{{ profile.createTime }}</strong></div>
+        </div>
         <section class="about-section"><p>关于下次一定</p><span>这次先留着，下次一定用得上。</span></section>
-        <div class="actions"><el-button @click="backHome"><House :size="16" />返回首页</el-button><el-button class="logout-button" text @click="logout"><LogOut :size="16" />退出登录</el-button></div>
+        <div class="actions">
+          <el-button @click="backHome"><House :size="16" />返回首页</el-button>
+          <el-button class="logout-button" text @click="logout"><LogOut :size="16" />退出登录</el-button>
+        </div>
       </template>
     </section>
   </main>
 </template>
 
 <style scoped>
-.profile-page { width: min(760px, calc(100% - 64px)); margin: 0 auto; padding: 42px 0 72px; }.profile-card { padding: 32px; border: 1px solid var(--color-border); border-radius: 22px; background: var(--color-surface); box-shadow: 0 10px 25px rgb(31 33 33 / 4%); }.profile-head { display: flex; align-items: center; gap: 16px; }.profile-mark { display: grid; width: 62px; height: 62px; place-items: center; border-radius: 20px; background: var(--color-brand); color: #fff; font-size: 22px; font-weight: 800; box-shadow: 0 7px 15px rgb(255 111 78 / 18%); }.profile-head h1 { margin: 0; color: var(--color-text-primary); font-size: 21px; }.profile-head p { margin: 6px 0 0; color: var(--color-text-tertiary); font-size: 13px; }.menu { overflow: hidden; margin-top: 26px; border: 1px solid var(--color-border); border-radius: 18px; }.menu-item { display: flex; width: 100%; align-items: center; justify-content: space-between; min-height: 55px; padding: 0 18px; border: 0; border-bottom: 1px solid #efefeb; background: #fff; color: var(--color-text-secondary); font: inherit; font-size: 14px; text-align: left; }.menu-item:last-child { border-bottom: 0; }.menu-item strong { color: var(--color-text-primary); font-weight: 700; }.menu-item button { cursor: pointer; }.about-section { margin-top: 16px; padding: 18px; border: 1px solid var(--color-border); border-radius: 16px; background: #fafaf8; }.about-section p { margin: 0 0 7px; color: var(--color-text-tertiary); font-size: 12px; font-weight: 700; }.about-section span { color: var(--color-text-secondary); font-size: 14px; }.actions { display: flex; align-items: center; gap: 10px; margin-top: 22px; }.actions :deep(.el-button) { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; border-radius: 12px; }.logout-button { margin-left: auto; color: var(--color-text-tertiary); }
+.profile-page { width: min(760px, calc(100% - 64px)); margin: 0 auto; padding: 42px 0 72px; }
+.profile-card { padding: 32px; border: 1px solid var(--color-border); border-radius: 22px; background: var(--color-surface); box-shadow: 0 10px 25px rgb(31 33 33 / 4%); }
+.profile-head { display: flex; align-items: center; gap: 16px; }
+.profile-mark { display: grid; width: 62px; height: 62px; padding: 0; place-items: center; overflow: hidden; border: 0; border-radius: 20px; background: var(--color-brand); color: #fff; cursor: pointer; font: inherit; font-size: 22px; font-weight: 800; box-shadow: 0 7px 15px rgb(255 111 78 / 18%); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.profile-mark:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 19px rgb(255 111 78 / 27%); }
+.profile-mark:disabled { cursor: wait; opacity: 0.75; }
+.profile-mark img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-input { display: none; }
+.profile-head h1 { margin: 0; color: var(--color-text-primary); font-size: 21px; }
+.profile-head p { margin: 6px 0 0; color: var(--color-text-tertiary); font-size: 13px; }
+.menu { overflow: hidden; margin-top: 26px; border: 1px solid var(--color-border); border-radius: 18px; }
+.menu-item { display: flex; width: 100%; align-items: center; justify-content: space-between; min-height: 55px; padding: 0 18px; border: 0; border-bottom: 1px solid #efefeb; background: #fff; color: var(--color-text-secondary); font: inherit; font-size: 14px; text-align: left; }
+.menu-item:last-child { border-bottom: 0; }
+.menu-item strong { color: var(--color-text-primary); font-weight: 700; }
+.menu-item button { cursor: pointer; }
+.about-section { margin-top: 16px; padding: 18px; border: 1px solid var(--color-border); border-radius: 16px; background: #fafaf8; }
+.about-section p { margin: 0 0 7px; color: var(--color-text-tertiary); font-size: 12px; font-weight: 700; }
+.about-section span { color: var(--color-text-secondary); font-size: 14px; }
+.actions { display: flex; align-items: center; gap: 10px; margin-top: 22px; }
+.actions :deep(.el-button) { display: inline-flex; align-items: center; gap: 9px; min-height: 40px; border-radius: 12px; }
+.logout-button { margin-left: auto; color: var(--color-text-tertiary); }
 </style>

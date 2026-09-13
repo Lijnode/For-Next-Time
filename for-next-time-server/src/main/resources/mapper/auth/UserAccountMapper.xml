@@ -8,16 +8,17 @@
         <id property="id" column="id"/>
         <result property="username" column="username"/>
         <result property="passwordHash" column="password_hash"/>
+        <result property="avatarPath" column="avatar_path"/>
         <result property="createTime" column="create_time"/>
     </resultMap>
 
     <select id="findByUsername" resultMap="UserAccountResultMap">
-        SELECT id, username, password_hash, create_time
+        SELECT id, username, password_hash, avatar_path, create_time
         FROM user_account
         WHERE username = #{username}
     </select>
     <select id="findById" resultMap="UserAccountResultMap">
-        SELECT id, username, password_hash, create_time
+        SELECT id, username, password_hash, avatar_path, create_time
         FROM user_account
         WHERE id = #{id}
     </select>
@@ -25,6 +26,13 @@
     <update id="updatePasswordHash">
         UPDATE user_account
         SET password_hash = #{passwordHash},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateAvatarPath">
+        UPDATE user_account
+        SET avatar_path = #{avatarPath},
             update_time = NOW()
         WHERE id = #{id}
     </update>

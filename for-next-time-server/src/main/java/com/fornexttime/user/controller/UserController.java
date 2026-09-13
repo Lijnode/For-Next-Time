@@ -6,11 +6,15 @@ import com.fornexttime.user.res.UserProfileRes;
 import com.fornexttime.user.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 提供当前登录用户的资料与账户安全接口。
@@ -32,6 +36,18 @@ public class UserController {
     public Result<UserProfileRes> profile() {
         // 1. 交由服务读取当前用户范围内的资料。
         return Result.success(userService.getProfile());
+    }
+
+    /**
+     * 上传当前登录用户的头像，仅接受 JPEG 或 PNG 格式。
+     *
+     * @param file 前端 multipart 表单中的头像文件
+     * @return 包含最新头像地址的当前用户资料
+     */
+    @PostMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Result<UserProfileRes> uploadAvatar(@RequestParam("file") MultipartFile file) {
+        // 1. 交由服务校验文件并保存当前用户的头像。
+        return Result.success(userService.uploadAvatar(file));
     }
 
     /**

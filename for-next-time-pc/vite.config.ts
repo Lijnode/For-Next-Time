@@ -11,6 +11,11 @@ export default defineConfig({
         target: 'http://127.0.0.1:6688',
         changeOrigin: true,
       },
+      // 2. 本地开发时代理头像静态文件，保持与生产环境一致的同源地址。
+      '/files': {
+        target: 'http://127.0.0.1:6688',
+        changeOrigin: true,
+      },
     },
   },
 })

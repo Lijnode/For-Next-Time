@@ -3,6 +3,7 @@
 !.env.example
 
 application-prod.yml
+files/
 
 node_modules/
 dist/

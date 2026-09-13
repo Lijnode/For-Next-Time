@@ -15,6 +15,7 @@ public enum ErrorCode {
     USERNAME_EXISTS(10001, "用户名已存在", HttpStatus.BAD_REQUEST),
     INVALID_CREDENTIALS(10002, "用户名或密码错误", HttpStatus.BAD_REQUEST),
     PASSWORD_MISMATCH(10006, "两次输入的密码不一致", HttpStatus.BAD_REQUEST),
+    AVATAR_INVALID(10007, "头像仅支持 JPG 或 PNG，且不能超过 2MB", HttpStatus.BAD_REQUEST),
     CONTENT_NOT_FOUND(20001, "内容不存在或无权操作", HttpStatus.NOT_FOUND),
     CONTENT_EMPTY(20002, "内容正文不能为空", HttpStatus.BAD_REQUEST),
     CONTENT_TOO_LONG(20003, "内容正文长度超限", HttpStatus.BAD_REQUEST),
