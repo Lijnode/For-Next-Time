@@ -15,6 +15,7 @@ const categoryCode = ref<string | null>(null)
 const copyingId = ref<number | null>(null)
 const pageNum = ref(1)
 const total = ref(0)
+const pageSize = 10
 const categories: Array<[string, string]> = [['FUNNY', '搞笑'], ['ABSTRACT', '抽象'], ['EMOTION', '感情'], ['LITERARY', '文艺'], ['HEALING', '治愈'], ['SOBER', '清醒'], ['SARCASM', '阴阳'], ['OTHER', '其他']]
 const isSearching = computed(() => Boolean(keyword.value.trim()))
 
@@ -54,8 +55,8 @@ async function loadContentPage() {
   // 1. 按首页当前模式请求普通列表或关键词搜索结果。
   try {
     const page = isSearching.value
-      ? await searchContents(keyword.value.trim(), pageNum.value, categoryCode.value)
-      : await getContentList(pageNum.value, categoryCode.value)
+      ? await searchContents(keyword.value.trim(), pageNum.value, categoryCode.value, pageSize)
+      : await getContentList(pageNum.value, categoryCode.value, pageSize)
     // 2. 用接口分页结果更新首页卡片区域。
     contents.value = page.list
     total.value = page.total
@@ -145,7 +146,7 @@ async function clearSearch() {
  */
 async function loadContents() {
   // 1. 并行请求当前用户内容列表和最近成功复制内容。
-  const [page, recent] = await Promise.all([getContentList(pageNum.value, categoryCode.value), getRecentContents()])
+  const [page, recent] = await Promise.all([getContentList(pageNum.value, categoryCode.value, pageSize), getRecentContents()])
   // 2. 写入首页两个独立展示区域。
   contents.value = page.list
   total.value = page.total
@@ -207,7 +208,7 @@ onMounted(() => {
         </div>
         <p v-if="!contents.length" class="empty-state">这里还空着，先留下一句。</p>
         <el-button v-if="!contents.length" class="empty-create" type="primary" @click="createContent">先留一句</el-button>
-        <el-pagination v-if="total > 0" class="pagination" background layout="prev, pager, next" :current-page="pageNum" :page-size="20" :total="total" @current-change="changePage" />
+        <el-pagination v-if="total > 0" class="pagination" background layout="prev, pager, next" :current-page="pageNum" :page-size="pageSize" :total="total" @current-change="changePage" />
       </section>
       <aside v-if="!isSearching" class="recent-panel">
         <div class="section-heading"><h2>最近使用</h2></div>
