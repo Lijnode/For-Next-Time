@@ -7,4 +7,11 @@
   --color-card: #ffffff;
   --color-border: #eee4dd;
   --radius-card: 16px;
+  --van-primary-color: #ff6f4e;
+  --van-danger-color: #d84c42;
+  --van-radius-sm: 8px;
+  --van-radius-md: 12px;
+  --van-radius-lg: 16px;
+  --van-cell-font-size: 16px;
+  --van-button-default-height: 48px;
 }

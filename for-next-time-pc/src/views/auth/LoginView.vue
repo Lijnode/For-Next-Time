@@ -52,13 +52,13 @@ async function submit() {
 </template>
 
 <style scoped>
-.auth-page { display: grid; min-height: 100vh; place-items: center; padding: 48px; }
-.auth-card { width: 420px; padding: 44px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-xl); box-shadow: 0 16px 36px rgb(32 35 34 / 7%); }
-.eyebrow { margin: 0; color: var(--color-brand); font-size: 12px; font-weight: 700; letter-spacing: .16em; }
-h1 { margin: 12px 0 8px; font-size: 30px; }
-.subtitle { margin: 0 0 28px; color: var(--color-text-secondary); }
-.submit-button { width: 100%; margin-top: 4px; }
-.error-message { margin: -4px 0 12px; color: var(--color-danger); font-size: 13px; }
-.switch-link { margin: 24px 0 0; color: var(--color-text-secondary); text-align: center; }
-.switch-link a { color: var(--color-brand); text-decoration: none; }
+.auth-page { display: grid; min-height: 100vh; place-items: center; padding: 48px; background: var(--color-bg); }
+.auth-card { width: min(440px, 100%); padding: 48px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-xl); box-shadow: 0 20px 48px rgb(32 35 34 / 7%); }
+.eyebrow { margin: 0; color: var(--color-brand); font-size: 11px; font-weight: 700; letter-spacing: .18em; }
+h1 { margin: 14px 0 10px; color: var(--color-text-primary); font-size: 34px; font-weight: 700; letter-spacing: -.03em; }
+.subtitle { margin: 0 0 34px; color: var(--color-text-secondary); line-height: 1.7; }
+.auth-card :deep(.el-form-item) { margin-bottom: 22px; }.auth-card :deep(.el-form-item__label) { padding-bottom: 8px; color: var(--color-text-primary); font-weight: 600; }.auth-card :deep(.el-input__wrapper) { min-height: 46px; padding: 1px 14px; border-radius: 14px; box-shadow: 0 0 0 1px var(--color-border) inset; transition: box-shadow .2s ease; }.auth-card :deep(.el-input__wrapper.is-focus) { box-shadow: 0 0 0 1px var(--color-brand) inset, 0 0 0 4px rgb(255 111 78 / 12%); }
+.submit-button { width: 100%; min-height: 46px; margin-top: 4px; border-radius: 14px; font-weight: 600; }
+.error-message { margin: -6px 0 14px; color: var(--color-danger); font-size: 13px; }
+.switch-link { margin: 28px 0 0; color: var(--color-text-secondary); text-align: center; }.switch-link a { color: var(--color-brand); font-weight: 600; text-decoration: none; }
 </style>

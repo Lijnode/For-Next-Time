@@ -19,4 +19,14 @@
   --space-4: 16px;
   --space-6: 24px;
   --space-8: 32px;
+  --el-color-primary: #ff6f4e;
+  --el-color-primary-light-3: #ff9a84;
+  --el-color-primary-light-5: #ffb6a5;
+  --el-color-primary-light-7: #ffd5ca;
+  --el-color-primary-light-8: #ffe2db;
+  --el-color-primary-light-9: #fff1ec;
+  --el-color-primary-dark-2: #e95838;
+  --el-border-radius-base: 12px;
+  --el-border-radius-small: 8px;
+  --el-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
 }
