@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { CircleUserRound, Search } from 'lucide-vue-next'
 import { getContentList, getRecentContents, recordCopy, type ContentListItem } from '../../api/content'
 import { copyText } from '../../platform/clipboard'
 import { showError, showSuccess } from '../../platform/feedback'
@@ -12,17 +13,10 @@ const keyword = ref('')
 const categoryCode = ref<string | null>(null)
 const copyingId = ref<number | null>(null)
 const pageNum = ref(1)
+const total = ref(0)
 const hasMore = ref(false)
 const loadingMore = ref(false)
 const categories: Array<[string, string]> = [['FUNNY', '搞笑'], ['ABSTRACT', '抽象'], ['EMOTION', '感情'], ['LITERARY', '文艺'], ['HEALING', '治愈'], ['SOBER', '清醒'], ['SARCASM', '阴阳'], ['OTHER', '其他']]
-
-/**
- * 进入新增内容页面。
- */
-async function createContent() {
-  // 1. 进入受保护的内容编辑页。
-  await router.push({ name: 'content-create' })
-}
 
 /**
  * 切换首页分类，并按当前用户范围重新加载内容。
@@ -55,6 +49,7 @@ async function loadContentPage(append: boolean, targetPage = pageNum.value) {
     const page = await getContentList(targetPage, categoryCode.value)
     contents.value = append ? [...contents.value, ...page.list] : page.list
     pageNum.value = page.pageNum
+    total.value = page.total
     hasMore.value = page.pageNum < page.pages
   } catch (error) {
     // 2. 请求失败时保留当前内容并提示用户。
@@ -120,6 +115,7 @@ async function loadContents() {
   // 2. 写入首页两个独立展示区域。
   contents.value = page.list
   recentContents.value = recent
+  total.value = page.total
   hasMore.value = page.pageNum < page.pages
 }
 
@@ -129,41 +125,266 @@ onMounted(loadContents)
 
 <template>
   <main class="home-page">
-    <p class="eyebrow">FOR NEXT TIME</p>
-    <h1>下次一定</h1>
-    <p class="description">先留下，找得到，用得上。</p>
-    <van-search v-model="keyword" placeholder="找找现在用得上的。" shape="round" @search="openSearch" />
-    <van-button type="primary" block @click="createContent">先留一句</van-button>
-    <section class="recent-section"><h2>最近使用</h2><div v-if="recentContents.length"><article v-for="item in recentContents" :key="item.id" class="recent-item" @click="openDetail(item.id)"><p>{{ item.content }}</p><van-button plain size="small" type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</van-button></article></div><p v-else class="recent-empty">最近还没用上这里的内容。</p></section>
-    <section class="all-content-section"><h2>全部内容</h2><div class="category-scroller"><button :class="{ active: categoryCode === null }" type="button" @click="selectCategory(null)">全部</button><button v-for="category in categories" :key="category[0]" :class="{ active: categoryCode === category[0] }" type="button" @click="selectCategory(category[0])">{{ category[1] }}</button></div><div class="content-list"><article v-for="item in contents" :key="item.id" class="content-card" @click="openDetail(item.id)"><div class="card-top"><van-tag v-if="item.pinned" plain type="warning">置顶</van-tag><span>{{ item.lastCopyTime ? '最近用过' : item.updateTime }}</span></div><p>{{ item.content }}</p><div class="card-footer"><div class="tag-row"><van-tag v-if="item.categoryName" plain type="warning">{{ item.categoryName }}</van-tag><van-tag v-for="tag in item.tags.slice(0, 3)" :key="tag.id" plain type="primary">#{{ tag.name }}</van-tag></div><van-button plain size="small" type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</van-button></div></article></div><p v-if="!contents.length" class="description">这里还空着，先留下一句。</p><van-button v-if="hasMore" class="load-more" block plain round type="primary" :loading="loadingMore" @click="loadMore">加载更多</van-button></section>
+    <header class="home-head">
+      <div class="brand-row">
+        <div class="brand-area"><span class="brand-mark">次</span><div><h1>下次一定</h1><p>先留下，找得到，用得上。</p></div></div>
+        <RouterLink class="profile-link" to="/profile" aria-label="我的"><CircleUserRound :size="21" /></RouterLink>
+      </div>
+      <van-search v-model="keyword" class="home-search" placeholder="找找现在用得上的。" shape="round" @search="openSearch">
+        <template #left-icon><Search :size="19" /></template>
+      </van-search>
+      <div class="category-scroller" aria-label="按分类浏览">
+        <button :class="{ active: categoryCode === null }" type="button" @click="selectCategory(null)">全部</button>
+        <button v-for="category in categories" :key="category[0]" :class="{ active: categoryCode === category[0] }" type="button" @click="selectCategory(category[0])">{{ category[1] }}</button>
+      </div>
+    </header>
+    <div class="home-content">
+      <section class="content-section recent-section">
+        <div class="section-heading"><div><h2>最近使用</h2><p>最近真正拿出去用过的内容</p></div></div>
+        <div v-if="recentContents.length" class="content-list">
+          <article v-for="item in recentContents" :key="item.id" class="content-card" @click="openDetail(item.id)">
+            <div class="card-top"><span v-if="item.pinned" class="pinned-mark">已置顶</span><span>{{ item.lastCopyTime || '刚刚留下' }}</span></div>
+            <p class="content-text">{{ item.content }}</p>
+            <div class="tag-row"><span v-if="item.categoryName" class="card-chip category-chip">{{ item.categoryName }}</span><span v-for="tag in item.tags.slice(0, 3)" :key="tag.id" class="card-chip">#{{ tag.name }}</span></div>
+            <div class="card-footer"><span>{{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '还没用过' }}</span><van-button plain size="small" type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</van-button></div>
+          </article>
+        </div>
+        <p v-else class="recent-empty">最近还没用上这里的内容。</p>
+      </section>
+      <section class="content-section all-content-section">
+        <div class="section-heading"><div><h2>全部内容</h2><p>共留下 {{ total }} 条，慢慢翻，总能翻到。</p></div></div>
+        <div class="content-list">
+          <article v-for="item in contents" :key="item.id" class="content-card" @click="openDetail(item.id)">
+            <div class="card-top"><span v-if="item.pinned" class="pinned-mark">已置顶</span><span>{{ item.lastCopyTime ? '最近用过' : item.updateTime }}</span></div>
+            <p class="content-text">{{ item.content }}</p>
+            <div class="tag-row"><span v-if="item.categoryName" class="card-chip category-chip">{{ item.categoryName }}</span><span v-for="tag in item.tags.slice(0, 3)" :key="tag.id" class="card-chip">#{{ tag.name }}</span></div>
+            <div class="card-footer"><span>{{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '还没用过' }}</span><van-button plain size="small" type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</van-button></div>
+          </article>
+        </div>
+        <p v-if="!contents.length" class="empty-state">这里还空着，先留下一句。</p>
+        <van-button v-if="hasMore" class="load-more" block plain round type="primary" :loading="loadingMore" @click="loadMore">加载更多</van-button>
+      </section>
+    </div>
   </main>
 </template>
 
 <style scoped>
 .home-page {
   min-height: 100vh;
-  padding: 96px 24px;
   background: var(--color-page);
 }
 
-.eyebrow {
-  margin: 0 0 12px;
-  color: var(--color-brand);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
+.home-head {
+  padding: 22px 16px 12px;
+  background: linear-gradient(180deg, #fff7f3 0%, var(--color-page) 100%);
+}
+
+.brand-row,
+.brand-area,
+.card-top,
+.card-footer {
+  display: flex;
+  align-items: center;
+}
+
+.brand-row,
+.card-top,
+.card-footer {
+  justify-content: space-between;
+}
+
+.brand-area {
+  gap: 11px;
+}
+
+.brand-mark {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--color-brand);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  box-shadow: 0 5px 12px rgb(255 111 78 / 22%);
 }
 
 h1 {
   margin: 0;
-  font-size: 32px;
-  letter-spacing: 0.04em;
+  color: var(--color-text-primary);
+  font-size: 22px;
+  letter-spacing: .04em;
 }
 
-.description {
-  margin-top: 16px;
+.brand-area p {
+  margin: 4px 0 0;
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.profile-link {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid #f0dfd9;
+  border-radius: 14px;
+  background: #fff1ec;
+  color: var(--color-brand);
+  text-decoration: none;
+}
+
+.home-search {
+  margin: 16px -8px 0;
+  padding: 0;
+  background: transparent;
+}
+
+.home-search :deep(.van-search__content) {
+  height: 52px;
+  padding: 0 13px;
+  border: 1px solid var(--color-border);
+  border-radius: 17px;
+  background: #fff;
+  box-shadow: 0 5px 14px rgb(31 33 33 / 4%);
+}
+
+.home-search :deep(.van-field__left-icon) {
+  display: flex;
+  align-items: center;
   color: var(--color-muted);
 }
-.recent-section,.all-content-section{margin-top:28px}.recent-section h2,.all-content-section h2{font-size:17px}.recent-item{display:flex;align-items:center;gap:8px;width:100%;margin:8px 0;padding:11px 13px;border:1px solid var(--color-border);border-radius:var(--radius-card);background:var(--color-card)}.recent-item p{flex:1;overflow:hidden;margin:0;color:var(--color-muted);text-align:left;text-overflow:ellipsis;white-space:nowrap}.recent-empty{margin:8px 0 0;color:var(--color-muted);font-size:14px}.category-scroller{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px}.category-scroller button{flex:0 0 auto;padding:7px 12px;border:1px solid var(--color-border);border-radius:999px;background:var(--color-card);color:var(--color-muted)}.category-scroller button.active{border-color:var(--color-brand);background:#fff1ec;color:var(--color-brand)}
-.content-list{margin-top:4px}.content-card{margin-bottom:12px;padding:16px;background:var(--color-card);border:1px solid var(--color-border);border-radius:var(--radius-card);cursor:pointer}.content-card p{min-height:48px;white-space:pre-wrap}.card-top,.card-footer,.tag-row{display:flex;align-items:center;gap:6px}.card-top{justify-content:space-between;color:var(--color-muted);font-size:12px}.card-footer{justify-content:space-between}.tag-row{flex-wrap:wrap}.load-more{margin-top:20px}
+
+.category-scroller {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin: 14px -16px -2px;
+  padding: 0 16px 4px;
+  scrollbar-width: none;
+}
+
+.category-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.category-scroller button {
+  flex: 0 0 auto;
+  padding: 7px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.category-scroller button.active {
+  border-color: #1f2121;
+  background: #1f2121;
+  color: #fff;
+}
+
+.home-content {
+  padding: 0 16px 24px;
+}
+
+.content-section {
+  margin-top: 25px;
+}
+
+.section-heading h2 {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: 17px;
+}
+
+.section-heading p {
+  margin: 5px 0 0;
+  color: var(--color-muted);
+  font-size: 11px;
+}
+
+.content-list {
+  margin-top: 13px;
+}
+
+.content-card {
+  display: flex;
+  min-height: 174px;
+  flex-direction: column;
+  margin-bottom: 12px;
+  padding: 17px;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  background: var(--color-card);
+  box-shadow: 0 6px 16px rgb(31 33 33 / 3%);
+  cursor: pointer;
+}
+
+.card-top,
+.card-footer {
+  color: var(--color-muted);
+  font-size: 11px;
+}
+
+.pinned-mark {
+  color: var(--color-brand);
+  font-weight: 700;
+}
+
+.content-text {
+  display: -webkit-box;
+  flex: 1;
+  overflow: hidden;
+  margin: 14px 0;
+  color: var(--color-text-primary);
+  font-size: 16px;
+  line-height: 1.72;
+  white-space: pre-wrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.card-chip {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #f1f2ef;
+  color: #737878;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.category-chip {
+  background: #fff1ec;
+  color: #cf5a41;
+}
+
+.card-footer {
+  margin-top: 13px;
+}
+
+.card-footer :deep(.van-button) {
+  min-width: 68px;
+  height: 40px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+.recent-empty,
+.empty-state {
+  margin: 13px 0 0;
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
+.load-more {
+  margin-top: 20px;
+}
 </style>
