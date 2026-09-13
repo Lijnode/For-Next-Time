@@ -14,5 +14,15 @@ public interface TagMapper {
 
     int insert(Tag tag);
 
+    /**
+     * 查询当前用户可复用的标签，并按名称升序返回。
+     *
+     * @param userId  当前登录用户主键
+     * @param keyword 可选标签关键词
+     * @param limit   最大返回数量
+     * @return 匹配的用户标签
+     */
+    List<Tag> findList(@Param("userId") Long userId, @Param("keyword") String keyword, @Param("limit") int limit);
+
     List<ContentTagRes> findByContentIds(@Param("contentIds") List<Long> contentIds);
 }

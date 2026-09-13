@@ -13,6 +13,14 @@
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO tag (user_id, name) VALUES (#{userId}, #{name})
     </insert>
+    <select id="findList" resultMap="TagResultMap">
+        SELECT id, user_id, name
+        FROM tag
+        WHERE user_id = #{userId}
+        <if test="keyword != null and keyword != ''">AND name LIKE CONCAT('%', #{keyword}, '%')</if>
+        ORDER BY name ASC
+        LIMIT #{limit}
+    </select>
     <select id="findByContentIds" resultType="com.fornexttime.content.res.ContentTagRes">
         SELECT ct.content_id AS contentId, t.id, t.name
         FROM content_tag ct INNER JOIN tag t ON t.id = ct.tag_id

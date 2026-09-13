@@ -2,12 +2,15 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { createContent, getContentDetail, updateContent } from '../../api/content'
+import { getTagList, type TagItem } from '../../api/tag'
 import { showError, showSuccess } from '../../platform/feedback'
 
 const route = useRoute()
 const router = useRouter()
 const form = reactive({ content: '', categoryCode: null as string | null, tagNames: [] as string[], remark: '' })
 const tagInput = ref('')
+const suggestedTags = ref<TagItem[]>([])
+const tagLoading = ref(false)
 const showMore = ref(false)
 const showCategorySheet = ref(false)
 const showTagSheet = ref(false)
@@ -49,6 +52,33 @@ async function loadEditingContent() {
 }
 
 /**
+ * 查询当前用户已有标签，为移动端标签面板提供可复用建议。
+ */
+async function loadTags(keyword = tagInput.value) {
+  // 1. 发起标签查询并标记建议区域加载状态。
+  tagLoading.value = true
+  try {
+    suggestedTags.value = await getTagList(keyword)
+  } catch {
+    // 2. 查询失败时不影响手动输入新标签的主流程。
+    suggestedTags.value = []
+  } finally {
+    // 3. 无论成功或失败都结束建议区域加载状态。
+    tagLoading.value = false
+  }
+}
+
+/**
+ * 打开标签 Bottom Sheet 并加载当前用户已有标签。
+ */
+function openTagSheet() {
+  // 1. 展开移动端标签选择面板。
+  showTagSheet.value = true
+  // 2. 异步加载默认标签建议，不阻塞面板展示。
+  void loadTags()
+}
+
+/**
  * 从分类 Bottom Sheet 选择分类或清空分类。
  */
 function selectCategory(action: { value: string | null }) {
@@ -68,6 +98,15 @@ function addTag() {
   // 2. 加入标签并清空输入框。
   form.tagNames.push(tag)
   tagInput.value = ''
+}
+
+/**
+ * 点选已有标签并加入当前内容表单。
+ */
+function selectSuggestedTag(tagName: string) {
+  // 1. 将建议标签写入现有输入后复用统一添加逻辑。
+  tagInput.value = tagName
+  addTag()
 }
 
 /**
@@ -113,11 +152,11 @@ onMounted(loadEditingContent)
   <main class="create-page"><header><button type="button" @click="router.back()">‹</button><h1>{{ isEditing ? '修改这一句' : '先留一句' }}</h1></header>
     <van-loading v-if="initialLoading" class="loading" vertical>正在载入内容……</van-loading><van-form v-else @submit="submit"><van-cell-group inset><van-field v-model="form.content" type="textarea" rows="7" maxlength="5000" show-word-limit label="正文 *" placeholder="粘贴你想以后再用的内容……" :rules="[{ required: true, message: '请填写正文' }]" />
       <van-field :model-value="categories.find((item) => item[0] === form.categoryCode)?.[1] ?? '不分类'" label="分类" is-link readonly @click="showCategorySheet = true" />
-      <van-field :model-value="form.tagNames.length ? `${form.tagNames.length} 个标签` : '添加标签'" label="标签" is-link readonly @click="showTagSheet = true" /><div class="tags"><van-tag v-for="tag in form.tagNames" :key="tag" closeable type="primary" @close="removeTag(tag)">#{{ tag }}</van-tag></div>
+      <van-field :model-value="form.tagNames.length ? `${form.tagNames.length} 个标签` : '添加标签'" label="标签" is-link readonly @click="openTagSheet" /><div class="tags"><van-tag v-for="tag in form.tagNames" :key="tag" closeable type="primary" @close="removeTag(tag)">#{{ tag }}</van-tag></div>
     </van-cell-group><button class="more" type="button" @click="showMore = !showMore">更多信息</button><van-cell-group v-if="showMore" inset><van-field v-model="form.remark" type="textarea" rows="3" maxlength="1000" label="备注" /></van-cell-group><p v-if="errorMessage" class="error">{{ errorMessage }}</p><div class="save"><van-button block round type="primary" native-type="submit" :loading="loading">{{ isEditing ? '保存修改' : '保存' }}</van-button></div></van-form>
-    <van-action-sheet v-model:show="showCategorySheet" :actions="categoryActions" @select="selectCategory" /><van-action-sheet v-model:show="showTagSheet" title="标签"><div class="tag-sheet"><van-field v-model="tagInput" placeholder="输入标签后添加" @keyup.enter="addTag" /><van-button block type="primary" @click="addTag">添加标签</van-button><div class="tags"><van-tag v-for="tag in form.tagNames" :key="tag" closeable type="primary" @close="removeTag(tag)">#{{ tag }}</van-tag></div></div></van-action-sheet></main>
+    <van-action-sheet v-model:show="showCategorySheet" :actions="categoryActions" @select="selectCategory" /><van-action-sheet v-model:show="showTagSheet" title="标签"><div class="tag-sheet"><van-field v-model="tagInput" placeholder="输入标签后添加" @update:model-value="loadTags" @keyup.enter="addTag" /><van-button block type="primary" @click="addTag">添加标签</van-button><p v-if="suggestedTags.length || tagLoading" class="suggestion-title">已有标签</p><div v-if="suggestedTags.length || tagLoading" class="tags suggestions"><van-tag v-for="tag in suggestedTags" :key="tag.id" plain type="primary" @click="selectSuggestedTag(tag.name)">#{{ tag.name }}</van-tag><span v-if="tagLoading">加载中…</span></div><div class="tags"><van-tag v-for="tag in form.tagNames" :key="tag" closeable type="primary" @close="removeTag(tag)">#{{ tag }}</van-tag></div></div></van-action-sheet></main>
 </template>
 
 <style scoped>
-.create-page{min-height:100vh;padding:calc(12px + env(safe-area-inset-top)) 0 32px}.create-page header{display:flex;align-items:center;padding:0 16px 18px}.create-page h1{margin:0 auto;font-size:18px}.create-page header button,.more{border:0;background:none;color:var(--color-brand);font:inherit}.create-page header button{font-size:28px}.tags{display:flex;flex-wrap:wrap;gap:8px;padding:8px 16px 16px}.tag-sheet{padding:16px}.more{margin:16px}.save{margin:28px 16px 0}.loading{padding:80px 0}.error{margin:16px;color:var(--color-danger)}
+.create-page{min-height:100vh;padding:calc(12px + env(safe-area-inset-top)) 0 32px}.create-page header{display:flex;align-items:center;padding:0 16px 18px}.create-page h1{margin:0 auto;font-size:18px}.create-page header button,.more{border:0;background:none;color:var(--color-brand);font:inherit}.create-page header button{font-size:28px}.tags{display:flex;flex-wrap:wrap;gap:8px;padding:8px 16px 16px}.tag-sheet{padding:16px}.suggestion-title{margin:16px 0 0;color:var(--color-muted);font-size:13px}.suggestions{padding-left:0;padding-right:0}.more{margin:16px}.save{margin:28px 16px 0}.loading{padding:80px 0}.error{margin:16px;color:var(--color-danger)}
 </style>
