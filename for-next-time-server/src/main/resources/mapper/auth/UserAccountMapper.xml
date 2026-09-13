@@ -8,13 +8,26 @@
         <id property="id" column="id"/>
         <result property="username" column="username"/>
         <result property="passwordHash" column="password_hash"/>
+        <result property="createTime" column="create_time"/>
     </resultMap>
 
     <select id="findByUsername" resultMap="UserAccountResultMap">
-        SELECT id, username, password_hash
+        SELECT id, username, password_hash, create_time
         FROM user_account
         WHERE username = #{username}
     </select>
+    <select id="findById" resultMap="UserAccountResultMap">
+        SELECT id, username, password_hash, create_time
+        FROM user_account
+        WHERE id = #{id}
+    </select>
+
+    <update id="updatePasswordHash">
+        UPDATE user_account
+        SET password_hash = #{passwordHash},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO user_account (username, password_hash)

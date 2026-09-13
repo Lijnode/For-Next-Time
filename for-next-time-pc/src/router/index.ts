@@ -6,6 +6,8 @@ import ContentCreateView from '../views/content/ContentCreateView.vue'
 import ContentDetailView from '../views/content/ContentDetailView.vue'
 import ContentSearchView from '../views/content/ContentSearchView.vue'
 import HomeView from '../views/home/HomeView.vue'
+import ChangePasswordView from '../views/user/ChangePasswordView.vue'
+import ProfileView from '../views/user/ProfileView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -30,6 +32,8 @@ const router = createRouter({
     { path: '/contents/:id/edit', name: 'content-edit', component: ContentCreateView, meta: { requiresAuth: true } },
     { path: '/search', name: 'content-search', component: ContentSearchView, meta: { requiresAuth: true } },
     { path: '/contents/:id', name: 'content-detail', component: ContentDetailView, meta: { requiresAuth: true } },
+    { path: '/profile', name: 'profile', component: ProfileView, meta: { requiresAuth: true } },
+    { path: '/password', name: 'password-change', component: ChangePasswordView, meta: { requiresAuth: true } },
   ],
 })
 

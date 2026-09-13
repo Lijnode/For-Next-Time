@@ -84,6 +84,14 @@ public interface ContentMapper {
     int updatePinned(@Param("id") Long id, @Param("userId") Long userId, @Param("pinned") boolean pinned);
 
     /**
+     * 统计当前用户未被逻辑删除的内容数量。
+     *
+     * @param userId 当前登录用户主键
+     * @return 可用内容数量
+     */
+    long countActiveByUserId(@Param("userId") Long userId);
+
+    /**
      * 查询当前用户最近成功复制的内容。
      *
      * @param userId 当前登录用户主键

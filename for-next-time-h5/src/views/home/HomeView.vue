@@ -29,6 +29,14 @@ async function createContent() {
 }
 
 /**
+ * 进入当前登录用户的个人资料页。
+ */
+async function openProfile() {
+  // 1. 进入受保护的个人资料路由。
+  await router.push({ name: 'profile' })
+}
+
+/**
  * 打开用户轻触的内容详情。
  */
 async function openDetail(id: number) {
@@ -69,6 +77,7 @@ onMounted(loadContents)
     <p class="description">先留下，找得到，用得上。</p>
     <van-search v-model="keyword" placeholder="找找现在用得上的。" shape="round" @search="openSearch" />
     <van-button type="primary" block @click="createContent">先留一句</van-button>
+    <van-button plain type="primary" @click="openProfile">我的</van-button>
     <van-button plain type="primary" @click="logout">退出登录</van-button>
     <section v-if="recentContents.length" class="recent-section"><h2>最近使用</h2><button v-for="item in recentContents" :key="item.id" type="button" class="recent-item" @click="openDetail(item.id)">{{ item.content }}</button></section>
     <section class="content-list"><article v-for="item in contents" :key="item.id" class="content-card" @click="openDetail(item.id)"><p>{{ item.content }}</p><van-tag v-for="tag in item.tags" :key="tag.id" type="primary">#{{ tag.name }}</van-tag></article><p v-if="!contents.length" class="description">这里还空着，先留下一句。</p></section>

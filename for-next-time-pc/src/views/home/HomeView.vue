@@ -29,6 +29,14 @@ async function createContent() {
 }
 
 /**
+ * 进入当前登录用户的个人资料页。
+ */
+async function openProfile() {
+  // 1. 进入受保护的个人资料路由。
+  await router.push({ name: 'profile' })
+}
+
+/**
  * 打开用户选中的内容详情。
  */
 async function openDetail(id: number) {
@@ -70,6 +78,7 @@ onMounted(loadContents)
       <p>这次先留着，下次一定用得上。</p>
       <div class="search-entry"><el-input v-model="keyword" placeholder="找找现在用得上的。" clearable @keyup.enter="openSearch"><template #append><el-button @click="openSearch">搜索</el-button></template></el-input></div>
       <el-button type="primary" @click="createContent">先留一句</el-button>
+      <el-button text type="primary" @click="openProfile">我的</el-button>
       <el-button text type="primary" @click="logout">退出登录</el-button>
     </section>
     <section v-if="recentContents.length" class="recent-section"><h2>最近使用</h2><div class="recent-list"><button v-for="item in recentContents" :key="item.id" type="button" @click="openDetail(item.id)">{{ item.content }}</button></div></section>
