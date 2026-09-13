@@ -9,18 +9,16 @@ import { showError, showSuccess } from '../../platform/feedback'
 const route = useRoute()
 const router = useRouter()
 const keyword = ref(typeof route.query.keyword === 'string' ? route.query.keyword : '')
-const categoryCode = ref<string | null>(null)
 const contents = ref<ContentListItem[]>([])
 const loading = ref(false)
 const copyingId = ref<number | null>(null)
 const pageNum = ref(1)
 const hasMore = ref(false)
 const loadingMore = ref(false)
-const categories: Array<[string, string]> = [['FUNNY', '搞笑'], ['ABSTRACT', '抽象'], ['EMOTION', '感情'], ['LITERARY', '文艺'], ['HEALING', '治愈'], ['SOBER', '清醒'], ['SARCASM', '阴阳'], ['OTHER', '其他']]
 let searchTimer: ReturnType<typeof setTimeout> | undefined
 
 /**
- * 立即请求当前关键词与分类组合的搜索结果。
+ * 立即请求当前关键词对应的搜索结果。
  */
 async function executeSearch() {
   // 1. 清理关键词；空关键词时清空结果而不请求接口。
@@ -30,7 +28,7 @@ async function executeSearch() {
     hasMore.value = false
     return
   }
-  // 2. 关键词或分类变动后从第一页开始查询。
+  // 2. 关键词变动后从第一页开始查询。
   pageNum.value = 1
   await loadSearchPage(false)
 }
@@ -46,7 +44,7 @@ async function loadMore() {
 }
 
 /**
- * 加载当前关键词、分类和页码对应的搜索结果。
+ * 加载当前关键词和页码对应的搜索结果。
  */
 async function loadSearchPage(append: boolean, targetPage = pageNum.value) {
   // 1. 空关键词不请求接口，保持搜索结果为空。
@@ -56,7 +54,7 @@ async function loadSearchPage(append: boolean, targetPage = pageNum.value) {
   loading.value = !append
   loadingMore.value = append
   try {
-    const page = await searchContents(normalizedKeyword, targetPage, categoryCode.value)
+    const page = await searchContents(normalizedKeyword, targetPage)
     contents.value = append ? [...contents.value, ...page.list] : page.list
     pageNum.value = page.pageNum
     hasMore.value = page.pageNum < page.pages
@@ -70,7 +68,7 @@ async function loadSearchPage(append: boolean, targetPage = pageNum.value) {
 }
 
 /**
- * 对输入变化进行 400ms 防抖，减少连续输入产生的请求。
+ * 对关键词输入进行 400ms 防抖，减少连续输入产生的请求。
  */
 function scheduleSearch() {
   // 1. 清除尚未执行的旧搜索任务。
@@ -114,8 +112,8 @@ async function copyContent(item: ContentListItem) {
   }
 }
 
-// 1. 关键词和分类变化时统一走防抖搜索。
-watch([keyword, categoryCode], scheduleSearch)
+// 1. 关键词变化时统一走防抖搜索。
+watch(keyword, scheduleSearch)
 // 2. 带关键词进入页面时立即执行首次搜索。
 onMounted(() => void executeSearch())
 // 3. 页面离开时清理尚未执行的定时任务。
@@ -126,12 +124,11 @@ onBeforeUnmount(() => { if (searchTimer) clearTimeout(searchTimer) })
   <main class="search-page">
     <header class="top-bar"><button type="button" aria-label="返回" @click="router.back()"><ArrowLeft :size="21" /></button><h1>找一句</h1><span aria-hidden="true"></span></header>
     <van-search v-model="keyword" class="search-input" placeholder="搜索正文、备注、标签或分类" shape="round" @search="executeSearch"><template #left-icon><Search :size="19" /></template><template #right-icon><button class="search-button" type="button" aria-label="搜索" @click="executeSearch"><Search :size="18" /></button></template></van-search>
-    <div class="category-scroller"><button :class="{ active: categoryCode === null }" type="button" @click="categoryCode = null">全部</button><button v-for="category in categories" :key="category[0]" :class="{ active: categoryCode === category[0] }" type="button" @click="categoryCode = category[0]">{{ category[1] }}</button></div>
     <van-loading v-if="loading" class="loading" vertical>正在翻找……</van-loading><p v-else-if="keyword.trim() && !contents.length" class="empty-message">这次没翻到合适的。</p>
     <section class="content-list"><article v-for="item in contents" :key="item.id" class="content-card" @click="openDetail(item.id)"><div class="card-top"><span v-if="item.pinned" class="pinned-mark">已置顶</span><span>{{ item.lastCopyTime ? '最近用过' : item.updateTime }}</span></div><p class="content-text">{{ item.content }}</p><div class="tag-row"><span v-if="item.categoryName" class="tag category-tag">{{ item.categoryName }}</span><span v-for="tag in item.tags.slice(0, 3)" :key="tag.id" class="tag">#{{ tag.name }}</span></div><div class="card-footer"><span>{{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '还没用过' }}</span><van-button plain size="small" type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</van-button></div></article><van-button v-if="hasMore" class="load-more" block plain round type="primary" :loading="loadingMore" @click="loadMore">加载更多</van-button></section>
   </main>
 </template>
 
 <style scoped>
-.search-page { min-height: 100vh; padding: calc(12px + env(safe-area-inset-top)) 0 32px; }.top-bar { display: grid; grid-template-columns: 42px 1fr 42px; align-items: center; padding: 0 16px 8px; }.top-bar button { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid var(--color-border); border-radius: 12px; background: #fff; color: var(--color-text-primary); }.top-bar h1 { margin: 0; color: var(--color-text-primary); font-size: 18px; text-align: center; }.search-input { padding: 8px 8px 0; background: transparent; }.search-input :deep(.van-search__content) { height: 52px; padding: 0 13px; border: 1px solid var(--color-border); border-radius: 17px; background: #fff; box-shadow: 0 5px 14px rgb(31 33 33 / 4%); }.search-input :deep(.van-field__left-icon) { display: flex; align-items: center; color: var(--color-muted); }.search-button { display: grid; width: 34px; height: 34px; place-items: center; border: 0; border-radius: 12px; background: var(--color-brand); color: #fff; }.category-scroller { display: flex; gap: 8px; overflow-x: auto; padding: 14px 16px 16px; scrollbar-width: none; }.category-scroller::-webkit-scrollbar { display: none; }.category-scroller button { flex: 0 0 auto; padding: 7px 12px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-card); color: var(--color-muted); font-size: 12px; }.category-scroller button.active { border-color: #1f2121; background: #1f2121; color: #fff; }.loading { padding: 64px 0; }.empty-message { margin: 48px 0; color: var(--color-muted); text-align: center; }.content-list { padding: 0 16px; }.content-card { display: flex; min-height: 174px; flex-direction: column; margin-bottom: 12px; padding: 17px; border: 1px solid var(--color-border); border-radius: 20px; background: var(--color-card); box-shadow: 0 6px 16px rgb(31 33 33 / 3%); }.card-top, .card-footer { display: flex; align-items: center; justify-content: space-between; color: var(--color-muted); font-size: 11px; }.pinned-mark { color: var(--color-brand); font-weight: 700; }.content-text { display: -webkit-box; flex: 1; overflow: hidden; margin: 14px 0; color: var(--color-text-primary); font-size: 16px; line-height: 1.72; white-space: pre-wrap; -webkit-box-orient: vertical; -webkit-line-clamp: 4; }.tag-row { display: flex; flex-wrap: wrap; gap: 6px; }.tag { padding: 5px 8px; border-radius: 999px; background: #f1f2ef; color: #737878; font-size: 11px; line-height: 1; }.category-tag { background: #fff1ec; color: #cf5a41; }.card-footer { margin-top: 13px; }.card-footer :deep(.van-button) { min-width: 68px; height: 40px; border-radius: 12px; font-weight: 700; }.load-more { margin-top: 20px; }
+.search-page { min-height: 100vh; padding: calc(12px + env(safe-area-inset-top)) 0 32px; }.top-bar { display: grid; grid-template-columns: 42px 1fr 42px; align-items: center; padding: 0 16px 8px; }.top-bar button { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid var(--color-border); border-radius: 12px; background: #fff; color: var(--color-text-primary); }.top-bar h1 { margin: 0; color: var(--color-text-primary); font-size: 18px; text-align: center; }.search-input { padding: 8px 8px 16px; background: transparent; }.search-input :deep(.van-search__content) { height: 52px; padding: 0 13px; border: 1px solid var(--color-border); border-radius: 17px; background: #fff; box-shadow: 0 5px 14px rgb(31 33 33 / 4%); }.search-input :deep(.van-field__left-icon) { display: flex; align-items: center; color: var(--color-muted); }.search-button { display: grid; width: 34px; height: 34px; place-items: center; border: 0; border-radius: 12px; background: var(--color-brand); color: #fff; }.loading { padding: 64px 0; }.empty-message { margin: 48px 0; color: var(--color-muted); text-align: center; }.content-list { padding: 0 16px; }.content-card { display: flex; min-height: 174px; flex-direction: column; margin-bottom: 12px; padding: 17px; border: 1px solid var(--color-border); border-radius: 20px; background: var(--color-card); box-shadow: 0 6px 16px rgb(31 33 33 / 3%); }.card-top, .card-footer { display: flex; align-items: center; justify-content: space-between; color: var(--color-muted); font-size: 11px; }.pinned-mark { color: var(--color-brand); font-weight: 700; }.content-text { display: -webkit-box; flex: 1; overflow: hidden; margin: 14px 0; color: var(--color-text-primary); font-size: 16px; line-height: 1.72; white-space: pre-wrap; -webkit-box-orient: vertical; -webkit-line-clamp: 4; }.tag-row { display: flex; flex-wrap: wrap; gap: 6px; }.tag { padding: 5px 8px; border-radius: 999px; background: #f1f2ef; color: #737878; font-size: 11px; line-height: 1; }.category-tag { background: #fff1ec; color: #cf5a41; }.card-footer { margin-top: 13px; }.card-footer :deep(.van-button) { min-width: 68px; height: 40px; border-radius: 12px; font-weight: 700; }.load-more { margin-top: 20px; }
 </style>
