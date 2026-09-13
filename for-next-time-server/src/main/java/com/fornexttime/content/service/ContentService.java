@@ -185,11 +185,12 @@ public class ContentService {
      * 查询当前用户最近成功复制过的内容。
      *
      * @param limit 最大返回数量
+     * @param offset 跳过的最近使用数量
      * @return 统一内容列表响应
      */
-    public List<ContentListRes> recent(int limit) {
-        // 1. 仅查询当前用户未删除且存在复制时间的内容。
-        List<Content> contents = contentMapper.findRecent(UserContext.requireUserId(), limit);
+    public List<ContentListRes> recent(int limit, int offset) {
+        // 1. 仅查询当前用户未删除且存在复制时间的一段内容。
+        List<Content> contents = contentMapper.findRecent(UserContext.requireUserId(), offset, limit);
         // 2. 批量组装标签和分类展示数据。
         return toListRes(contents);
     }

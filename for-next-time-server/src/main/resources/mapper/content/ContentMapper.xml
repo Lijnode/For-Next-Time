@@ -105,6 +105,6 @@
         FROM content
         WHERE user_id = #{userId} AND deleted = 0 AND last_copy_time IS NOT NULL
         ORDER BY last_copy_time DESC
-        LIMIT #{limit}
+        LIMIT #{offset}, #{limit}
     </select>
 </mapper>

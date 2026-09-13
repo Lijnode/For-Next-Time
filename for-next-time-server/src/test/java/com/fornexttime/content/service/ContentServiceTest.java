@@ -71,4 +71,13 @@ class ContentServiceTest {
         assertEquals(ErrorCode.CONTENT_EXISTS, exception.getErrorCode());
         verify(contentMapper, never()).update(eq(8L), eq(1L), any(), any(), any());
     }
+
+    @Test
+    void queriesRecentContentsWithTheRequestedOffset() {
+        when(contentMapper.findRecent(1L, 10, 10)).thenReturn(List.of());
+
+        contentService.recent(10, 10);
+
+        verify(contentMapper).findRecent(1L, 10, 10);
+    }
 }

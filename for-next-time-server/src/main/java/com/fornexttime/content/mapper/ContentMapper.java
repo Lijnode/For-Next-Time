@@ -106,10 +106,11 @@ public interface ContentMapper {
      * 查询当前用户最近成功复制的内容。
      *
      * @param userId 当前登录用户主键
+     * @param offset 跳过的最近使用数量
      * @param limit  最大返回数量
      * @return 按最近复制时间倒序的内容
      */
-    List<Content> findRecent(@Param("userId") Long userId, @Param("limit") int limit);
+    List<Content> findRecent(@Param("userId") Long userId, @Param("offset") int offset, @Param("limit") int limit);
 
     List<Content> findPage(@Param("userId") Long userId, @Param("categoryCode") String categoryCode,
                            @Param("pinned") Boolean pinned, @Param("offset") int offset, @Param("pageSize") int pageSize);

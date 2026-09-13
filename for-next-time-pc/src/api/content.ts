@@ -100,9 +100,9 @@ export async function recordCopy(id: number) {
 /**
  * 获取当前用户最近成功复制的内容。
  */
-export async function getRecentContents() {
-  // 1. 请求默认五条最近使用内容。
-  const response = await request.get<ContentListItem[]>('/contents/recent')
+export async function getRecentContents(limit = 5, offset = 0) {
+  // 1. 请求指定数量和偏移量的最近使用内容。
+  const response = await request.get<ContentListItem[]>('/contents/recent', { params: { limit, offset } })
   // 2. 返回最近使用内容数组。
   return response.data
 }

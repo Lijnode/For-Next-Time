@@ -10,22 +10,43 @@ const router = useRouter()
 const recentContents = ref<ContentListItem[]>([])
 const loading = ref(true)
 const copyingId = ref<number | null>(null)
+const loadingMore = ref(false)
+const hasMore = ref(true)
+const offset = ref(0)
+const pageSize = 10
 
 /**
- * 加载当前用户最近成功复制过的内容。
+ * 加载当前用户最近成功复制过的一页内容，并在需要时追加到列表。
+ *
+ * @param append 是否在已有列表后继续加载
  */
-async function loadRecentContents() {
-  // 1. 进入独立历史页后再请求最近使用数据，避免首页首屏冗余加载。
-  loading.value = true
+async function loadRecentContents(append = false) {
+  // 1. 首屏和后续滚动使用各自的加载状态，避免重复请求。
+  if (append && (!hasMore.value || loadingMore.value)) return
+  if (append) loadingMore.value = true
+  else loading.value = true
   try {
-    recentContents.value = await getRecentContents()
+    // 2. 按十条一组获取最近使用内容，并追加后续页面。
+    const items = await getRecentContents(pageSize, append ? offset.value : 0)
+    recentContents.value = append ? [...recentContents.value, ...items] : items
+    offset.value = (append ? offset.value : 0) + items.length
+    hasMore.value = items.length === pageSize
   } catch (error) {
-    // 2. 请求失败时保留空列表并给出可理解的反馈。
+    // 3. 请求失败时保留已加载内容，并给出可理解的反馈。
     showError(error instanceof Error ? error.message : '加载最近使用失败，请稍后重试')
   } finally {
-    // 3. 无论请求结果如何都结束页面加载状态。
+    // 4. 无论请求结果如何都结束对应的加载状态。
     loading.value = false
+    loadingMore.value = false
   }
+}
+
+/**
+ * 在用户滚动接近页面底部时自动请求下一批最近使用内容。
+ */
+async function loadMore() {
+  // 1. 将 Vant List 的触底事件转交给追加加载逻辑。
+  await loadRecentContents(true)
 }
 
 /**
@@ -77,7 +98,7 @@ async function openDetail(id: number) {
   await router.push({ name: 'content-detail', params: { id } })
 }
 
-// 1. 页面进入时按需加载最近使用数据。
+// 1. 页面进入时先加载十条最近使用数据。
 onMounted(loadRecentContents)
 </script>
 
@@ -89,13 +110,13 @@ onMounted(loadRecentContents)
       <van-loading v-if="loading" class="loading-state" vertical>正在翻找最近用过的内容</van-loading>
       <template v-else>
         <p v-if="!recentContents.length" class="empty-state">最近还没用上这里的内容。</p>
-        <div v-else class="recent-list">
+        <van-list v-else class="recent-list" v-model:loading="loadingMore" :finished="!hasMore" finished-text="" :offset="120" @load="loadMore">
           <article v-for="item in recentContents" :key="item.id" class="recent-item" @click="openDetail(item.id)">
             <div class="item-heading"><span class="item-time"><Clock3 :size="14" />{{ formatRecentTime(item.lastCopyTime) }}</span></div>
             <p class="item-content">{{ item.content }}</p>
             <footer class="item-footer"><span>已用 {{ item.copyCount }} 次</span><van-button plain size="small" type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</van-button></footer>
           </article>
-        </div>
+        </van-list>
       </template>
     </section>
   </main>

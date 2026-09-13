@@ -88,13 +88,15 @@ public class ContentController {
     /**
      * 获取当前用户最近成功复制过的内容。
      *
-     * @param limit 最大返回数量，默认五条
+     * @param limit  最大返回数量，默认五条
+     * @param offset 跳过的最近使用数量，默认不跳过
      * @return 最近使用内容列表
      */
     @GetMapping("/recent")
-    public Result<List<ContentListRes>> recent(@RequestParam(defaultValue = "5") @Min(1) @Max(20) int limit) {
+    public Result<List<ContentListRes>> recent(@RequestParam(defaultValue = "5") @Min(1) @Max(20) int limit,
+                                                @RequestParam(defaultValue = "0") @Min(0) int offset) {
         // 1. 交由服务按最近复制时间查询当前用户内容。
-        return Result.success(contentService.recent(limit));
+        return Result.success(contentService.recent(limit, offset));
     }
 
     /**
