@@ -366,12 +366,15 @@ h1 {
 }
 
 .recent-panel {
-  padding-left: 22px;
-  border-left: 1px solid var(--color-border);
+  padding: 20px;
+  border: 1px solid #f0dfd9;
+  border-radius: 20px;
+  background: #fff8f5;
+  box-shadow: 0 8px 20px rgb(31 33 33 / 3%);
 }
 
 .recent-list {
-  margin-top: 17px;
+  margin-top: 14px;
 }
 
 .recent-quick-item {
@@ -379,7 +382,7 @@ h1 {
   grid-template-columns: 26px minmax(0, 1fr);
   gap: 10px;
   padding: 15px 0;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid #efdfda;
   cursor: pointer;
   transition: color .18s ease;
 }
@@ -615,7 +618,7 @@ h1 {
   }
 
   .recent-panel {
-    padding-left: 18px;
+    padding: 18px;
   }
 }
 
@@ -626,13 +629,11 @@ h1 {
   }
 
   .recent-panel {
-    padding: 0;
-    border-top: 1px solid var(--color-border);
-    border-left: 0;
+    padding: 20px;
   }
 
   .recent-panel .section-heading {
-    padding-top: 28px;
+    padding-top: 0;
   }
 
   .recent-list {
