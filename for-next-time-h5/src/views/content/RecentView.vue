@@ -91,7 +91,7 @@ onMounted(loadRecentContents)
         <p v-if="!recentContents.length" class="empty-state">最近还没用上这里的内容。</p>
         <div v-else class="recent-list">
           <article v-for="item in recentContents" :key="item.id" class="recent-item" @click="openDetail(item.id)">
-            <div class="item-heading"><span class="item-time"><Clock3 :size="14" />{{ formatRecentTime(item.lastCopyTime) }}</span><span v-if="item.pinned" class="pinned-mark">已置顶</span></div>
+            <div class="item-heading"><span class="item-time"><Clock3 :size="14" />{{ formatRecentTime(item.lastCopyTime) }}</span></div>
             <p class="item-content">{{ item.content }}</p>
             <footer class="item-footer"><span>已用 {{ item.copyCount }} 次</span><van-button plain size="small" type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</van-button></footer>
           </article>
@@ -106,5 +106,5 @@ onMounted(loadRecentContents)
 .recent-header { padding: 18px 16px 14px; border-bottom: 1px solid var(--color-border); background: #fffaf7; }
 h1 { margin: 0; color: var(--color-text-primary); font-size: 20px; letter-spacing: .02em; }
 .recent-content { padding: 20px 16px 30px; }.loading-state { padding-top: 88px; color: var(--color-muted); }.empty-state { margin: 48px 0; color: var(--color-muted); font-size: 14px; text-align: center; }
-.recent-list { border-top: 1px solid var(--color-border); }.recent-item { padding: 17px 0 16px; border-bottom: 1px solid var(--color-border); cursor: pointer; }.item-heading, .item-footer { display: flex; align-items: center; }.item-time, .item-footer { color: var(--color-muted); font-size: 11px; }.item-time { display: inline-flex; gap: 4px; align-items: center; }.pinned-mark { margin-left: auto; color: var(--color-brand); font-size: 11px; font-weight: 700; }.item-content { display: -webkit-box; overflow: hidden; margin: 11px 0; color: var(--color-text-primary); font-size: 16px; line-height: 1.65; white-space: pre-wrap; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }.item-footer { justify-content: space-between; margin-top: 13px; }.item-footer :deep(.van-button) { min-width: 68px; height: 38px; border-radius: 12px; font-weight: 700; }
+.recent-list { border-top: 1px solid var(--color-border); }.recent-item { padding: 17px 0 16px; border-bottom: 1px solid var(--color-border); cursor: pointer; }.item-heading, .item-footer { display: flex; align-items: center; }.item-time, .item-footer { color: var(--color-muted); font-size: 11px; }.item-time { display: inline-flex; gap: 4px; align-items: center; }.item-content { display: -webkit-box; overflow: hidden; margin: 11px 0; color: var(--color-text-primary); font-size: 16px; line-height: 1.65; white-space: pre-wrap; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }.item-footer { justify-content: space-between; margin-top: 13px; }.item-footer :deep(.van-button) { min-width: 68px; height: 38px; border-radius: 12px; font-weight: 700; }
 </style>
