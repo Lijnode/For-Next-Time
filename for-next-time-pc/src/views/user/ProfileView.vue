@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { House, KeyRound, LogOut } from 'lucide-vue-next'
 import { getUserProfile, type UserProfile } from '../../api/user'
 import { useAuthStore } from '../../stores/auth'
 
@@ -56,33 +57,16 @@ onMounted(loadProfile)
 <template>
   <main class="profile-page">
     <section class="profile-card" v-loading="loading">
-      <p class="eyebrow">MY SPACE</p>
-      <h1>我的</h1>
       <template v-if="profile">
-        <dl>
-          <div><dt>用户名</dt><dd>{{ profile.username }}</dd></div>
-          <div><dt>已留内容</dt><dd>{{ profile.contentCount }} 条</dd></div>
-          <div><dt>加入时间</dt><dd>{{ profile.createTime }}</dd></div>
-        </dl>
-        <div class="actions">
-          <el-button type="primary" @click="openPasswordForm">修改密码</el-button>
-          <el-button @click="backHome">返回首页</el-button>
-          <el-button text type="danger" @click="logout">退出登录</el-button>
-        </div>
-        <section class="about-section"><p class="section-label">关于下次一定</p><p>这次先留着，下次一定用得上。</p></section>
+        <div class="profile-head"><span class="profile-mark">{{ profile.username.slice(0, 1) }}</span><div><h1>{{ profile.username }}</h1><p>已经留下 {{ profile.contentCount }} 条内容</p></div></div>
+        <div class="menu"><div class="menu-item"><span>内容总数</span><strong>{{ profile.contentCount }}</strong></div><button class="menu-item" type="button" @click="openPasswordForm"><span>修改密码</span><KeyRound :size="17" /></button><div class="menu-item"><span>加入时间</span><strong>{{ profile.createTime }}</strong></div></div>
+        <section class="about-section"><p>关于下次一定</p><span>这次先留着，下次一定用得上。</span></section>
+        <div class="actions"><el-button @click="backHome"><House :size="16" />返回首页</el-button><el-button class="logout-button" text @click="logout"><LogOut :size="16" />退出登录</el-button></div>
       </template>
     </section>
   </main>
 </template>
 
 <style scoped>
-.profile-page { width: min(760px, calc(100% - 64px)); margin: 0 auto; padding: 96px 0; }
-.profile-card { padding: 48px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-xl); box-shadow: 0 16px 36px rgb(32 35 34 / 7%); }
-.eyebrow { margin: 0; color: var(--color-brand); font-size: 12px; font-weight: 700; letter-spacing: .16em; }
-h1 { margin: 12px 0 32px; font-size: 30px; }
-dl { margin: 0; }
-dl div { display: flex; justify-content: space-between; padding: 18px 0; border-top: 1px solid var(--color-border); }
-dt { color: var(--color-text-secondary); } dd { margin: 0; font-weight: 600; }
-.actions { display: flex; gap: 12px; margin-top: 32px; }
-.about-section { margin-top: 38px; padding-top: 22px; border-top: 1px solid var(--color-divider); }.section-label { margin: 0; color: var(--color-text-primary); font-weight: 600; }.about-section p:last-child { margin: 8px 0 0; color: var(--color-text-secondary); }
+.profile-page { width: min(760px, calc(100% - 64px)); margin: 0 auto; padding: 42px 0 72px; }.profile-card { padding: 32px; border: 1px solid var(--color-border); border-radius: 22px; background: var(--color-surface); box-shadow: 0 10px 25px rgb(31 33 33 / 4%); }.profile-head { display: flex; align-items: center; gap: 16px; }.profile-mark { display: grid; width: 62px; height: 62px; place-items: center; border-radius: 20px; background: var(--color-brand); color: #fff; font-size: 22px; font-weight: 800; box-shadow: 0 7px 15px rgb(255 111 78 / 18%); }.profile-head h1 { margin: 0; color: var(--color-text-primary); font-size: 21px; }.profile-head p { margin: 6px 0 0; color: var(--color-text-tertiary); font-size: 13px; }.menu { overflow: hidden; margin-top: 26px; border: 1px solid var(--color-border); border-radius: 18px; }.menu-item { display: flex; width: 100%; align-items: center; justify-content: space-between; min-height: 55px; padding: 0 18px; border: 0; border-bottom: 1px solid #efefeb; background: #fff; color: var(--color-text-secondary); font: inherit; font-size: 14px; text-align: left; }.menu-item:last-child { border-bottom: 0; }.menu-item strong { color: var(--color-text-primary); font-weight: 700; }.menu-item button { cursor: pointer; }.about-section { margin-top: 16px; padding: 18px; border: 1px solid var(--color-border); border-radius: 16px; background: #fafaf8; }.about-section p { margin: 0 0 7px; color: var(--color-text-tertiary); font-size: 12px; font-weight: 700; }.about-section span { color: var(--color-text-secondary); font-size: 14px; }.actions { display: flex; align-items: center; gap: 10px; margin-top: 22px; }.actions :deep(.el-button) { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; border-radius: 12px; }.logout-button { margin-left: auto; color: var(--color-text-tertiary); }
 </style>

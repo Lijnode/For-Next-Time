@@ -42,10 +42,9 @@ async function cancel() {
 
 <template>
   <main class="password-page">
+    <header class="page-title-bar"><button type="button" aria-label="返回" @click="cancel">‹</button><h1>修改密码</h1><span aria-hidden="true"></span></header>
     <section class="password-card">
-      <p class="eyebrow">ACCOUNT SECURITY</p>
-      <h1>修改密码</h1>
-      <p class="hint">修改成功后需要使用新密码重新登录。</p>
+      <p class="hint">修改成功后，需要使用新密码重新登录。</p>
       <el-form :model="form" label-position="top" @submit.prevent="submit">
         <el-form-item label="当前密码"><el-input v-model="form.oldPassword" type="password" show-password autocomplete="current-password" /></el-form-item>
         <el-form-item label="新密码"><el-input v-model="form.newPassword" type="password" show-password minlength="8" maxlength="64" autocomplete="new-password" /></el-form-item>
@@ -58,8 +57,5 @@ async function cancel() {
 </template>
 
 <style scoped>
-.password-page { width: min(640px, calc(100% - 64px)); margin: 0 auto; padding: 96px 0; }
-.password-card { padding: 44px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-xl); box-shadow: 0 16px 36px rgb(32 35 34 / 7%); }
-.eyebrow { margin: 0; color: var(--color-brand); font-size: 12px; font-weight: 700; letter-spacing: .16em; }
-h1 { margin: 12px 0 8px; font-size: 30px; }.hint { margin: 0 0 28px; color: var(--color-text-secondary); }.error-message { color: var(--color-danger); }.actions { display: flex; gap: 12px; margin-top: 28px; }
+.password-page { width: min(640px, calc(100% - 64px)); margin: 0 auto; padding: 32px 0 72px; }.page-title-bar { display: grid; grid-template-columns: 42px 1fr 42px; align-items: center; margin-bottom: 18px; }.page-title-bar button { width: 38px; height: 38px; border: 1px solid var(--color-border); border-radius: 12px; background: #fff; color: var(--color-text-primary); font-size: 25px; line-height: 1; }.page-title-bar h1 { margin: 0; color: var(--color-text-primary); font-size: 20px; text-align: center; }.password-card { padding: 30px; border: 1px solid var(--color-border); border-radius: 22px; background: var(--color-surface); box-shadow: 0 10px 25px rgb(31 33 33 / 4%); }.hint { margin: 0 0 25px; color: var(--color-text-secondary); font-size: 14px; }.password-card :deep(.el-form-item__label) { color: var(--color-text-primary); font-size: 13px; font-weight: 700; }.password-card :deep(.el-input__wrapper) { min-height: 48px; border: 1px solid var(--color-border); border-radius: 14px; background: #fbfbf9; box-shadow: none; }.password-card :deep(.el-input__wrapper.is-focus) { border-color: #ffb29f; box-shadow: 0 0 0 3px rgb(255 111 78 / 10%); }.error-message { color: var(--color-danger); }.actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 28px; }.actions :deep(.el-button) { min-width: 88px; min-height: 42px; border-radius: 12px; font-weight: 700; }
 </style>

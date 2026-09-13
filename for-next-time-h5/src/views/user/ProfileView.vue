@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { House, KeyRound, LogOut } from 'lucide-vue-next'
 import { getUserProfile, type UserProfile } from '../../api/user'
 import { useAuthStore } from '../../stores/auth'
 
@@ -55,21 +56,13 @@ onMounted(loadProfile)
 
 <template>
   <main class="profile-page">
-    <p class="eyebrow">MY SPACE</p>
-    <h1>我的</h1>
     <van-loading v-if="loading" class="loading" vertical>正在加载</van-loading>
     <template v-else-if="profile">
-      <van-cell-group inset>
-        <van-cell title="用户名" :value="profile.username" />
-        <van-cell title="已留内容" :value="profile.contentCount + ' 条'" />
-        <van-cell title="加入时间" :value="profile.createTime" />
-      </van-cell-group>
-      <van-cell-group inset class="about"><van-cell title="关于下次一定" label="这次先留着，下次一定用得上。" /></van-cell-group>
-      <div class="actions"><van-button block round type="primary" @click="openPasswordForm">修改密码</van-button><van-button block plain round type="primary" @click="backHome">返回首页</van-button><van-button block plain round type="danger" @click="logout">退出登录</van-button></div>
+      <section class="profile-card"><div class="profile-head"><span class="profile-mark">{{ profile.username.slice(0, 1) }}</span><div><h1>{{ profile.username }}</h1><p>已经留下 {{ profile.contentCount }} 条内容</p></div></div><div class="menu"><div class="menu-item"><span>内容总数</span><strong>{{ profile.contentCount }}</strong></div><button class="menu-item" type="button" @click="openPasswordForm"><span>修改密码</span><KeyRound :size="17" /></button><div class="menu-item"><span>加入时间</span><strong>{{ profile.createTime }}</strong></div></div><section class="about"><p>关于下次一定</p><span>这次先留着，下次一定用得上。</span></section><div class="actions"><van-button plain @click="backHome"><House :size="16" />返回首页</van-button><button class="logout-button" type="button" @click="logout"><LogOut :size="16" />退出登录</button></div></section>
     </template>
   </main>
 </template>
 
 <style scoped>
-.profile-page { min-height: 100vh; padding: calc(72px + env(safe-area-inset-top)) 20px 32px; }.eyebrow { margin: 0 4px 12px; color: var(--color-brand); font-size: 12px; font-weight: 700; letter-spacing: .15em; }h1 { margin: 0 4px 32px; font-size: 32px; }.loading { margin-top: 80px; }.about { margin-top: 20px; }.actions { display: grid; gap: 12px; margin: 28px 16px 0; }
+.profile-page { min-height: 100vh; padding: calc(24px + env(safe-area-inset-top)) 16px 32px; }.loading { margin-top: 80px; }.profile-card { padding: 20px 17px; border: 1px solid var(--color-border); border-radius: 20px; background: var(--color-card); box-shadow: 0 6px 16px rgb(31 33 33 / 3%); }.profile-head { display: flex; align-items: center; gap: 13px; }.profile-mark { display: grid; width: 54px; height: 54px; place-items: center; border-radius: 18px; background: var(--color-brand); color: #fff; font-size: 20px; font-weight: 800; box-shadow: 0 6px 14px rgb(255 111 78 / 20%); }.profile-head h1 { margin: 0; color: var(--color-text-primary); font-size: 19px; }.profile-head p { margin: 5px 0 0; color: var(--color-muted); font-size: 12px; }.menu { overflow: hidden; margin-top: 21px; border: 1px solid var(--color-border); border-radius: 16px; }.menu-item { display: flex; width: 100%; min-height: 52px; align-items: center; justify-content: space-between; padding: 0 15px; border: 0; border-bottom: 1px solid #efefeb; background: #fff; color: var(--color-text-secondary); font: inherit; font-size: 13px; text-align: left; }.menu-item:last-child { border-bottom: 0; }.menu-item strong { color: var(--color-text-primary); font-weight: 700; }.about { margin-top: 12px; padding: 15px; border: 1px solid var(--color-border); border-radius: 15px; background: #fafaf8; }.about p { margin: 0 0 7px; color: var(--color-muted); font-size: 11px; font-weight: 700; }.about span { color: var(--color-text-secondary); font-size: 13px; }.actions { display: flex; align-items: center; gap: 10px; margin-top: 19px; }.actions :deep(.van-button) { display: inline-flex; align-items: center; gap: 5px; height: 40px; border-radius: 12px; font-weight: 700; }.logout-button { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; padding: 8px 0; border: 0; background: transparent; color: var(--color-muted); font: inherit; font-size: 12px; }
 </style>
