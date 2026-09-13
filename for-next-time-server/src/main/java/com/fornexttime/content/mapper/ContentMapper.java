@@ -69,6 +69,24 @@ public interface ContentMapper {
     long countSearch(@Param("userId") Long userId, @Param("keyword") String keyword,
                      @Param("categoryCode") String categoryCode, @Param("categoryCodes") List<String> categoryCodes);
 
+    /**
+     * 原子增加当前用户一条内容的复制次数并刷新最近复制时间。
+     *
+     * @param id     内容主键
+     * @param userId 当前登录用户主键
+     * @return 实际更新行数
+     */
+    int incrementCopyCount(@Param("id") Long id, @Param("userId") Long userId);
+
+    /**
+     * 查询当前用户最近成功复制的内容。
+     *
+     * @param userId 当前登录用户主键
+     * @param limit  最大返回数量
+     * @return 按最近复制时间倒序的内容
+     */
+    List<Content> findRecent(@Param("userId") Long userId, @Param("limit") int limit);
+
     List<Content> findPage(@Param("userId") Long userId, @Param("categoryCode") String categoryCode,
                            @Param("pinned") Boolean pinned, @Param("offset") int offset, @Param("pageSize") int pageSize);
 

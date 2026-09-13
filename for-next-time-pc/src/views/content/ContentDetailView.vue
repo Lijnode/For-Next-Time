@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { deleteContent, getContentDetail, type ContentDetail } from '../../api/content'
+import { deleteContent, getContentDetail, recordCopy, type ContentDetail } from '../../api/content'
 
 const route = useRoute()
 const router = useRouter()
 const detail = ref<ContentDetail | null>(null)
 const loading = ref(true)
 const deleting = ref(false)
+const copying = ref(false)
 const errorMessage = ref('')
+const copyMessage = ref('')
 
 /**
  * 加载路由指定的当前用户内容详情。
@@ -38,6 +40,33 @@ async function loadDetail() {
 async function editContent() {
   // 1. 使用当前详情的内容主键进入共用表单编辑模式。
   await router.push({ name: 'content-edit', params: { id: route.params.id } })
+}
+
+/**
+ * 先复制正文到剪贴板，成功后再记录复制统计。
+ */
+async function copyContent() {
+  // 1. 复制正文失败时不请求后端统计接口。
+  if (!detail.value) return
+  copying.value = true
+  copyMessage.value = ''
+  try {
+    await navigator.clipboard.writeText(detail.value.content)
+    copyMessage.value = '就是这句。'
+    // 2. 复制成功后才记录统计；统计失败不影响复制成功反馈。
+    try {
+      const stat = await recordCopy(detail.value.id)
+      detail.value.copyCount = stat.copyCount
+      detail.value.lastCopyTime = stat.lastCopyTime
+    } catch {
+      // 3. 接受少量统计误差，避免自动重试造成重复计数。
+    }
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : '复制失败，请稍后重试'
+  } finally {
+    // 4. 无论成功或失败都恢复复制按钮状态。
+    copying.value = false
+  }
 }
 
 /**
@@ -76,7 +105,7 @@ onMounted(loadDetail)
           <p class="eyebrow">FOR NEXT TIME</p>
           <h1>留住的这一句</h1>
         </div>
-        <div class="header-actions"><el-button text @click="router.back()">返回</el-button><el-button text type="primary" @click="editContent">编辑</el-button><el-popconfirm title="确定删除这句话吗？" confirm-button-text="删除" cancel-button-text="取消" @confirm="removeContent"><template #reference><el-button text type="danger" :loading="deleting">删除</el-button></template></el-popconfirm></div>
+        <div class="header-actions"><el-button text @click="router.back()">返回</el-button><el-button text type="primary" :loading="copying" @click="copyContent">复制</el-button><el-button text type="primary" @click="editContent">编辑</el-button><el-popconfirm title="确定删除这句话吗？" confirm-button-text="删除" cancel-button-text="取消" @confirm="removeContent"><template #reference><el-button text type="danger" :loading="deleting">删除</el-button></template></el-popconfirm></div>
       </header>
 
       <p class="content-text">{{ detail.content }}</p>
@@ -92,6 +121,7 @@ onMounted(loadDetail)
       </section>
 
       <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+      <p v-if="copyMessage" class="copy-message">{{ copyMessage }}</p>
 
       <dl class="meta-list">
         <div><dt>复制次数</dt><dd>{{ detail.copyCount }} 次</dd></div>
@@ -115,6 +145,7 @@ h1 { margin: 10px 0 0; font-size: 28px; }
 .remark-block { margin-top: 28px; padding: 20px; background: var(--color-brand-soft); border-radius: var(--radius-md); }
 .remark-block p:last-child { margin: 10px 0 0; color: var(--color-text-secondary); line-height: 1.7; white-space: pre-wrap; }
 .error-message { margin: 20px 0 0; color: var(--color-danger); }
+.copy-message { margin: 20px 0 0; color: var(--color-brand); }
 .meta-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px 32px; margin: 32px 0 0; padding-top: 24px; border-top: 1px solid var(--color-divider); }
 .meta-list div { display: flex; justify-content: space-between; gap: 16px; }
 dt { color: var(--color-text-tertiary); } dd { margin: 0; color: var(--color-text-secondary); text-align: right; }

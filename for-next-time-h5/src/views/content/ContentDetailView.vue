@@ -2,14 +2,16 @@
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showConfirmDialog } from 'vant'
-import { deleteContent, getContentDetail, type ContentDetail } from '../../api/content'
+import { deleteContent, getContentDetail, recordCopy, type ContentDetail } from '../../api/content'
 import { showError, showSuccess } from '../../platform/feedback'
+import { copyText } from '../../platform/clipboard'
 
 const route = useRoute()
 const router = useRouter()
 const detail = ref<ContentDetail | null>(null)
 const loading = ref(true)
 const deleting = ref(false)
+const copying = ref(false)
 const errorMessage = ref('')
 
 /**
@@ -44,6 +46,32 @@ async function editContent() {
 }
 
 /**
+ * 通过平台剪贴板复制正文，成功后再记录复制统计。
+ */
+async function copyContent() {
+  // 1. 平台剪贴板复制失败时不请求后端统计接口。
+  if (!detail.value) return
+  copying.value = true
+  try {
+    await copyText(detail.value.content)
+    showSuccess('就是这句。')
+    // 2. 复制成功后才记录统计；统计失败不影响复制成功反馈。
+    try {
+      const stat = await recordCopy(detail.value.id)
+      detail.value.copyCount = stat.copyCount
+      detail.value.lastCopyTime = stat.lastCopyTime
+    } catch {
+      // 3. 接受少量统计误差，避免自动重试造成重复计数。
+    }
+  } catch (error) {
+    showError(error instanceof Error ? error.message : '复制失败，请稍后重试')
+  } finally {
+    // 4. 无论成功或失败都恢复复制按钮状态。
+    copying.value = false
+  }
+}
+
+/**
  * 经移动端确认后逻辑删除当前内容。
  */
 async function removeContent() {
@@ -73,7 +101,7 @@ onMounted(loadDetail)
 
 <template>
   <main class="detail-page">
-    <header class="top-bar"><button type="button" aria-label="返回" @click="router.back()">‹</button><h1>内容详情</h1><div class="top-actions"><button type="button" @click="editContent">编辑</button><button type="button" :disabled="deleting" @click="removeContent">删除</button></div></header>
+    <header class="top-bar"><button type="button" aria-label="返回" @click="router.back()">‹</button><h1>内容详情</h1><div class="top-actions"><button type="button" :disabled="copying" @click="copyContent">复制</button><button type="button" @click="editContent">编辑</button><button type="button" :disabled="deleting" @click="removeContent">删除</button></div></header>
     <van-loading v-if="loading" class="loading" vertical>正在翻找这句话……</van-loading>
     <van-empty v-else-if="errorMessage" :description="errorMessage"><van-button type="primary" round @click="router.replace({ name: 'home' })">回到首页</van-button></van-empty>
     <article v-else-if="detail" class="detail-card">

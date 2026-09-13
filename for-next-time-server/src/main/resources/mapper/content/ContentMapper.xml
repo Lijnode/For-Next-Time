@@ -80,4 +80,18 @@
             </if>
         )
     </select>
+    <update id="incrementCopyCount">
+        UPDATE content
+        SET copy_count = copy_count + 1, last_copy_time = NOW()
+        WHERE id = #{id} AND user_id = #{userId} AND deleted = 0
+    </update>
+    <select id="findRecent" resultType="com.fornexttime.content.entity.Content">
+        SELECT id, user_id AS userId, content, category_code AS categoryCode, remark,
+               is_pinned AS pinned, copy_count AS copyCount, last_copy_time AS lastCopyTime,
+               create_time AS createTime, update_time AS updateTime
+        FROM content
+        WHERE user_id = #{userId} AND deleted = 0 AND last_copy_time IS NOT NULL
+        ORDER BY last_copy_time DESC
+        LIMIT #{limit}
+    </select>
 </mapper>

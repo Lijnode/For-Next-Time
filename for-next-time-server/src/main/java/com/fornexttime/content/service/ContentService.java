@@ -9,6 +9,7 @@ import com.fornexttime.content.entity.Content;
 import com.fornexttime.content.mapper.ContentMapper;
 import com.fornexttime.content.mapper.ContentTagMapper;
 import com.fornexttime.content.req.ContentCreateReq;
+import com.fornexttime.content.res.ContentCopyRes;
 import com.fornexttime.content.res.ContentDetailRes;
 import com.fornexttime.content.res.ContentIdRes;
 import com.fornexttime.content.res.ContentListRes;
@@ -149,6 +150,37 @@ public class ContentService {
 
         // 3. 批量组装标签后返回与普通列表一致的分页结构。
         return PageResult.of(pageNum, pageSize, total, toListRes(contents));
+    }
+
+    /**
+     * 在剪贴板复制成功后，原子记录当前用户内容的复制统计。
+     *
+     * @param id 内容主键
+     * @return 更新后的复制统计
+     */
+    public ContentCopyRes recordCopy(Long id) {
+        // 1. 在当前用户和未删除范围内原子增加复制次数。
+        Long userId = UserContext.requireUserId();
+        int affectedRows = contentMapper.incrementCopyCount(id, userId);
+        if (affectedRows == 0) {
+            throw new BusinessException(ErrorCode.CONTENT_NOT_FOUND);
+        }
+        // 2. 读取更新后的统计数据，不修改内容的 updateTime。
+        Content content = contentMapper.findDetail(userId, id);
+        return new ContentCopyRes(content.getCopyCount(), content.getLastCopyTime());
+    }
+
+    /**
+     * 查询当前用户最近成功复制过的内容。
+     *
+     * @param limit 最大返回数量
+     * @return 统一内容列表响应
+     */
+    public List<ContentListRes> recent(int limit) {
+        // 1. 仅查询当前用户未删除且存在复制时间的内容。
+        List<Content> contents = contentMapper.findRecent(UserContext.requireUserId(), limit);
+        // 2. 批量组装标签和分类展示数据。
+        return toListRes(contents);
     }
 
     /**

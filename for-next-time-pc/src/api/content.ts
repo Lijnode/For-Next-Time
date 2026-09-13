@@ -24,6 +24,11 @@ export interface ContentDetail extends ContentListItem {
   remark: string | null
 }
 
+export interface ContentCopyStat {
+  copyCount: number
+  lastCopyTime: string
+}
+
 export async function createContent(data: ContentCreateReq) {
   // 1. 提交新增内容请求。
   const response = await request.post<{ id: number }>('/contents', data)
@@ -77,4 +82,24 @@ export async function searchContents(keyword: string, categoryCode: string | nul
   })
   // 2. 返回当前页搜索结果数组。
   return response.data.list
+}
+
+/**
+ * 在文本复制成功后记录内容复制统计。
+ */
+export async function recordCopy(id: number) {
+  // 1. 请求后端原子更新复制次数与最近使用时间。
+  const response = await request.post<ContentCopyStat>(`/contents/${id}/copy`)
+  // 2. 返回最新复制统计。
+  return response.data
+}
+
+/**
+ * 获取当前用户最近成功复制的内容。
+ */
+export async function getRecentContents() {
+  // 1. 请求默认五条最近使用内容。
+  const response = await request.get<ContentListItem[]>('/contents/recent')
+  // 2. 返回最近使用内容数组。
+  return response.data
 }

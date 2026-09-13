@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { getContentList, type ContentListItem } from '../../api/content'
+import { getContentList, getRecentContents, type ContentListItem } from '../../api/content'
 import { useAuthStore } from '../../stores/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const contents = ref<ContentListItem[]>([])
+const recentContents = ref<ContentListItem[]>([])
 const keyword = ref('')
 
 /**
@@ -50,8 +51,11 @@ async function openSearch() {
  * 加载首页内容列表，失败时保留空状态。
  */
 async function loadContents() {
-  // 1. 请求当前用户的默认分页内容。
-  contents.value = await getContentList()
+  // 1. 并行请求当前用户内容列表和最近成功复制内容。
+  const [list, recent] = await Promise.all([getContentList(), getRecentContents()])
+  // 2. 写入首页两个独立展示区域。
+  contents.value = list
+  recentContents.value = recent
 }
 
 // 1. 进入首页后加载内容列表。
@@ -68,6 +72,7 @@ onMounted(loadContents)
       <el-button type="primary" @click="createContent">先留一句</el-button>
       <el-button text type="primary" @click="logout">退出登录</el-button>
     </section>
+    <section v-if="recentContents.length" class="recent-section"><h2>最近使用</h2><div class="recent-list"><button v-for="item in recentContents" :key="item.id" type="button" @click="openDetail(item.id)">{{ item.content }}</button></div></section>
     <section class="content-grid"><article v-for="item in contents" :key="item.id" class="content-card" tabindex="0" @click="openDetail(item.id)" @keydown.enter="openDetail(item.id)"><p>{{ item.content }}</p><el-tag v-for="tag in item.tags" :key="tag.id" size="small">#{{ tag.name }}</el-tag></article><p v-if="!contents.length">这里还空着，先留下一句。</p></section>
   </main>
 </template>
@@ -93,6 +98,7 @@ onMounted(loadContents)
   font-size: 13px;
 }
 .search-entry { width: min(560px, 100%); margin: 28px 0 18px; }
+.recent-section{margin-top:32px}.recent-section h2{font-size:18px}.recent-list{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.recent-list button{overflow:hidden;padding:14px;border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface);color:var(--color-text-secondary);text-align:left;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
 
 h1 {
   margin: var(--space-2) 0;
