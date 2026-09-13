@@ -15,7 +15,7 @@ body,
 body {
   color: var(--color-text);
   background: var(--color-page);
-  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: "HarmonyOS Sans SC", "MiSans", "PingFang SC", "Noto Sans SC", system-ui, -apple-system, BlinkMacSystemFont, "Microsoft YaHei", sans-serif;
 }
 
 button,
