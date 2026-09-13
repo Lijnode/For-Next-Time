@@ -24,6 +24,17 @@ textarea {
   font: inherit;
 }
 
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--color-text);
+  -webkit-box-shadow: 0 0 0 1000px #fff inset;
+  box-shadow: 0 0 0 1000px #fff inset;
+  caret-color: var(--color-text);
+  transition: background-color 9999s ease-out 0s;
+}
+
 :focus-visible {
   outline: 3px solid rgb(255 111 78 / 24%);
   outline-offset: 2px;
