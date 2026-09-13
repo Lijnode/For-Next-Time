@@ -181,7 +181,7 @@ onMounted(loadContents)
           <article v-for="item in contents" :key="item.id" class="content-card" tabindex="0" @click="openDetail(item.id)" @keydown.enter="openDetail(item.id)">
             <div class="card-top"><span v-if="item.pinned" class="pinned-mark">已置顶</span><span>{{ item.lastCopyTime ? '最近用过' : item.updateTime }}</span></div>
             <p class="content-text">{{ item.content }}</p>
-            <div class="tag-row"><span v-if="item.categoryName" class="card-chip category-chip">{{ item.categoryName }}</span><span v-for="tag in item.tags.slice(0, 3)" :key="tag.id" class="card-chip">#{{ tag.name }}</span></div>
+            <div v-if="item.categoryName || item.tags.length" class="tag-row"><span v-if="item.categoryName" :class="['card-chip', 'category-chip', item.categoryCode ? 'category-' + item.categoryCode.toLowerCase() : '']">{{ item.categoryName }}</span><span v-for="tag in item.tags.slice(0, 3)" :key="tag.id" class="card-chip tag-chip">#{{ tag.name }}</span></div>
             <div class="card-footer"><span>{{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '还没用过' }}</span><el-button text type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</el-button></div>
           </article>
         </div>
@@ -465,17 +465,62 @@ h1 {
 }
 
 .card-chip {
-  padding: 5px 9px;
+  padding: 4px 8px;
   border-radius: 999px;
-  background: #f1f2ef;
-  color: #737878;
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 600;
   line-height: 1;
 }
 
 .category-chip {
-  background: #fff1ec;
-  color: #cf5a41;
+  border: 1px solid transparent;
+}
+
+.tag-chip {
+  border: 1px solid #e1e5e2;
+  background: #fff;
+  color: #6f7575;
+  font-weight: 500;
+}
+
+.category-funny {
+  background: #fff4d8;
+  color: #9c6700;
+}
+
+.category-abstract {
+  background: #f1edff;
+  color: #715cac;
+}
+
+.category-emotion {
+  background: #fff0f3;
+  color: #b85f74;
+}
+
+.category-literary {
+  background: #edf1ff;
+  color: #556eae;
+}
+
+.category-healing {
+  background: #edf8f0;
+  color: #4d8662;
+}
+
+.category-sober {
+  background: #edf5f8;
+  color: #4f7e91;
+}
+
+.category-sarcasm {
+  background: #f5effa;
+  color: #865d9a;
+}
+
+.category-other {
+  background: #f1f2ef;
+  color: #666d6d;
 }
 
 .card-footer {
