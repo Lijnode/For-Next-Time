@@ -51,16 +51,20 @@ public class ContentService {
         String categoryCode = normalizeCategory(request.categoryCode());
         List<String> tagNames = normalizeTagNames(request.tagNames());
         String remark = normalizeRemark(request.remark());
+        Long userId = UserContext.requireUserId();
 
-        // 2. 保存只属于当前登录用户的内容主体。
+        // 2. 拒绝当前用户已经保存过的相同正文。
+        ensureContentNotDuplicated(userId, contentText, null);
+
+        // 3. 保存只属于当前登录用户的内容主体。
         Content content = new Content();
-        content.setUserId(UserContext.requireUserId());
+        content.setUserId(userId);
         content.setContent(contentText);
         content.setCategoryCode(categoryCode);
         content.setRemark(remark);
         contentMapper.insert(content);
 
-        // 3. 逐个复用或创建标签，并写入内容标签关系。
+        // 4. 逐个复用或创建标签，并写入内容标签关系。
         saveContentTags(content.getId(), content.getUserId(), tagNames);
         return new ContentIdRes(content.getId());
     }
@@ -80,13 +84,19 @@ public class ContentService {
         String remark = normalizeRemark(request.remark());
         Long userId = UserContext.requireUserId();
 
-        // 2. 仅更新属于当前用户且未删除的内容主体。
+        // 2. 先确认目标内容属于当前用户，再排除自身校验重复正文。
+        if (contentMapper.findDetail(userId, id) == null) {
+            throw new BusinessException(ErrorCode.CONTENT_NOT_FOUND);
+        }
+        ensureContentNotDuplicated(userId, contentText, id);
+
+        // 3. 仅更新属于当前用户且未删除的内容主体。
         int affectedRows = contentMapper.update(id, userId, contentText, categoryCode, remark);
         if (affectedRows == 0) {
             throw new BusinessException(ErrorCode.CONTENT_NOT_FOUND);
         }
 
-        // 3. 删除旧标签关系后，按新输入重新建立关系。
+        // 4. 删除旧标签关系后，按新输入重新建立关系。
         contentTagMapper.deleteByContentId(id);
         saveContentTags(id, userId, tagNames);
     }
@@ -210,6 +220,20 @@ public class ContentService {
             throw new BusinessException(ErrorCode.CONTENT_TOO_LONG);
         }
         return normalized;
+    }
+
+    /**
+     * 校验当前用户的未删除内容中不存在相同正文；编辑时排除自身。
+     *
+     * @param userId    当前登录用户主键
+     * @param content   清洗后的正文
+     * @param excludeId 编辑时需要排除的内容主键；新增时为空
+     */
+    private void ensureContentNotDuplicated(Long userId, String content, Long excludeId) {
+        // 1. 仅在当前用户、未删除内容范围内检查完全相同的正文。
+        if (contentMapper.existsActiveByUserIdAndContent(userId, content, excludeId)) {
+            throw new BusinessException(ErrorCode.CONTENT_EXISTS);
+        }
     }
 
     /**

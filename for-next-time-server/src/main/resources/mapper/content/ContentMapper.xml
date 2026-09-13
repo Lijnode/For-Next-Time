@@ -5,6 +5,14 @@
         INSERT INTO content (user_id, content, category_code, remark)
         VALUES (#{userId}, #{content}, #{categoryCode}, #{remark})
     </insert>
+    <select id="existsActiveByUserIdAndContent" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM content
+            WHERE user_id = #{userId} AND content = #{content} AND deleted = 0
+            <if test="excludeId != null">AND id != #{excludeId}</if>
+        )
+    </select>
     <update id="update">
         UPDATE content
         SET content = #{content}, category_code = #{categoryCode}, remark = #{remark}, update_time = NOW()

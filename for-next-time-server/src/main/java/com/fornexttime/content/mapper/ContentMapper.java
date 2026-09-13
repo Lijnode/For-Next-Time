@@ -12,6 +12,17 @@ public interface ContentMapper {
     int insert(Content content);
 
     /**
+     * 判断当前用户是否已保存相同的未删除正文。
+     *
+     * @param userId    当前登录用户主键
+     * @param content   清洗后的正文
+     * @param excludeId 编辑时需要排除的内容主键；新增时为空
+     * @return 存在相同正文时为 true
+     */
+    boolean existsActiveByUserIdAndContent(@Param("userId") Long userId, @Param("content") String content,
+                                           @Param("excludeId") Long excludeId);
+
+    /**
      * 在当前用户范围内更新内容正文、分类和备注。
      *
      * @param id           内容主键

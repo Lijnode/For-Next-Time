@@ -22,6 +22,7 @@ public enum ErrorCode {
     CATEGORY_INVALID(20004, "分类不存在", HttpStatus.BAD_REQUEST),
     TAG_LIMIT_EXCEEDED(20005, "标签数量超过限制", HttpStatus.BAD_REQUEST),
     REMARK_TOO_LONG(20006, "备注长度超限", HttpStatus.BAD_REQUEST),
+    CONTENT_EXISTS(20007, "这句已经留过了", HttpStatus.BAD_REQUEST),
     TAG_NAME_TOO_LONG(30002, "标签名称长度超限", HttpStatus.BAD_REQUEST),
     SYSTEM_ERROR(50000, "系统异常", HttpStatus.INTERNAL_SERVER_ERROR);
 
