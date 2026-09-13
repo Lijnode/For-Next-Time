@@ -207,7 +207,7 @@ onMounted(() => {
         </div>
         <p v-if="!contents.length" class="empty-state">这里还空着，先留下一句。</p>
         <el-button v-if="!contents.length" class="empty-create" type="primary" @click="createContent">先留一句</el-button>
-        <el-pagination v-if="total > 20" class="pagination" background layout="prev, pager, next" :current-page="pageNum" :page-size="20" :total="total" @current-change="changePage" />
+        <el-pagination v-if="total > 0" class="pagination" background layout="prev, pager, next" :current-page="pageNum" :page-size="20" :total="total" @current-change="changePage" />
       </section>
       <aside v-if="!isSearching" class="recent-panel">
         <div class="section-heading"><h2>最近使用</h2></div>
