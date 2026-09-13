@@ -12,7 +12,6 @@ const keyword = ref('')
 const categoryCode = ref<string | null>(null)
 const copyingId = ref<number | null>(null)
 const pageNum = ref(1)
-const total = ref(0)
 const hasMore = ref(false)
 const loadingMore = ref(false)
 const categories: Array<[string, string]> = [['FUNNY', '搞笑'], ['ABSTRACT', '抽象'], ['EMOTION', '感情'], ['LITERARY', '文艺'], ['HEALING', '治愈'], ['SOBER', '清醒'], ['SARCASM', '阴阳'], ['OTHER', '其他']]
@@ -48,7 +47,6 @@ async function loadContentPage(append: boolean, targetPage = pageNum.value) {
     const page = await getContentList(targetPage, categoryCode.value)
     contents.value = append ? [...contents.value, ...page.list] : page.list
     pageNum.value = page.pageNum
-    total.value = page.total
     hasMore.value = page.pageNum < page.pages
   } catch (error) {
     // 2. 请求失败时保留当前内容并提示用户。
@@ -113,7 +111,6 @@ async function loadContents() {
   const page = await getContentList(pageNum.value, categoryCode.value)
   // 2. 写入首页内容列表与分页状态。
   contents.value = page.list
-  total.value = page.total
   hasMore.value = page.pageNum < page.pages
 }
 
@@ -134,7 +131,6 @@ onMounted(loadContents)
     </header>
     <div class="home-content">
       <section class="content-section all-content-section">
-        <div class="section-heading"><div><h2>全部内容</h2><p>共留下 {{ total }} 条，慢慢翻，总能翻到。</p></div></div>
         <div class="content-list">
           <article v-for="item in contents" :key="item.id" class="content-card" @click="openDetail(item.id)">
             <div class="card-top"><span v-if="item.pinned" class="pinned-mark">已置顶</span><span>{{ item.lastCopyTime ? '最近用过' : item.updateTime }}</span></div>
@@ -230,20 +226,8 @@ onMounted(loadContents)
   margin-top: 25px;
 }
 
-.section-heading h2 {
-  margin: 0;
-  color: var(--color-text-primary);
-  font-size: 17px;
-}
-
-.section-heading p {
-  margin: 5px 0 0;
-  color: var(--color-muted);
-  font-size: 11px;
-}
-
 .content-list {
-  margin-top: 13px;
+  margin-top: 0;
 }
 
 .content-card {
