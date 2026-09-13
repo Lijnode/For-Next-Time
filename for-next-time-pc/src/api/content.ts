@@ -1,4 +1,5 @@
 import request from './request'
+import type { PageResult } from '../types/api'
 
 export interface ContentCreateReq {
   content: string
@@ -39,13 +40,13 @@ export async function createContent(data: ContentCreateReq) {
 /**
  * 获取当前用户指定分类的第一页内容。
  */
-export async function getContentList(categoryCode: string | null = null) {
+export async function getContentList(pageNum = 1, categoryCode: string | null = null) {
   // 1. 请求首页所需的默认分页与可选分类数据。
-  const response = await request.get<{ list: ContentListItem[] }>('/contents', {
-    params: { pageNum: 1, pageSize: 20, categoryCode: categoryCode ?? undefined },
+  const response = await request.get<PageResult<ContentListItem>>('/contents', {
+    params: { pageNum, pageSize: 20, categoryCode: categoryCode ?? undefined },
   })
-  // 2. 返回当前页内容数组。
-  return response.data.list
+  // 2. 返回带总数和页码信息的统一分页结果。
+  return response.data
 }
 
 /**

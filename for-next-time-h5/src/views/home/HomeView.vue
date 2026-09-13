@@ -13,6 +13,9 @@ const recentContents = ref<ContentListItem[]>([])
 const keyword = ref('')
 const categoryCode = ref<string | null>(null)
 const copyingId = ref<number | null>(null)
+const pageNum = ref(1)
+const hasMore = ref(false)
+const loadingMore = ref(false)
 const categories: Array<[string, string]> = [['FUNNY', '搞笑'], ['ABSTRACT', '抽象'], ['EMOTION', '感情'], ['LITERARY', '文艺'], ['HEALING', '治愈'], ['SOBER', '清醒'], ['SARCASM', '阴阳'], ['OTHER', '其他']]
 
 /**
@@ -47,12 +50,38 @@ async function openProfile() {
 async function selectCategory(value: string | null) {
   // 1. 保存用户轻触选择的固定分类编码。
   categoryCode.value = value
-  // 2. 只刷新列表，最近使用区域保持独立。
+  // 2. 切换分类后回到第一页，避免页码超出筛选结果范围。
+  pageNum.value = 1
+  await loadContentPage(false)
+}
+
+/**
+ * 请求下一页内容并追加到当前移动端列表。
+ */
+async function loadMore() {
+  // 1. 没有下一页或正在加载时不重复请求。
+  if (!hasMore.value || loadingMore.value) return
+  // 2. 请求下一页，只有成功后才更新当前页码。
+  await loadContentPage(true, pageNum.value + 1)
+}
+
+/**
+ * 加载当前分类与页码的内容分页结果。
+ */
+async function loadContentPage(append: boolean, targetPage = pageNum.value) {
+  // 1. 请求当前用户范围内的指定内容页。
+  loadingMore.value = true
   try {
-    contents.value = await getContentList(categoryCode.value)
+    const page = await getContentList(targetPage, categoryCode.value)
+    contents.value = append ? [...contents.value, ...page.list] : page.list
+    pageNum.value = page.pageNum
+    hasMore.value = page.pageNum < page.pages
   } catch (error) {
-    // 3. 分类切换失败时保留当前内容并提示用户。
+    // 2. 请求失败时保留当前内容并提示用户。
     showError(error instanceof Error ? error.message : '加载内容失败，请稍后重试')
+  } finally {
+    // 3. 请求结束后恢复加载更多按钮状态。
+    loadingMore.value = false
   }
 }
 
@@ -107,10 +136,11 @@ async function openSearch() {
  */
 async function loadContents() {
   // 1. 并行请求当前用户内容列表和最近成功复制内容。
-  const [list, recent] = await Promise.all([getContentList(categoryCode.value), getRecentContents()])
+  const [page, recent] = await Promise.all([getContentList(pageNum.value, categoryCode.value), getRecentContents()])
   // 2. 写入首页两个独立展示区域。
-  contents.value = list
+  contents.value = page.list
   recentContents.value = recent
+  hasMore.value = page.pageNum < page.pages
 }
 
 // 1. 进入首页后加载内容列表。
@@ -127,7 +157,7 @@ onMounted(loadContents)
     <van-button plain type="primary" @click="openProfile">我的</van-button>
     <van-button plain type="primary" @click="logout">退出登录</van-button>
     <section v-if="recentContents.length" class="recent-section"><h2>最近使用</h2><button v-for="item in recentContents" :key="item.id" type="button" class="recent-item" @click="openDetail(item.id)">{{ item.content }}</button></section>
-    <section class="all-content-section"><h2>全部内容</h2><div class="category-scroller"><button :class="{ active: categoryCode === null }" type="button" @click="selectCategory(null)">全部</button><button v-for="category in categories" :key="category[0]" :class="{ active: categoryCode === category[0] }" type="button" @click="selectCategory(category[0])">{{ category[1] }}</button></div><div class="content-list"><article v-for="item in contents" :key="item.id" class="content-card" @click="openDetail(item.id)"><div class="card-top"><van-tag v-if="item.pinned" plain type="warning">置顶</van-tag><span>{{ item.lastCopyTime ? '最近用过' : item.updateTime }}</span></div><p>{{ item.content }}</p><div class="card-footer"><div class="tag-row"><van-tag v-if="item.categoryName" plain type="warning">{{ item.categoryName }}</van-tag><van-tag v-for="tag in item.tags.slice(0, 3)" :key="tag.id" plain type="primary">#{{ tag.name }}</van-tag></div><van-button plain size="small" type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</van-button></div></article></div><p v-if="!contents.length" class="description">这里还空着，先留下一句。</p></section>
+    <section class="all-content-section"><h2>全部内容</h2><div class="category-scroller"><button :class="{ active: categoryCode === null }" type="button" @click="selectCategory(null)">全部</button><button v-for="category in categories" :key="category[0]" :class="{ active: categoryCode === category[0] }" type="button" @click="selectCategory(category[0])">{{ category[1] }}</button></div><div class="content-list"><article v-for="item in contents" :key="item.id" class="content-card" @click="openDetail(item.id)"><div class="card-top"><van-tag v-if="item.pinned" plain type="warning">置顶</van-tag><span>{{ item.lastCopyTime ? '最近用过' : item.updateTime }}</span></div><p>{{ item.content }}</p><div class="card-footer"><div class="tag-row"><van-tag v-if="item.categoryName" plain type="warning">{{ item.categoryName }}</van-tag><van-tag v-for="tag in item.tags.slice(0, 3)" :key="tag.id" plain type="primary">#{{ tag.name }}</van-tag></div><van-button plain size="small" type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</van-button></div></article></div><p v-if="!contents.length" class="description">这里还空着，先留下一句。</p><van-button v-if="hasMore" class="load-more" block plain round type="primary" :loading="loadingMore" @click="loadMore">加载更多</van-button></section>
   </main>
 </template>
 
@@ -157,5 +187,5 @@ h1 {
   color: var(--color-muted);
 }
 .recent-section,.all-content-section{margin-top:28px}.recent-section h2,.all-content-section h2{font-size:17px}.recent-item{display:block;width:100%;overflow:hidden;margin:8px 0;padding:13px;border:1px solid var(--color-border);border-radius:var(--radius-card);background:var(--color-card);color:var(--color-muted);text-align:left;text-overflow:ellipsis;white-space:nowrap}.category-scroller{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px}.category-scroller button{flex:0 0 auto;padding:7px 12px;border:1px solid var(--color-border);border-radius:999px;background:var(--color-card);color:var(--color-muted)}.category-scroller button.active{border-color:var(--color-brand);background:#fff1ec;color:var(--color-brand)}
-.content-list{margin-top:4px}.content-card{margin-bottom:12px;padding:16px;background:var(--color-card);border:1px solid var(--color-border);border-radius:var(--radius-card);cursor:pointer}.content-card p{min-height:48px;white-space:pre-wrap}.card-top,.card-footer,.tag-row{display:flex;align-items:center;gap:6px}.card-top{justify-content:space-between;color:var(--color-muted);font-size:12px}.card-footer{justify-content:space-between}.tag-row{flex-wrap:wrap}
+.content-list{margin-top:4px}.content-card{margin-bottom:12px;padding:16px;background:var(--color-card);border:1px solid var(--color-border);border-radius:var(--radius-card);cursor:pointer}.content-card p{min-height:48px;white-space:pre-wrap}.card-top,.card-footer,.tag-row{display:flex;align-items:center;gap:6px}.card-top{justify-content:space-between;color:var(--color-muted);font-size:12px}.card-footer{justify-content:space-between}.tag-row{flex-wrap:wrap}.load-more{margin-top:20px}
 </style>
