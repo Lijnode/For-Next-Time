@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import { ActionSheet, Button, CellGroup, Field, Form, Search, Tag, Uploader } from 'vant'
+import { ActionSheet, Button, CellGroup, Field, Form, List, Search, Tag, Uploader } from 'vant'
 import 'vant/lib/index.css'
 import App from './App.vue'
 import router from './router'
@@ -14,6 +14,7 @@ createApp(App)
   .use(CellGroup)
   .use(Field)
   .use(Form)
+  .use(List)
   .use(Search)
   .use(Tag)
   .use(Uploader)

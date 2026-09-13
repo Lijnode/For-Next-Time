@@ -30,9 +30,12 @@ async function selectCategory(value: string | null) {
  * 请求下一页内容并追加到当前移动端列表。
  */
 async function loadMore() {
-  // 1. 没有下一页或正在加载时不重复请求。
-  if (!hasMore.value || loadingMore.value) return
-  // 2. 请求下一页，只有成功后才更新当前页码。
+  // 1. 没有下一页时结束 Vant List 的本次加载状态。
+  if (!hasMore.value) {
+    loadingMore.value = false
+    return
+  }
+  // 2. 由 Vant List 在接近底部时触发下一页请求。
   await loadContentPage(true, pageNum.value + 1)
 }
 
@@ -128,16 +131,15 @@ onMounted(loadContents)
     </header>
     <div class="home-content">
       <section class="content-section all-content-section">
-        <div class="content-list">
+        <van-list v-model:loading="loadingMore" :finished="!hasMore" finished-text="" :immediate-check="false" :offset="120" class="content-list" @load="loadMore">
           <article v-for="item in contents" :key="item.id" class="content-card" @click="openDetail(item.id)">
             <div class="card-top"><span v-if="item.pinned" class="pinned-mark">已置顶</span><span>{{ item.lastCopyTime ? '最近用过' : item.updateTime }}</span></div>
             <p class="content-text">{{ item.content }}</p>
             <div class="tag-row"><span v-if="item.categoryName" :class="['card-chip', 'category-chip', item.categoryCode ? 'category-' + item.categoryCode.toLowerCase() : '']">{{ item.categoryName }}</span><span v-for="tag in item.tags.slice(0, 3)" :key="tag.id" class="card-chip">#{{ tag.name }}</span></div>
             <div class="card-footer"><span>{{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '还没用过' }}</span><van-button plain size="small" type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</van-button></div>
           </article>
-        </div>
+        </van-list>
         <p v-if="!contents.length" class="empty-state">这里还空着，先留下一句。</p>
-        <van-button v-if="hasMore" class="load-more" block plain round type="primary" :loading="loadingMore" @click="loadMore">加载更多</van-button>
       </section>
     </div>
   </main>
@@ -283,7 +285,4 @@ h1 { margin: 0; color: var(--color-text-primary); font-size: 22px; letter-spacin
   font-size: 13px;
 }
 
-.load-more {
-  margin-top: 20px;
-}
 </style>
