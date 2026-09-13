@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { CircleUserRound, Search } from 'lucide-vue-next'
-import { getContentList, getRecentContents, recordCopy, type ContentListItem } from '../../api/content'
+import { CircleUserRound, History, Search } from 'lucide-vue-next'
+import { getContentList, recordCopy, type ContentListItem } from '../../api/content'
 import { copyText } from '../../platform/clipboard'
 import { showError, showSuccess } from '../../platform/feedback'
 
 const router = useRouter()
 const contents = ref<ContentListItem[]>([])
-const recentContents = ref<ContentListItem[]>([])
 const keyword = ref('')
 const categoryCode = ref<string | null>(null)
 const copyingId = ref<number | null>(null)
@@ -110,11 +109,10 @@ async function openSearch() {
  * 加载首页内容列表，失败时保留空状态。
  */
 async function loadContents() {
-  // 1. 并行请求当前用户内容列表和最近成功复制内容。
-  const [page, recent] = await Promise.all([getContentList(pageNum.value, categoryCode.value), getRecentContents()])
-  // 2. 写入首页两个独立展示区域。
+  // 1. 请求首页首屏需要的当前用户内容列表。
+  const page = await getContentList(pageNum.value, categoryCode.value)
+  // 2. 写入首页内容列表与分页状态。
   contents.value = page.list
-  recentContents.value = recent
   total.value = page.total
   hasMore.value = page.pageNum < page.pages
 }
@@ -128,7 +126,10 @@ onMounted(loadContents)
     <header class="home-head">
       <div class="brand-row">
         <div class="brand-area"><span class="brand-mark">次</span><div><h1>下次一定</h1><p>先留下，找得到，用得上。</p></div></div>
-        <RouterLink class="profile-link" to="/profile" aria-label="我的"><CircleUserRound :size="21" /></RouterLink>
+        <div class="header-actions">
+          <RouterLink class="history-link" to="/recent" aria-label="最近使用"><History :size="20" /></RouterLink>
+          <RouterLink class="profile-link" to="/profile" aria-label="我的"><CircleUserRound :size="21" /></RouterLink>
+        </div>
       </div>
       <van-search v-model="keyword" class="home-search" placeholder="找找现在用得上的。" shape="round" @search="openSearch">
         <template #left-icon><Search :size="19" /></template>
@@ -139,18 +140,6 @@ onMounted(loadContents)
       </div>
     </header>
     <div class="home-content">
-      <section class="content-section recent-section">
-        <div class="section-heading"><div><h2>最近使用</h2><p>最近真正拿出去用过的内容</p></div></div>
-        <div v-if="recentContents.length" class="content-list">
-          <article v-for="item in recentContents" :key="item.id" class="content-card" @click="openDetail(item.id)">
-            <div class="card-top"><span v-if="item.pinned" class="pinned-mark">已置顶</span><span>{{ item.lastCopyTime || '刚刚留下' }}</span></div>
-            <p class="content-text">{{ item.content }}</p>
-            <div class="tag-row"><span v-if="item.categoryName" class="card-chip category-chip">{{ item.categoryName }}</span><span v-for="tag in item.tags.slice(0, 3)" :key="tag.id" class="card-chip">#{{ tag.name }}</span></div>
-            <div class="card-footer"><span>{{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '还没用过' }}</span><van-button plain size="small" type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</van-button></div>
-          </article>
-        </div>
-        <p v-else class="recent-empty">最近还没用上这里的内容。</p>
-      </section>
       <section class="content-section all-content-section">
         <div class="section-heading"><div><h2>全部内容</h2><p>共留下 {{ total }} 条，慢慢翻，总能翻到。</p></div></div>
         <div class="content-list">
@@ -197,6 +186,11 @@ onMounted(loadContents)
   gap: 11px;
 }
 
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .brand-mark {
   display: grid;
   width: 38px;
@@ -223,6 +217,7 @@ h1 {
   font-size: 12px;
 }
 
+.history-link,
 .profile-link {
   display: grid;
   width: 40px;
@@ -377,7 +372,6 @@ h1 {
   font-weight: 700;
 }
 
-.recent-empty,
 .empty-state {
   margin: 13px 0 0;
   color: var(--color-muted);
