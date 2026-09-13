@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showConfirmDialog } from 'vant'
-import { deleteContent, getContentDetail, recordCopy, type ContentDetail } from '../../api/content'
+import { deleteContent, getContentDetail, recordCopy, setPinned, type ContentDetail } from '../../api/content'
 import { showError, showSuccess } from '../../platform/feedback'
 import { copyText } from '../../platform/clipboard'
 
@@ -12,6 +12,7 @@ const detail = ref<ContentDetail | null>(null)
 const loading = ref(true)
 const deleting = ref(false)
 const copying = ref(false)
+const pinning = ref(false)
 const errorMessage = ref('')
 
 /**
@@ -72,6 +73,24 @@ async function copyContent() {
 }
 
 /**
+ * 切换当前内容的明确置顶状态。
+ */
+async function togglePinned() {
+  // 1. 读取当前状态并请求相反的明确置顶状态。
+  if (!detail.value) return
+  pinning.value = true
+  try {
+    const result = await setPinned(detail.value.id, !detail.value.pinned)
+    detail.value.pinned = result.pinned
+  } catch (error) {
+    showError(error instanceof Error ? error.message : '置顶设置失败，请稍后重试')
+  } finally {
+    // 2. 请求结束后恢复置顶按钮状态。
+    pinning.value = false
+  }
+}
+
+/**
  * 经移动端确认后逻辑删除当前内容。
  */
 async function removeContent() {
@@ -101,7 +120,7 @@ onMounted(loadDetail)
 
 <template>
   <main class="detail-page">
-    <header class="top-bar"><button type="button" aria-label="返回" @click="router.back()">‹</button><h1>内容详情</h1><div class="top-actions"><button type="button" :disabled="copying" @click="copyContent">复制</button><button type="button" @click="editContent">编辑</button><button type="button" :disabled="deleting" @click="removeContent">删除</button></div></header>
+    <header class="top-bar"><button type="button" aria-label="返回" @click="router.back()">‹</button><h1>内容详情</h1><div class="top-actions"><button type="button" :disabled="copying" @click="copyContent">复制</button><button type="button" :disabled="pinning" @click="togglePinned">{{ detail?.pinned ? '取消置顶' : '置顶' }}</button><button type="button" @click="editContent">编辑</button><button type="button" :disabled="deleting" @click="removeContent">删除</button></div></header>
     <van-loading v-if="loading" class="loading" vertical>正在翻找这句话……</van-loading>
     <van-empty v-else-if="errorMessage" :description="errorMessage"><van-button type="primary" round @click="router.replace({ name: 'home' })">回到首页</van-button></van-empty>
     <article v-else-if="detail" class="detail-card">

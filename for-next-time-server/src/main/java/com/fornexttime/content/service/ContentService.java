@@ -9,6 +9,7 @@ import com.fornexttime.content.entity.Content;
 import com.fornexttime.content.mapper.ContentMapper;
 import com.fornexttime.content.mapper.ContentTagMapper;
 import com.fornexttime.content.req.ContentCreateReq;
+import com.fornexttime.content.res.ContentPinRes;
 import com.fornexttime.content.res.ContentCopyRes;
 import com.fornexttime.content.res.ContentDetailRes;
 import com.fornexttime.content.res.ContentIdRes;
@@ -181,6 +182,18 @@ public class ContentService {
         List<Content> contents = contentMapper.findRecent(UserContext.requireUserId(), limit);
         // 2. 批量组装标签和分类展示数据。
         return toListRes(contents);
+    }
+
+    /**
+     * 设置当前用户内容的置顶状态，不修改内容修改时间。
+     */
+    public ContentPinRes setPinned(Long id, boolean pinned) {
+        // 1. 在当前用户和未删除范围内更新明确的置顶状态。
+        if (contentMapper.updatePinned(id, UserContext.requireUserId(), pinned) == 0) {
+            throw new BusinessException(ErrorCode.CONTENT_NOT_FOUND);
+        }
+        // 2. 返回与请求一致的最终状态。
+        return new ContentPinRes(pinned);
     }
 
     /**

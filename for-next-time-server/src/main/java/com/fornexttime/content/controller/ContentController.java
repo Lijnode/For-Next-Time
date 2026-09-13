@@ -2,8 +2,10 @@ package com.fornexttime.content.controller;
 
 import com.fornexttime.common.model.Result;
 import com.fornexttime.content.req.ContentCreateReq;
+import com.fornexttime.content.req.ContentPinReq;
 import com.fornexttime.content.res.ContentDetailRes;
 import com.fornexttime.content.res.ContentCopyRes;
+import com.fornexttime.content.res.ContentPinRes;
 import com.fornexttime.content.res.ContentIdRes;
 import com.fornexttime.content.service.ContentService;
 import jakarta.validation.Valid;
@@ -93,6 +95,15 @@ public class ContentController {
     public Result<List<ContentListRes>> recent(@RequestParam(defaultValue = "5") @Min(1) @Max(20) int limit) {
         // 1. 交由服务按最近复制时间查询当前用户内容。
         return Result.success(contentService.recent(limit));
+    }
+
+    /**
+     * 设置当前用户内容的置顶状态。
+     */
+    @PutMapping("/{id}/pin")
+    public Result<ContentPinRes> pin(@PathVariable @Min(1) Long id, @RequestBody ContentPinReq request) {
+        // 1. 按请求的明确状态设置置顶，不使用 toggle 语义。
+        return Result.success(contentService.setPinned(id, request.pinned()));
     }
 
     /**

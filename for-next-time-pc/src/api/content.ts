@@ -103,3 +103,13 @@ export async function getRecentContents() {
   // 2. 返回最近使用内容数组。
   return response.data
 }
+
+/**
+ * 设置当前用户内容的置顶状态。
+ */
+export async function setPinned(id: number, pinned: boolean) {
+  // 1. 按明确状态请求后端设置置顶。
+  const response = await request.put<{ pinned: boolean }>(`/contents/${id}/pin`, { pinned })
+  // 2. 返回最终置顶状态。
+  return response.data
+}

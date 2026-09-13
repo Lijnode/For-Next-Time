@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { deleteContent, getContentDetail, recordCopy, type ContentDetail } from '../../api/content'
+import { deleteContent, getContentDetail, recordCopy, setPinned, type ContentDetail } from '../../api/content'
 
 const route = useRoute()
 const router = useRouter()
@@ -9,6 +9,7 @@ const detail = ref<ContentDetail | null>(null)
 const loading = ref(true)
 const deleting = ref(false)
 const copying = ref(false)
+const pinning = ref(false)
 const errorMessage = ref('')
 const copyMessage = ref('')
 
@@ -70,6 +71,24 @@ async function copyContent() {
 }
 
 /**
+ * 切换当前内容的明确置顶状态。
+ */
+async function togglePinned() {
+  // 1. 读取当前状态并请求相反的明确置顶状态。
+  if (!detail.value) return
+  pinning.value = true
+  try {
+    const result = await setPinned(detail.value.id, !detail.value.pinned)
+    detail.value.pinned = result.pinned
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : '置顶设置失败，请稍后重试'
+  } finally {
+    // 2. 请求结束后恢复置顶按钮状态。
+    pinning.value = false
+  }
+}
+
+/**
  * 确认后逻辑删除当前内容并回到首页。
  */
 async function removeContent() {
@@ -105,7 +124,7 @@ onMounted(loadDetail)
           <p class="eyebrow">FOR NEXT TIME</p>
           <h1>留住的这一句</h1>
         </div>
-        <div class="header-actions"><el-button text @click="router.back()">返回</el-button><el-button text type="primary" :loading="copying" @click="copyContent">复制</el-button><el-button text type="primary" @click="editContent">编辑</el-button><el-popconfirm title="确定删除这句话吗？" confirm-button-text="删除" cancel-button-text="取消" @confirm="removeContent"><template #reference><el-button text type="danger" :loading="deleting">删除</el-button></template></el-popconfirm></div>
+        <div class="header-actions"><el-button text @click="router.back()">返回</el-button><el-button text type="primary" :loading="copying" @click="copyContent">复制</el-button><el-button text type="primary" :loading="pinning" @click="togglePinned">{{ detail.pinned ? '取消置顶' : '置顶' }}</el-button><el-button text type="primary" @click="editContent">编辑</el-button><el-popconfirm title="确定删除这句话吗？" confirm-button-text="删除" cancel-button-text="取消" @confirm="removeContent"><template #reference><el-button text type="danger" :loading="deleting">删除</el-button></template></el-popconfirm></div>
       </header>
 
       <p class="content-text">{{ detail.content }}</p>
