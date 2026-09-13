@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Clock3 } from 'lucide-vue-next'
+import { Clock3 } from 'lucide-vue-next'
 import { getRecentContents, recordCopy, type ContentListItem } from '../../api/content'
 import { copyText } from '../../platform/clipboard'
 import { showError, showSuccess } from '../../platform/feedback'
@@ -77,24 +77,13 @@ async function openDetail(id: number) {
   await router.push({ name: 'content-detail', params: { id } })
 }
 
-/**
- * 返回首页继续浏览全部内容。
- */
-async function backHome() {
-  // 1. 使用命名路由返回首页，避免依赖浏览器历史栈。
-  await router.push({ name: 'home' })
-}
-
 // 1. 页面进入时按需加载最近使用数据。
 onMounted(loadRecentContents)
 </script>
 
 <template>
   <main class="recent-page">
-    <header class="recent-header">
-      <button class="back-button" type="button" aria-label="返回首页" @click="backHome"><ArrowLeft :size="22" /></button>
-      <div><h1>最近使用</h1><p>最近真正拿出去用过的内容</p></div>
-    </header>
+    <header class="recent-header"><h1>最近使用</h1><p>最近真正拿出去用过的内容</p></header>
 
     <section class="recent-content" aria-label="最近使用内容">
       <van-loading v-if="loading" class="loading-state" vertical>正在翻找最近用过的内容</van-loading>
@@ -115,8 +104,7 @@ onMounted(loadRecentContents)
 
 <style scoped>
 .recent-page { min-height: 100vh; background: var(--color-page); }
-.recent-header { display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: center; padding: 18px 16px 16px; border-bottom: 1px solid var(--color-border); background: #fffaf7; }
-.back-button { display: grid; width: 44px; height: 44px; padding: 0; place-items: center; border: 1px solid var(--color-border); border-radius: 14px; background: #fff; color: var(--color-text-primary); }
+.recent-header { padding: 22px 16px 16px; border-bottom: 1px solid var(--color-border); background: #fffaf7; }
 h1 { margin: 0; color: var(--color-text-primary); font-size: 20px; letter-spacing: .02em; }.recent-header p { margin: 4px 0 0; color: var(--color-muted); font-size: 12px; }
 .recent-content { padding: 20px 16px 30px; }.loading-state { padding-top: 88px; color: var(--color-muted); }.empty-state { margin: 48px 0; color: var(--color-muted); font-size: 14px; text-align: center; }
 .recent-list { border-top: 1px solid var(--color-border); }.recent-item { padding: 17px 0 16px; border-bottom: 1px solid var(--color-border); cursor: pointer; }.item-heading, .item-footer { display: flex; align-items: center; }.item-heading { gap: 9px; }.item-index { color: var(--color-brand); font-size: 17px; font-weight: 800; }.item-time, .item-footer { color: var(--color-muted); font-size: 11px; }.item-time { display: inline-flex; gap: 4px; align-items: center; }.pinned-mark { margin-left: auto; color: var(--color-brand); font-size: 11px; font-weight: 700; }.item-content { display: -webkit-box; overflow: hidden; margin: 11px 0; color: var(--color-text-primary); font-size: 16px; line-height: 1.65; white-space: pre-wrap; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }.tag-row { display: flex; flex-wrap: wrap; gap: 6px; }.tag-chip { padding: 4px 7px; border-radius: 999px; background: #f1f2ef; color: #737878; font-size: 11px; }.item-footer { justify-content: space-between; margin-top: 13px; }.item-footer :deep(.van-button) { min-width: 68px; height: 38px; border-radius: 12px; font-weight: 700; }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { CircleUserRound, History, Search } from 'lucide-vue-next'
+import { CircleUserRound, Search } from 'lucide-vue-next'
 import { getContentList, recordCopy, type ContentListItem } from '../../api/content'
 import { copyText } from '../../platform/clipboard'
 import { showError, showSuccess } from '../../platform/feedback'
@@ -126,10 +126,7 @@ onMounted(loadContents)
     <header class="home-head">
       <div class="brand-row">
         <div class="brand-area"><span class="brand-mark">次</span><div><h1>下次一定</h1><p>先留下，找得到，用得上。</p></div></div>
-        <div class="header-actions">
-          <RouterLink class="history-link" to="/recent" aria-label="最近使用"><History :size="20" /></RouterLink>
-          <RouterLink class="profile-link" to="/profile" aria-label="我的"><CircleUserRound :size="21" /></RouterLink>
-        </div>
+        <RouterLink class="profile-link" to="/profile" aria-label="我的"><CircleUserRound :size="21" /></RouterLink>
       </div>
       <van-search v-model="keyword" class="home-search" placeholder="找找现在用得上的。" shape="round" @search="openSearch">
         <template #left-icon><Search :size="19" /></template>
@@ -186,11 +183,6 @@ onMounted(loadContents)
   gap: 11px;
 }
 
-.header-actions {
-  display: flex;
-  gap: 8px;
-}
-
 .brand-mark {
   display: grid;
   width: 38px;
@@ -217,7 +209,6 @@ h1 {
   font-size: 12px;
 }
 
-.history-link,
 .profile-link {
   display: grid;
   width: 40px;
@@ -231,7 +222,7 @@ h1 {
 }
 
 .home-search {
-  margin: 16px -8px 0;
+  margin: 12px -8px 0;
   padding: 0;
   background: transparent;
 }
