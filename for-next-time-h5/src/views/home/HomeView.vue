@@ -13,6 +13,7 @@ const copyingId = ref<number | null>(null)
 const pageNum = ref(1)
 const hasMore = ref(false)
 const loadingMore = ref(false)
+const pageSize = 10
 const categories: Array<[string, string]> = [['FUNNY', '搞笑'], ['ABSTRACT', '抽象'], ['EMOTION', '感情'], ['LITERARY', '文艺'], ['HEALING', '治愈'], ['SOBER', '清醒'], ['SARCASM', '阴阳'], ['OTHER', '其他']]
 
 /**
@@ -46,7 +47,7 @@ async function loadContentPage(append: boolean, targetPage = pageNum.value) {
   // 1. 请求当前用户范围内的指定内容页。
   loadingMore.value = true
   try {
-    const page = await getContentList(targetPage, categoryCode.value)
+    const page = await getContentList(targetPage, categoryCode.value, pageSize)
     contents.value = append ? [...contents.value, ...page.list] : page.list
     pageNum.value = page.pageNum
     hasMore.value = page.pageNum < page.pages
@@ -107,7 +108,7 @@ async function openSearchPage() {
  */
 async function loadContents() {
   // 1. 请求首页首屏需要的当前用户内容列表。
-  const page = await getContentList(pageNum.value, categoryCode.value)
+  const page = await getContentList(pageNum.value, categoryCode.value, pageSize)
   // 2. 写入首页内容列表与分页状态。
   contents.value = page.list
   hasMore.value = page.pageNum < page.pages
@@ -131,7 +132,7 @@ onMounted(loadContents)
     </header>
     <div class="home-content">
       <section class="content-section all-content-section">
-        <van-list v-model:loading="loadingMore" :finished="!hasMore" finished-text="" :immediate-check="false" :offset="120" class="content-list" @load="loadMore">
+        <van-list v-model:loading="loadingMore" :finished="!hasMore" finished-text="" :offset="120" class="content-list" @load="loadMore">
           <article v-for="item in contents" :key="item.id" class="content-card" @click="openDetail(item.id)">
             <div class="card-top"><span v-if="item.pinned" class="pinned-mark">已置顶</span><span>{{ item.lastCopyTime ? '最近用过' : item.updateTime }}</span></div>
             <p class="content-text">{{ item.content }}</p>

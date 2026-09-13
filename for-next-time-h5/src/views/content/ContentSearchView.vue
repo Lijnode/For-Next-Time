@@ -15,6 +15,7 @@ const copyingId = ref<number | null>(null)
 const pageNum = ref(1)
 const hasMore = ref(false)
 const loadingMore = ref(false)
+const pageSize = 10
 let searchTimer: ReturnType<typeof setTimeout> | undefined
 
 /**
@@ -57,7 +58,7 @@ async function loadSearchPage(append: boolean, targetPage = pageNum.value) {
   loading.value = !append
   loadingMore.value = append
   try {
-    const page = await searchContents(normalizedKeyword, targetPage)
+    const page = await searchContents(normalizedKeyword, targetPage, null, pageSize)
     contents.value = append ? [...contents.value, ...page.list] : page.list
     pageNum.value = page.pageNum
     hasMore.value = page.pageNum < page.pages
@@ -128,7 +129,7 @@ onBeforeUnmount(() => { if (searchTimer) clearTimeout(searchTimer) })
     <header class="top-bar"><button type="button" aria-label="返回" @click="router.back()"><ArrowLeft :size="21" /></button><h1>找一句</h1><span aria-hidden="true"></span></header>
     <div class="search-box"><van-search v-model="keyword" class="search-input" placeholder="搜索正文、备注、标签或分类" shape="round" @search="executeSearch"><template #left-icon><Search :size="19" /></template></van-search><button class="search-button" type="button" aria-label="搜索" @click="executeSearch"><Search :size="18" /></button></div>
     <van-loading v-if="loading" class="loading" vertical>正在翻找……</van-loading><p v-else-if="keyword.trim() && !contents.length" class="empty-message">这次没翻到合适的。</p>
-    <section class="content-list"><van-list v-model:loading="loadingMore" :finished="!hasMore" finished-text="" :immediate-check="false" :offset="120" @load="loadMore"><article v-for="item in contents" :key="item.id" class="content-card" @click="openDetail(item.id)"><div class="card-top"><span v-if="item.pinned" class="pinned-mark">已置顶</span><span>{{ item.lastCopyTime ? '最近用过' : item.updateTime }}</span></div><p class="content-text">{{ item.content }}</p><div class="tag-row"><span v-if="item.categoryName" :class="['tag', 'category-tag', item.categoryCode ? 'category-' + item.categoryCode.toLowerCase() : '']">{{ item.categoryName }}</span><span v-for="tag in item.tags.slice(0, 3)" :key="tag.id" class="tag">#{{ tag.name }}</span></div><div class="card-footer"><span>{{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '还没用过' }}</span><van-button plain size="small" type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</van-button></div></article></van-list></section>
+    <section class="content-list"><van-list v-model:loading="loadingMore" :finished="!hasMore" finished-text="" :offset="120" @load="loadMore"><article v-for="item in contents" :key="item.id" class="content-card" @click="openDetail(item.id)"><div class="card-top"><span v-if="item.pinned" class="pinned-mark">已置顶</span><span>{{ item.lastCopyTime ? '最近用过' : item.updateTime }}</span></div><p class="content-text">{{ item.content }}</p><div class="tag-row"><span v-if="item.categoryName" :class="['tag', 'category-tag', item.categoryCode ? 'category-' + item.categoryCode.toLowerCase() : '']">{{ item.categoryName }}</span><span v-for="tag in item.tags.slice(0, 3)" :key="tag.id" class="tag">#{{ tag.name }}</span></div><div class="card-footer"><span>{{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '还没用过' }}</span><van-button plain size="small" type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</van-button></div></article></van-list></section>
   </main>
 </template>
 
