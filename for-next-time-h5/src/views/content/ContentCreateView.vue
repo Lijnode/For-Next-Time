@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { createContent, getContentDetail, updateContent } from '../../api/content'
 import { getTagList, type TagItem } from '../../api/tag'
-import { showError, showSuccess } from '../../platform/feedback'
+import { confirm as confirmDialog, showError, showSuccess } from '../../platform/feedback'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,6 +17,8 @@ const showTagSheet = ref(false)
 const loading = ref(false)
 const initialLoading = ref(false)
 const errorMessage = ref('')
+const initialSnapshot = ref('')
+const allowLeave = ref(false)
 const categories = [['FUNNY', '搞笑'], ['ABSTRACT', '抽象'], ['EMOTION', '感情'], ['LITERARY', '文艺'], ['HEALING', '治愈'], ['SOBER', '清醒'], ['SARCASM', '阴阳'], ['OTHER', '其他']]
 const categoryActions = [{ name: '不分类', value: null }, ...categories.map(([value, name]) => ({ name, value }))]
 const editingId = computed(() => route.name === 'content-edit' ? Number(route.params.id) : null)
@@ -49,6 +51,37 @@ async function loadEditingContent() {
     // 4. 无论成功或失败都结束初始加载状态。
     initialLoading.value = false
   }
+}
+
+/**
+ * 将当前可保存字段序列化为稳定快照，用于比较未保存改动。
+ */
+function createFormSnapshot() {
+  // 1. 只保留会提交给后端的字段，忽略标签输入框等临时界面状态。
+  return JSON.stringify({
+    content: form.content,
+    categoryCode: form.categoryCode,
+    tagNames: form.tagNames,
+    remark: form.remark,
+  })
+}
+
+/**
+ * 记录当前表单为已保存基线，后续离开页面时用于判断是否需要确认。
+ */
+function saveFormSnapshot() {
+  // 1. 覆盖页面进入或数据加载完成后的初始表单状态。
+  initialSnapshot.value = createFormSnapshot()
+}
+
+/**
+ * 在有未保存表单改动时询问用户是否放弃这些输入。
+ */
+async function confirmDiscardChanges() {
+  // 1. 无改动或已成功保存时允许直接离开。
+  if (allowLeave.value || createFormSnapshot() === initialSnapshot.value) return true
+  // 2. 通过移动端平台反馈层确认，避免用户误丢正文和标签。
+  return confirmDialog('当前修改尚未保存，确定离开吗？')
 }
 
 /**
@@ -128,10 +161,12 @@ async function submit() {
     const payload = { ...form, remark: form.remark.trim() || null }
     if (isEditing.value) {
       await updateContent(editingId.value!, payload)
+      allowLeave.value = true
       showSuccess('先留着，下次一定。')
       await router.replace({ name: 'content-detail', params: { id: editingId.value } })
     } else {
       await createContent(payload)
+      allowLeave.value = true
       showSuccess('先留着，下次一定。')
       await router.replace({ name: 'home' })
     }
@@ -144,8 +179,14 @@ async function submit() {
   }
 }
 
-// 1. 编辑路由首次进入时回填现有内容。
-onMounted(loadEditingContent)
+// 1. 编辑路由首次进入时回填现有内容，并记录表单初始状态。
+onMounted(async () => {
+  await loadEditingContent()
+  saveFormSnapshot()
+})
+
+// 2. 路由切换前确认未保存改动，防止误丢用户输入。
+onBeforeRouteLeave(confirmDiscardChanges)
 </script>
 
 <template>
