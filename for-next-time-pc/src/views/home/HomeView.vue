@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Search } from 'lucide-vue-next'
-import { getContentList, getRecentContents, recordCopy, type ContentListItem } from '../../api/content'
+import { CircleUserRound, Plus, Search } from 'lucide-vue-next'
+import { getContentList, getRecentContents, recordCopy, searchContents, type ContentListItem } from '../../api/content'
 
 const router = useRouter()
 const contents = ref<ContentListItem[]>([])
@@ -14,6 +14,7 @@ const copyingId = ref<number | null>(null)
 const pageNum = ref(1)
 const total = ref(0)
 const categories: Array<[string, string]> = [['FUNNY', '搞笑'], ['ABSTRACT', '抽象'], ['EMOTION', '感情'], ['LITERARY', '文艺'], ['HEALING', '治愈'], ['SOBER', '清醒'], ['SARCASM', '阴阳'], ['OTHER', '其他']]
+const isSearching = computed(() => Boolean(keyword.value.trim()))
 
 /**
  * 进入新增内容页面。
@@ -48,13 +49,16 @@ async function changePage(value: number) {
  * 加载当前分类与页码的内容分页结果。
  */
 async function loadContentPage() {
-  // 1. 请求当前用户范围内的指定内容页。
+  // 1. 按首页当前模式请求普通列表或关键词搜索结果。
   try {
-    const page = await getContentList(pageNum.value, categoryCode.value)
+    const page = isSearching.value
+      ? await searchContents(keyword.value.trim(), pageNum.value, categoryCode.value)
+      : await getContentList(pageNum.value, categoryCode.value)
+    // 2. 用接口分页结果更新首页卡片区域。
     contents.value = page.list
     total.value = page.total
   } catch (error) {
-    // 2. 请求失败时保留当前内容并提示用户。
+    // 3. 请求失败时保留当前内容并提示用户。
     ElMessage.error(error instanceof Error ? error.message : '加载内容失败，请稍后重试')
   }
 }
@@ -95,14 +99,26 @@ async function openDetail(id: number) {
 }
 
 /**
- * 使用首页关键词进入内容搜索页。
+ * 在首页原地加载当前关键词对应的搜索结果。
  */
-async function openSearch() {
-  // 1. 清理空白关键词，避免跳转后发起无效搜索。
+async function searchOnHome() {
+  // 1. 清理空白关键词，避免发起无效搜索。
   const normalizedKeyword = keyword.value.trim()
   if (!normalizedKeyword) return
-  // 2. 将关键词带入受保护的搜索路由。
-  await router.push({ name: 'content-search', query: { keyword: normalizedKeyword } })
+  // 2. 从第一页加载当前关键词和分类的结果。
+  pageNum.value = 1
+  await loadContentPage()
+}
+
+/**
+ * 清空首页关键词并恢复当前分类下的普通内容列表。
+ */
+async function clearSearch() {
+  // 1. 清空输入内容并将分页回到第一页。
+  keyword.value = ''
+  pageNum.value = 1
+  // 2. 重新加载当前分类下的普通列表。
+  await loadContentPage()
 }
 
 /**
@@ -123,14 +139,18 @@ onMounted(loadContents)
 
 <template>
   <main class="home-shell">
+    <div class="home-actions">
+      <RouterLink class="create-link" to="/contents/new"><Plus :size="17" />先留一句</RouterLink>
+      <RouterLink class="profile-link" to="/profile" aria-label="我的"><CircleUserRound :size="21" /></RouterLink>
+    </div>
     <section class="hero">
       <p class="eyebrow">FOR NEXT TIME</p>
       <h1>这次先留着，下次一定用得上。</h1>
       <p class="hero-description">以前留下的那些句子，需要的时候，都应该找得回来。</p>
       <div class="search-entry">
-        <el-input v-model="keyword" size="large" placeholder="找找现在用得上的。" clearable :prefix-icon="Search" @keyup.enter="openSearch">
+        <el-input v-model="keyword" size="large" placeholder="找找现在用得上的。" clearable :prefix-icon="Search" @clear="clearSearch" @keyup.enter="searchOnHome">
           <template #suffix>
-            <button class="search-button" type="button" aria-label="搜索" @click="openSearch"><Search :size="19" /></button>
+            <button class="search-button" type="button" aria-label="搜索" @click="searchOnHome"><Search :size="19" /></button>
           </template>
         </el-input>
       </div>
@@ -139,7 +159,7 @@ onMounted(loadContents)
         <button v-for="category in categories" :key="category[0]" :class="{ active: categoryCode === category[0] }" type="button" @click="selectCategory(category[0])">{{ category[1] }}</button>
       </div>
     </section>
-    <section class="content-section recent-section">
+    <section v-if="!isSearching" class="content-section recent-section">
       <div class="section-heading">
         <div><h2>最近使用</h2><p>最近真正拿出去用过的内容</p></div>
       </div>
@@ -154,7 +174,7 @@ onMounted(loadContents)
       <p v-else class="recent-empty">最近还没用上这里的内容。</p>
     </section>
     <section class="content-section all-content-section">
-      <div class="section-heading"><div><h2>全部内容</h2><p>共留下 {{ total }} 条，慢慢翻，总能翻到。</p></div></div>
+      <div class="section-heading"><div><h2>{{ isSearching ? '搜索结果' : '全部内容' }}</h2><p v-if="isSearching">“{{ keyword.trim() }}”共翻到 {{ total }} 条。</p><p v-else>共留下 {{ total }} 条，慢慢翻，总能翻到。</p></div><el-button v-if="isSearching" text type="primary" @click="clearSearch">返回全部</el-button></div>
       <div class="content-grid">
         <article v-for="item in contents" :key="item.id" class="content-card" tabindex="0" @click="openDetail(item.id)" @keydown.enter="openDetail(item.id)">
           <div class="card-top"><span v-if="item.pinned" class="pinned-mark">已置顶</span><span>{{ item.lastCopyTime ? '最近用过' : item.updateTime }}</span></div>
@@ -174,11 +194,43 @@ onMounted(loadContents)
 .home-shell {
   width: min(1240px, calc(100% - 64px));
   margin: 0 auto;
-  padding: 34px 0 72px;
+  padding: 24px 0 72px;
+}
+
+.home-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.create-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 16px;
+  border-radius: 14px;
+  background: var(--color-brand);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 7px 15px rgb(255 111 78 / 18%);
+}
+
+.profile-link {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid #f0dfd9;
+  border-radius: 14px;
+  background: #fff1ec;
+  color: var(--color-brand);
+  text-decoration: none;
 }
 
 .hero {
-  padding: 31px 0 18px;
+  padding: 48px 0 18px;
   text-align: center;
 }
 
