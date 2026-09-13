@@ -5,13 +5,14 @@ import { CircleUserRound, Clock3, House, Plus } from 'lucide-vue-next'
 
 const route = useRoute()
 const showTabBar = computed(() => route.name === 'home' || route.name === 'content-recent' || route.name === 'profile')
+const showFloatingCreate = computed(() => route.name === 'home')
 </script>
 
 <template>
   <div :class="{ 'with-tab-bar': showTabBar }">
     <RouterView />
   </div>
-  <RouterLink v-if="showTabBar" to="/contents/new" class="floating-create" aria-label="先留一句"><Plus :size="25" /></RouterLink>
+  <RouterLink v-if="showFloatingCreate" to="/contents/new" class="floating-create" aria-label="先留一句"><Plus :size="25" /></RouterLink>
   <nav v-if="showTabBar" class="tab-bar" aria-label="底部导航">
     <RouterLink to="/" class="tab-item">
       <House class="tab-icon" :size="21" />
