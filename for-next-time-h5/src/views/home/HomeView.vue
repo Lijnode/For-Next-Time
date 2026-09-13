@@ -8,7 +8,6 @@ import { showError, showSuccess } from '../../platform/feedback'
 
 const router = useRouter()
 const contents = ref<ContentListItem[]>([])
-const keyword = ref('')
 const categoryCode = ref<string | null>(null)
 const copyingId = ref<number | null>(null)
 const pageNum = ref(1)
@@ -93,14 +92,11 @@ async function openDetail(id: number) {
 }
 
 /**
- * 使用首页关键词进入内容搜索页。
+ * 从首页进入独立的内容搜索页。
  */
-async function openSearch() {
-  // 1. 清理空白关键词，避免跳转后发起无效搜索。
-  const normalizedKeyword = keyword.value.trim()
-  if (!normalizedKeyword) return
-  // 2. 将关键词带入受保护的搜索路由。
-  await router.push({ name: 'content-search', query: { keyword: normalizedKeyword } })
+async function openSearchPage() {
+  // 1. 打开不含底部导航的搜索任务页。
+  await router.push({ name: 'content-search' })
 }
 
 /**
@@ -121,9 +117,10 @@ onMounted(loadContents)
 <template>
   <main class="home-page">
     <header class="home-head">
-      <van-search v-model="keyword" class="home-search" placeholder="找找现在用得上的。" shape="round" @search="openSearch">
-        <template #left-icon><Search :size="19" /></template>
-      </van-search>
+      <div class="brand-row">
+        <div class="brand-area"><span class="brand-mark" aria-hidden="true">次</span><div><h1>下次一定</h1><p>先留下，找得到，用得上。</p></div></div>
+        <button class="search-entry" type="button" aria-label="搜索内容" @click="openSearchPage"><Search :size="21" /></button>
+      </div>
       <div class="category-scroller" aria-label="按分类浏览">
         <button :class="{ active: categoryCode === null }" type="button" @click="selectCategory(null)">全部</button>
         <button v-for="category in categories" :key="category[0]" :class="{ active: categoryCode === category[0] }" type="button" @click="selectCategory(category[0])">{{ category[1] }}</button>
@@ -153,47 +150,33 @@ onMounted(loadContents)
 }
 
 .home-head {
-  padding: 14px 16px 12px;
+  padding: 20px 16px 12px;
   background: linear-gradient(180deg, #fff7f3 0%, var(--color-page) 100%);
 }
 
+.brand-row,
+.brand-area,
 .card-top,
 .card-footer {
   display: flex;
   align-items: center;
 }
 
+.brand-row,
 .card-top,
 .card-footer {
   justify-content: space-between;
 }
-
-.home-search {
-  margin: 0 -8px;
-  padding: 0;
-  background: transparent;
-}
-
-.home-search :deep(.van-search__content) {
-  height: 50px;
-  padding: 0 13px;
-  border: 1px solid var(--color-border);
-  border-radius: 17px;
-  background: #fff;
-  box-shadow: 0 5px 14px rgb(31 33 33 / 4%);
-}
-
-.home-search :deep(.van-field__left-icon) {
-  display: flex;
-  align-items: center;
-  color: var(--color-muted);
-}
+.brand-area { gap: 11px; }
+.brand-mark { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 14px; background: var(--color-brand); color: #fff; font-size: 18px; font-weight: 800; box-shadow: 0 5px 12px rgb(255 111 78 / 22%); }
+h1 { margin: 0; color: var(--color-text-primary); font-size: 22px; letter-spacing: .04em; }.brand-area p { margin: 4px 0 0; color: var(--color-muted); font-size: 12px; }
+.search-entry { display: grid; width: 44px; height: 44px; padding: 0; place-items: center; border: 1px solid #f0dfd9; border-radius: 15px; background: #fff1ec; color: var(--color-brand); }
 
 .category-scroller {
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  margin: 14px -16px -2px;
+  margin: 16px -16px -2px;
   padding: 0 16px 4px;
   scrollbar-width: none;
 }
