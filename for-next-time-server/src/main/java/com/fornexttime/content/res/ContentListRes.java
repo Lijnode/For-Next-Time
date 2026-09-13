@@ -1,5 +1,6 @@
 package com.fornexttime.content.res;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fornexttime.tag.res.TagRes;
 
 import java.time.LocalDateTime;
@@ -27,13 +28,16 @@ public record ContentListRes(
         /** 成功复制次数。 */
         int copyCount,
 
-        /** 最近一次成功复制时间，从未复制时为空。 */
+        /** 最近一次成功复制时间，从未复制时为空，按统一时间协议序列化。 */
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Shanghai")
         LocalDateTime lastCopyTime,
 
-        /** 内容创建时间。 */
+        /** 内容创建时间，按统一时间协议序列化。 */
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Shanghai")
         LocalDateTime createTime,
 
-        /** 内容最后编辑时间。 */
+        /** 内容最后编辑时间，按统一时间协议序列化。 */
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Shanghai")
         LocalDateTime updateTime,
 
         /** 当前内容关联的标签列表，未关联时返回空数组。 */

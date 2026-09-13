@@ -184,7 +184,7 @@ onMounted(() => {
     <section class="hero">
       <h1>这次先留着，下次一定用得上。</h1>
       <div class="search-entry">
-        <el-input v-model="keyword" size="large" placeholder="找找现在用得上的。" clearable :prefix-icon="Search" @clear="clearSearch" @keyup.enter="searchOnHome">
+        <el-input v-model="keyword" size="large" placeholder="找找现在用得上的" clearable :prefix-icon="Search" @clear="clearSearch" @keyup.enter="searchOnHome">
           <template #suffix>
             <button class="search-button" type="button" aria-label="搜索" @click="searchOnHome"><Search :size="19" /></button>
           </template>
