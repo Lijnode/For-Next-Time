@@ -196,7 +196,7 @@ onMounted(() => {
     </section>
     <div class="home-content-layout">
       <section class="all-content-section">
-        <div class="section-heading"><div><h2>{{ isSearching ? '搜索结果' : '全部内容' }}</h2><p v-if="isSearching">“{{ keyword.trim() }}”共翻到 {{ total }} 条。</p><p v-else>共留下 {{ total }} 条，慢慢翻，总能翻到。</p></div><el-button v-if="isSearching" text type="primary" @click="clearSearch">返回全部</el-button></div>
+        <div class="section-heading"><div><h2>{{ isSearching ? '搜索结果' : '全部内容' }}</h2><p v-if="isSearching">“{{ keyword.trim() }}”共翻到 {{ total }} 条。</p></div><el-button v-if="isSearching" text type="primary" @click="clearSearch">返回全部</el-button></div>
         <div class="content-grid">
           <article v-for="item in contents" :key="item.id" class="content-card" tabindex="0" @click="openDetail(item.id)" @keydown.enter="openDetail(item.id)">
             <div class="card-top"><span v-if="item.pinned" class="pinned-mark">已置顶</span><span>{{ item.lastCopyTime ? '最近用过' : item.updateTime }}</span></div>
@@ -210,7 +210,7 @@ onMounted(() => {
         <el-pagination v-if="total > 20" class="pagination" background layout="prev, pager, next" :current-page="pageNum" :page-size="20" :total="total" @current-change="changePage" />
       </section>
       <aside v-if="!isSearching" class="recent-panel">
-        <div class="section-heading"><h2>最近使用</h2><p>最近真正拿出去用过的内容</p></div>
+        <div class="section-heading"><h2>最近使用</h2></div>
         <div v-if="recentContents.length" class="recent-list" aria-label="最近使用内容">
           <article v-for="(item, index) in recentContents.slice(0, 3)" :key="item.id" class="recent-quick-item" tabindex="0" @click="openDetail(item.id)" @keydown.enter="openDetail(item.id)">
             <span class="recent-rank">{{ String(index + 1).padStart(2, '0') }}</span>
@@ -259,7 +259,7 @@ onMounted(() => {
   height: 40px;
   place-items: center;
   border: 1px solid #f0dfd9;
-  border-radius: 14px;
+  border-radius: 50%;
   background: #fff1ec;
   color: var(--color-brand);
   overflow: hidden;
@@ -575,8 +575,36 @@ h1 {
 }
 
 .pagination {
+  display: flex;
   justify-content: center;
   margin-top: 30px;
+}
+
+.pagination :deep(.btn-prev),
+.pagination :deep(.btn-next),
+.pagination :deep(.el-pager li) {
+  min-width: 34px;
+  height: 34px;
+  margin: 0 3px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.pagination :deep(.btn-prev:hover),
+.pagination :deep(.btn-next:hover),
+.pagination :deep(.el-pager li:hover) {
+  border-color: #ffb29f;
+  color: var(--color-brand);
+}
+
+.pagination :deep(.el-pager li.is-active) {
+  border-color: var(--color-brand);
+  background: var(--color-brand);
+  color: #fff;
+  box-shadow: 0 5px 12px rgb(255 111 78 / 20%);
 }
 
 @media (max-width: 1180px) {
