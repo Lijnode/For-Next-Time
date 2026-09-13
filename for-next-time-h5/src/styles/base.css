@@ -39,3 +39,28 @@ input:-webkit-autofill:active {
   outline: 3px solid rgb(255 111 78 / 24%);
   outline-offset: 2px;
 }
+
+/* 固定分类沿用 PC 端色板，保证双端识别一致。 */
+body .category-chip.category-funny,
+body .category-tag.category-funny { background: #fff4d8; color: #9c6700; }
+
+body .category-chip.category-abstract,
+body .category-tag.category-abstract { background: #f1edff; color: #715cac; }
+
+body .category-chip.category-emotion,
+body .category-tag.category-emotion { background: #fff0f3; color: #b85f74; }
+
+body .category-chip.category-literary,
+body .category-tag.category-literary { background: #edf1ff; color: #556eae; }
+
+body .category-chip.category-healing,
+body .category-tag.category-healing { background: #edf8f0; color: #4d8662; }
+
+body .category-chip.category-sober,
+body .category-tag.category-sober { background: #edf5f8; color: #4f7e91; }
+
+body .category-chip.category-sarcasm,
+body .category-tag.category-sarcasm { background: #f5effa; color: #865d9a; }
+
+body .category-chip.category-other,
+body .category-tag.category-other { background: #f1f2ef; color: #666d6d; }

@@ -132,7 +132,7 @@ onMounted(loadContents)
           <article v-for="item in contents" :key="item.id" class="content-card" @click="openDetail(item.id)">
             <div class="card-top"><span v-if="item.pinned" class="pinned-mark">已置顶</span><span>{{ item.lastCopyTime ? '最近用过' : item.updateTime }}</span></div>
             <p class="content-text">{{ item.content }}</p>
-            <div class="tag-row"><span v-if="item.categoryName" class="card-chip category-chip">{{ item.categoryName }}</span><span v-for="tag in item.tags.slice(0, 3)" :key="tag.id" class="card-chip">#{{ tag.name }}</span></div>
+            <div class="tag-row"><span v-if="item.categoryName" :class="['card-chip', 'category-chip', item.categoryCode ? 'category-' + item.categoryCode.toLowerCase() : '']">{{ item.categoryName }}</span><span v-for="tag in item.tags.slice(0, 3)" :key="tag.id" class="card-chip">#{{ tag.name }}</span></div>
             <div class="card-footer"><span>{{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '还没用过' }}</span><van-button plain size="small" type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</van-button></div>
           </article>
         </div>
@@ -265,10 +265,6 @@ h1 { margin: 0; color: var(--color-text-primary); font-size: 22px; letter-spacin
   line-height: 1;
 }
 
-.category-chip {
-  background: #fff1ec;
-  color: #cf5a41;
-}
 
 .card-footer {
   margin-top: 13px;
