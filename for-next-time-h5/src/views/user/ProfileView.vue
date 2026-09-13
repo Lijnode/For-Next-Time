@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Camera, ChevronRight, KeyRound, LogOut } from 'lucide-vue-next'
+import { Camera, ChevronRight, Info, KeyRound, LogOut } from 'lucide-vue-next'
 import type { UploaderAfterRead } from 'vant'
 import { getUserProfile, uploadAvatar, type UserProfile } from '../../api/user'
 import { showError, showSuccess } from '../../platform/feedback'
@@ -65,6 +65,14 @@ async function openPasswordForm() {
 }
 
 /**
+ * 打开产品介绍页查看应用说明与版本信息。
+ */
+async function openAboutPage() {
+  // 1. 跳转至不展示底部导航的独立关于页。
+  await router.push({ name: 'about' })
+}
+
+/**
  * 清除当前账户登录状态并返回登录页。
  */
 async function logout() {
@@ -101,9 +109,11 @@ onMounted(loadProfile)
       </section>
       <section class="profile-group" aria-label="账户设置">
         <button class="profile-row settings-row" type="button" @click="openPasswordForm"><span><KeyRound :size="18" />修改密码</span><ChevronRight :size="18" /></button>
+        <button class="profile-row settings-row" type="button" @click="openAboutPage"><span><Info :size="18" />关于下次一定</span><ChevronRight :size="18" /></button>
       </section>
-      <section class="about"><p>关于下次一定</p><span>这次先留着，下次一定用得上。</span></section>
-      <button class="logout-button" type="button" @click="logout"><LogOut :size="17" />退出登录</button>
+      <section class="profile-group logout-group" aria-label="账户操作">
+        <button class="profile-row logout-button" type="button" @click="logout"><span><LogOut :size="18" />退出登录</span></button>
+      </section>
     </template>
   </main>
 </template>
@@ -116,7 +126,6 @@ onMounted(loadProfile)
 .avatar-uploader { display: block; flex: 0 0 64px; width: 64px; height: 64px; }.avatar-uploader :deep(.van-uploader__wrapper) { display: block; width: 64px; height: 64px; }.avatar-uploader :deep(.van-uploader__input) { width: 64px; height: 64px; }
 .profile-mark { position: relative; display: grid; box-sizing: border-box; width: 64px; height: 64px; padding: 0; place-items: center; overflow: hidden; border: 0; border-radius: 22px; background: var(--color-brand); color: #fff; font: inherit; font-size: 24px; font-weight: 800; box-shadow: 0 7px 15px rgb(255 111 78 / 20%); }.profile-mark:disabled { opacity: 0.75; }.profile-mark img { position: absolute; inset: 0; display: block; width: 100% !important; height: 100% !important; max-width: none; object-fit: cover; }.avatar-edit { position: absolute; right: 3px; bottom: 3px; z-index: 1; display: grid; width: 22px; height: 22px; place-items: center; border: 2px solid #fff; border-radius: 50%; background: var(--color-brand); }
 .profile-head h1 { margin: 0; color: var(--color-text-primary); font-size: 19px; }.profile-head p { margin: 5px 0 0; color: var(--color-muted); font-size: 12px; }
-.profile-group { overflow: hidden; margin-top: 14px; border: 1px solid var(--color-border); border-radius: 17px; background: var(--color-card); }.profile-row { display: flex; width: 100%; min-height: 54px; align-items: center; justify-content: space-between; padding: 0 15px; border: 0; border-bottom: 1px solid #efefeb; background: transparent; color: var(--color-text-secondary); font: inherit; font-size: 14px; text-align: left; }.profile-row:last-child { border-bottom: 0; }.profile-row strong { color: var(--color-text-primary); font-size: 13px; font-weight: 700; }.settings-row { color: var(--color-text-primary); }.settings-row span { display: inline-flex; align-items: center; gap: 10px; }.settings-row > svg { color: var(--color-muted); }
-.about { margin-top: 14px; padding: 16px; border: 1px solid var(--color-border); border-radius: 17px; background: #fafaf8; }.about p { margin: 0 0 7px; color: var(--color-muted); font-size: 12px; font-weight: 700; }.about span { color: var(--color-text-secondary); font-size: 13px; line-height: 1.6; }
-.logout-button { display: inline-flex; min-height: 44px; align-items: center; gap: 8px; margin: 22px 0 0 2px; padding: 0; border: 0; background: transparent; color: var(--color-muted); font: inherit; font-size: 13px; }
+.profile-group { overflow: hidden; margin-top: 14px; border: 1px solid var(--color-border); border-radius: 17px; background: var(--color-card); }.profile-row { display: flex; width: 100%; min-height: 54px; align-items: center; justify-content: space-between; padding: 0 15px; border: 0; border-bottom: 1px solid #efefeb; background: transparent; color: var(--color-text-secondary); font: inherit; font-size: 14px; text-align: left; }.profile-row:last-child { border-bottom: 0; }.profile-row strong { color: var(--color-text-primary); font-size: 13px; font-weight: 700; }.settings-row { color: var(--color-text-primary); }.settings-row span, .logout-button span { display: inline-flex; align-items: center; gap: 10px; }.settings-row > svg { color: var(--color-muted); }
+.logout-group { margin-top: 22px; }.logout-button { color: #d95d4a; }
 </style>

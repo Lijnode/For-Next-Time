@@ -8,6 +8,7 @@ import RecentView from '../views/content/RecentView.vue'
 import ContentSearchView from '../views/content/ContentSearchView.vue'
 import HomeView from '../views/home/HomeView.vue'
 import ChangePasswordView from '../views/user/ChangePasswordView.vue'
+import AboutView from '../views/user/AboutView.vue'
 import ProfileView from '../views/user/ProfileView.vue'
 
 const router = createRouter({
@@ -35,6 +36,7 @@ const router = createRouter({
     { path: '/recent', name: 'content-recent', component: RecentView, meta: { requiresAuth: true } },
     { path: '/contents/:id', name: 'content-detail', component: ContentDetailView, meta: { requiresAuth: true } },
     { path: '/profile', name: 'profile', component: ProfileView, meta: { requiresAuth: true } },
+    { path: '/about', name: 'about', component: AboutView, meta: { requiresAuth: true } },
     { path: '/password', name: 'password-change', component: ChangePasswordView, meta: { requiresAuth: true } },
   ],
 })
