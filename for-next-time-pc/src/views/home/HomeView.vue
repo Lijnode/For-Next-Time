@@ -7,6 +7,7 @@ import { useAuthStore } from '../../stores/auth'
 const router = useRouter()
 const authStore = useAuthStore()
 const contents = ref<ContentListItem[]>([])
+const keyword = ref('')
 
 /**
  * 清除登录状态并返回登录页。
@@ -35,6 +36,17 @@ async function openDetail(id: number) {
 }
 
 /**
+ * 使用首页关键词进入内容搜索页。
+ */
+async function openSearch() {
+  // 1. 清理空白关键词，避免跳转后发起无效搜索。
+  const normalizedKeyword = keyword.value.trim()
+  if (!normalizedKeyword) return
+  // 2. 将关键词带入受保护的搜索路由。
+  await router.push({ name: 'content-search', query: { keyword: normalizedKeyword } })
+}
+
+/**
  * 加载首页内容列表，失败时保留空状态。
  */
 async function loadContents() {
@@ -52,6 +64,7 @@ onMounted(loadContents)
       <p class="eyebrow">For Next Time</p>
       <h1>下次一定</h1>
       <p>这次先留着，下次一定用得上。</p>
+      <div class="search-entry"><el-input v-model="keyword" placeholder="找找现在用得上的。" clearable @keyup.enter="openSearch"><template #append><el-button @click="openSearch">搜索</el-button></template></el-input></div>
       <el-button type="primary" @click="createContent">先留一句</el-button>
       <el-button text type="primary" @click="logout">退出登录</el-button>
     </section>
@@ -79,6 +92,7 @@ onMounted(loadContents)
   color: var(--color-text-tertiary);
   font-size: 13px;
 }
+.search-entry { width: min(560px, 100%); margin: 28px 0 18px; }
 
 h1 {
   margin: var(--space-2) 0;

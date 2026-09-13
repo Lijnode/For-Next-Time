@@ -127,6 +127,31 @@ public class ContentService {
     }
 
     /**
+     * 在当前用户范围内分页搜索正文、备注、标签和分类中文名称。
+     *
+     * @param keyword      搜索关键词
+     * @param pageNum      页码
+     * @param pageSize     每页数量
+     * @param categoryCode 可选分类二次筛选
+     * @return 统一的内容列表分页结果
+     */
+    public PageResult<ContentListRes> search(String keyword, int pageNum, int pageSize, String categoryCode) {
+        // 1. 校验搜索关键词与可选分类，并映射命中的中文分类编码。
+        String normalizedKeyword = normalizeSearchKeyword(keyword);
+        String normalizedCategory = normalizeCategory(categoryCode);
+        List<String> categoryCodes = CategoryCode.findCodesByLabelKeyword(normalizedKeyword);
+        Long userId = UserContext.requireUserId();
+
+        // 2. 查询符合搜索范围的总数和当前页内容。
+        long total = contentMapper.countSearch(userId, normalizedKeyword, normalizedCategory, categoryCodes);
+        List<Content> contents = contentMapper.searchPage(userId, normalizedKeyword, normalizedCategory, categoryCodes,
+                (pageNum - 1) * pageSize, pageSize);
+
+        // 3. 批量组装标签后返回与普通列表一致的分页结构。
+        return PageResult.of(pageNum, pageSize, total, toListRes(contents));
+    }
+
+    /**
      * 清理正文两端空白，同时保留内部换行与空格。
      */
     private String normalizeContent(String content) {
@@ -139,6 +164,22 @@ public class ContentService {
         if (normalized.length() > 5000) {
             throw new BusinessException(ErrorCode.CONTENT_TOO_LONG);
         }
+        return normalized;
+    }
+
+    /**
+     * 清理搜索关键词并校验 V1 搜索长度边界。
+     *
+     * @param keyword 原始搜索关键词
+     * @return 清洗后的非空搜索关键词
+     */
+    private String normalizeSearchKeyword(String keyword) {
+        // 1. 清理首尾空白，避免空白关键词触发全量搜索。
+        String normalized = keyword == null ? "" : keyword.trim();
+        if (normalized.isEmpty() || normalized.length() > 100) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR);
+        }
+        // 2. 返回允许单个中文字符的有效关键词。
         return normalized;
     }
 
@@ -243,15 +284,33 @@ public class ContentService {
         // 2. 只查询当前用户未删除的当前页内容。
         List<Content> contents = contentMapper.findPage(userId, normalizedCategory, pinned,
                 (pageNum - 1) * pageSize, pageSize);
-        // 3. 一次性查询当前页标签并按内容 ID 分组，避免 N+1。
+        // 3. 一次性查询当前页标签并组装列表响应，避免 N+1。
+        return PageResult.of(pageNum, pageSize, total, toListRes(contents));
+    }
+
+    /**
+     * 批量查询内容关联标签，并转换为对外内容列表结构。
+     *
+     * @param contents 当前页内容实体
+     * @return 携带分类名称和标签的内容列表响应
+     */
+    private List<ContentListRes> toListRes(List<Content> contents) {
+        // 1. 一次性查询当前页全部标签并按内容主键分组。
         Map<Long, List<ContentTagRes>> tagsByContentId = contents.isEmpty() ? Map.of() : tagMapper
                 .findByContentIds(contents.stream().map(Content::getId).toList()).stream()
                 .collect(Collectors.groupingBy(ContentTagRes::contentId));
+        // 2. 解析分类中文名称，并移除标签关系中的内部 contentId。
         List<ContentListRes> list = contents.stream()
-                .map(content -> new ContentListRes(content.getId(), content.getContent(), content.getCategoryCode(),
-                        content.isPinned(), content.getCopyCount(), tagsByContentId.getOrDefault(content.getId(), List.of())
-                        .stream().map(tag -> new TagRes(tag.id(), tag.name())).toList()))
+                .map(content -> {
+                    CategoryCode category = CategoryCode.fromCode(content.getCategoryCode());
+                    List<TagRes> tags = tagsByContentId.getOrDefault(content.getId(), List.of()).stream()
+                            .map(tag -> new TagRes(tag.id(), tag.name()))
+                            .toList();
+                    return new ContentListRes(content.getId(), content.getContent(), content.getCategoryCode(),
+                            category == null ? null : category.getLabel(), content.isPinned(), content.getCopyCount(),
+                            content.getLastCopyTime(), content.getCreateTime(), content.getUpdateTime(), tags);
+                })
                 .toList();
-        return PageResult.of(pageNum, pageSize, total, list);
+        return list;
     }
 }

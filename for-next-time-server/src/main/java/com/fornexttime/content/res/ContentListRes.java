@@ -2,6 +2,7 @@ package com.fornexttime.content.res;
 
 import com.fornexttime.tag.res.TagRes;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -17,13 +18,25 @@ public record ContentListRes(
         /** 固定分类编码，取值见 CategoryCode；未分类时为空。 */
         String categoryCode,
 
+        /** 分类中文展示名称，未分类时为空。 */
+        String categoryName,
+
     /** 是否置顶。 */
     boolean pinned,
 
-    /** 成功复制次数。 */
-    int copyCount,
+        /** 成功复制次数。 */
+        int copyCount,
 
-    /** 当前内容关联的标签列表，未关联时返回空数组。 */
+        /** 最近一次成功复制时间，从未复制时为空。 */
+        LocalDateTime lastCopyTime,
+
+        /** 内容创建时间。 */
+        LocalDateTime createTime,
+
+        /** 内容最后编辑时间。 */
+        LocalDateTime updateTime,
+
+        /** 当前内容关联的标签列表，未关联时返回空数组。 */
         List<TagRes> tags
 ) {
 }

@@ -7,6 +7,7 @@ import { useAuthStore } from '../../stores/auth'
 const router = useRouter()
 const authStore = useAuthStore()
 const contents = ref<ContentListItem[]>([])
+const keyword = ref('')
 
 /**
  * 清除登录状态并返回登录页。
@@ -35,6 +36,17 @@ async function openDetail(id: number) {
 }
 
 /**
+ * 使用首页关键词进入内容搜索页。
+ */
+async function openSearch() {
+  // 1. 清理空白关键词，避免跳转后发起无效搜索。
+  const normalizedKeyword = keyword.value.trim()
+  if (!normalizedKeyword) return
+  // 2. 将关键词带入受保护的搜索路由。
+  await router.push({ name: 'content-search', query: { keyword: normalizedKeyword } })
+}
+
+/**
  * 加载首页内容列表，失败时保留空状态。
  */
 async function loadContents() {
@@ -51,6 +63,7 @@ onMounted(loadContents)
     <p class="eyebrow">FOR NEXT TIME</p>
     <h1>下次一定</h1>
     <p class="description">先留下，找得到，用得上。</p>
+    <van-search v-model="keyword" placeholder="找找现在用得上的。" shape="round" @search="openSearch" />
     <van-button type="primary" block @click="createContent">先留一句</van-button>
     <van-button plain type="primary" @click="logout">退出登录</van-button>
     <section class="content-list"><article v-for="item in contents" :key="item.id" class="content-card" @click="openDetail(item.id)"><p>{{ item.content }}</p><van-tag v-for="tag in item.tags" :key="tag.id" type="primary">#{{ tag.name }}</van-tag></article><p v-if="!contents.length" class="description">这里还空着，先留下一句。</p></section>

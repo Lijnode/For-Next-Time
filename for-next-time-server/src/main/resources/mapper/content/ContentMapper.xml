@@ -24,16 +24,60 @@
     </select>
     <select id="findPage" resultType="com.fornexttime.content.entity.Content">
         SELECT id, user_id AS userId, content, category_code AS categoryCode, remark,
-               is_pinned AS pinned, copy_count AS copyCount
+               is_pinned AS pinned, copy_count AS copyCount, last_copy_time AS lastCopyTime,
+               create_time AS createTime, update_time AS updateTime
         FROM content WHERE user_id = #{userId} AND deleted = 0
         <if test="categoryCode != null">AND category_code = #{categoryCode}</if>
         <if test="pinned != null">AND is_pinned = #{pinned}</if>
         ORDER BY is_pinned DESC, update_time DESC, id DESC
         LIMIT #{offset}, #{pageSize}
     </select>
+    <select id="searchPage" resultType="com.fornexttime.content.entity.Content">
+        SELECT id, user_id AS userId, content, category_code AS categoryCode, remark,
+               is_pinned AS pinned, copy_count AS copyCount, last_copy_time AS lastCopyTime,
+               create_time AS createTime, update_time AS updateTime
+        FROM content c
+        WHERE c.user_id = #{userId} AND c.deleted = 0
+        <if test="categoryCode != null">AND c.category_code = #{categoryCode}</if>
+        AND (
+            c.content LIKE CONCAT('%', #{keyword}, '%')
+            OR c.remark LIKE CONCAT('%', #{keyword}, '%')
+            OR EXISTS (
+                SELECT 1 FROM content_tag ct
+                INNER JOIN tag t ON t.id = ct.tag_id
+                WHERE ct.content_id = c.id AND t.name LIKE CONCAT('%', #{keyword}, '%')
+            )
+            <if test="categoryCodes != null and !categoryCodes.isEmpty()">
+                OR c.category_code IN
+                <foreach collection="categoryCodes" item="code" open="(" separator="," close=")">#{code}</foreach>
+            </if>
+        )
+        ORDER BY c.is_pinned DESC,
+                 CASE WHEN c.last_copy_time IS NULL THEN 1 ELSE 0 END,
+                 c.last_copy_time DESC, c.update_time DESC, c.id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
     <select id="countPage" resultType="long">
         SELECT COUNT(*) FROM content WHERE user_id = #{userId} AND deleted = 0
         <if test="categoryCode != null">AND category_code = #{categoryCode}</if>
         <if test="pinned != null">AND is_pinned = #{pinned}</if>
+    </select>
+    <select id="countSearch" resultType="long">
+        SELECT COUNT(*) FROM content c
+        WHERE c.user_id = #{userId} AND c.deleted = 0
+        <if test="categoryCode != null">AND c.category_code = #{categoryCode}</if>
+        AND (
+            c.content LIKE CONCAT('%', #{keyword}, '%')
+            OR c.remark LIKE CONCAT('%', #{keyword}, '%')
+            OR EXISTS (
+                SELECT 1 FROM content_tag ct
+                INNER JOIN tag t ON t.id = ct.tag_id
+                WHERE ct.content_id = c.id AND t.name LIKE CONCAT('%', #{keyword}, '%')
+            )
+            <if test="categoryCodes != null and !categoryCodes.isEmpty()">
+                OR c.category_code IN
+                <foreach collection="categoryCodes" item="code" open="(" separator="," close=")">#{code}</foreach>
+            </if>
+        )
     </select>
 </mapper>

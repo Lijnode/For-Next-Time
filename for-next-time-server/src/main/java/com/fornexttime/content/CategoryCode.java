@@ -3,6 +3,7 @@ package com.fornexttime.content;
 import lombok.Getter;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * V1 固定内容分类编码及其中文展示名称。
@@ -63,6 +64,24 @@ public enum CategoryCode {
                 .filter(category -> category.name().equals(categoryCode))
                 .findFirst()
                 .orElse(null);
+    }
+
+    /**
+     * 查找中文分类名称包含关键词的全部固定分类编码。
+     *
+     * @param keyword 搜索关键词
+     * @return 匹配的分类编码列表
+     */
+    public static List<String> findCodesByLabelKeyword(String keyword) {
+        // 1. 空白关键词不匹配任何分类编码。
+        if (keyword == null || keyword.isBlank()) {
+            return List.of();
+        }
+        // 2. 按中文展示名称筛选并返回对应编码。
+        return Arrays.stream(values())
+                .filter(category -> category.getLabel().contains(keyword))
+                .map(Enum::name)
+                .toList();
     }
 
     /**

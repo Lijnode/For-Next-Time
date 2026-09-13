@@ -51,6 +51,24 @@ public class ContentController {
     }
 
     /**
+     * 搜索当前用户正文、备注、标签和分类匹配的内容。
+     *
+     * @param keyword      必填搜索关键词
+     * @param pageNum      页码
+     * @param pageSize     每页数量
+     * @param categoryCode 可选分类二次筛选
+     * @return 内容搜索分页结果
+     */
+    @GetMapping("/search")
+    public Result<PageResult<ContentListRes>> search(@RequestParam String keyword,
+                                                      @RequestParam(defaultValue = "1") @Min(1) int pageNum,
+                                                      @RequestParam(defaultValue = "20") @Min(1) @Max(100) int pageSize,
+                                                      @RequestParam(required = false) String categoryCode) {
+        // 1. 交由服务校验关键词并在当前用户数据范围内执行搜索。
+        return Result.success(contentService.search(keyword, pageNum, pageSize, categoryCode));
+    }
+
+    /**
      * 更新当前登录用户的一条内容及其标签关系。
      *
      * @param id      内容主键

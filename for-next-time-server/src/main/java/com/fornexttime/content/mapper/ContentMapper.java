@@ -42,6 +42,33 @@ public interface ContentMapper {
      */
     Content findDetail(@Param("userId") Long userId, @Param("id") Long id);
 
+    /**
+     * 在当前用户范围内分页搜索内容、备注、标签和分类。
+     *
+     * @param userId        当前登录用户主键
+     * @param keyword       清洗后的搜索关键词
+     * @param categoryCode  可选分类二次筛选
+     * @param categoryCodes 按中文分类名匹配得到的分类编码
+     * @param offset        分页偏移量
+     * @param pageSize      每页数量
+     * @return 匹配的当前页内容
+     */
+    List<Content> searchPage(@Param("userId") Long userId, @Param("keyword") String keyword,
+                             @Param("categoryCode") String categoryCode, @Param("categoryCodes") List<String> categoryCodes,
+                             @Param("offset") int offset, @Param("pageSize") int pageSize);
+
+    /**
+     * 统计当前用户范围内符合搜索条件的内容总数。
+     *
+     * @param userId        当前登录用户主键
+     * @param keyword       清洗后的搜索关键词
+     * @param categoryCode  可选分类二次筛选
+     * @param categoryCodes 按中文分类名匹配得到的分类编码
+     * @return 匹配内容总数
+     */
+    long countSearch(@Param("userId") Long userId, @Param("keyword") String keyword,
+                     @Param("categoryCode") String categoryCode, @Param("categoryCodes") List<String> categoryCodes);
+
     List<Content> findPage(@Param("userId") Long userId, @Param("categoryCode") String categoryCode,
                            @Param("pinned") Boolean pinned, @Param("offset") int offset, @Param("pageSize") int pageSize);
 

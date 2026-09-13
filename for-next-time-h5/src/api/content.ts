@@ -11,17 +11,17 @@ export interface ContentListItem {
   id: number
   content: string
   categoryCode: string | null
+  categoryName: string | null
   pinned: boolean
   copyCount: number
+  lastCopyTime: string | null
+  createTime: string
+  updateTime: string
   tags: Array<{ id: number; name: string }>
 }
 
 export interface ContentDetail extends ContentListItem {
-  categoryName: string | null
   remark: string | null
-  lastCopyTime: string | null
-  createTime: string
-  updateTime: string
 }
 
 export async function createContent(data: ContentCreateReq) {
@@ -65,4 +65,16 @@ export async function updateContent(id: number, data: ContentCreateReq) {
 export async function deleteContent(id: number) {
   // 1. 请求后端在当前用户数据范围内执行逻辑删除。
   await request.delete(`/contents/${id}`)
+}
+
+/**
+ * 按关键词搜索当前用户内容。
+ */
+export async function searchContents(keyword: string, categoryCode: string | null = null) {
+  // 1. 请求默认分页大小的内容搜索接口。
+  const response = await request.get<{ list: ContentListItem[] }>('/contents/search', {
+    params: { keyword, pageNum: 1, pageSize: 20, categoryCode: categoryCode ?? undefined },
+  })
+  // 2. 返回当前页搜索结果数组。
+  return response.data.list
 }
