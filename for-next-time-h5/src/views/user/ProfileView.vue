@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { House, KeyRound, LogOut } from 'lucide-vue-next'
+import type { UploaderAfterRead } from 'vant'
 import { getUserProfile, uploadAvatar, type UserProfile } from '../../api/user'
 import { showError, showSuccess } from '../../platform/feedback'
 import { useAuthStore } from '../../stores/auth'
@@ -11,7 +12,6 @@ const authStore = useAuthStore()
 const profile = ref<UserProfile>()
 const loading = ref(false)
 const uploadingAvatar = ref(false)
-const avatarInput = ref<HTMLInputElement>()
 
 /**
  * 加载当前登录用户的个人资料。
@@ -28,29 +28,19 @@ async function loadProfile() {
 }
 
 /**
- * 打开系统文件选择器以选择新的头像。
- */
-function chooseAvatar() {
-  // 1. 通过隐藏的文件输入框触发系统文件选择器。
-  avatarInput.value?.click()
-}
-
-/**
- * 校验并上传用户刚选择的头像文件。
+ * 校验并上传 Vant 上传组件读取到的头像文件。
  *
- * @param event 文件输入框的变更事件
+ * @param item Vant 返回的已读取文件对象
  */
-async function handleAvatarChange(event: Event) {
-  // 1. 读取本次选择的首个文件，并忽略取消选择的情况。
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
+const handleAvatarRead: UploaderAfterRead = async (item) => {
+  // 1. 读取单文件上传结果，并忽略取消选择或不完整文件。
+  const file = Array.isArray(item) ? item[0]?.file : item.file
   if (!file) {
     return
   }
   // 2. 在请求前提示不符合服务端约束的文件。
   if (!['image/jpeg', 'image/png'].includes(file.type) || file.size > 2 * 1024 * 1024) {
     showError('头像仅支持 JPG 或 PNG，且不能超过 2MB')
-    input.value = ''
     return
   }
   // 3. 上传文件并用服务端返回的最新资料更新页面。
@@ -61,9 +51,8 @@ async function handleAvatarChange(event: Event) {
   } catch (error) {
     showError(error instanceof Error ? error.message : '头像上传失败，请稍后重试')
   } finally {
-    // 4. 恢复选择控件，允许连续选择同一个文件。
+    // 4. 恢复上传入口，允许用户再次选择头像。
     uploadingAvatar.value = false
-    input.value = ''
   }
 }
 
@@ -103,25 +92,12 @@ onMounted(loadProfile)
     <template v-else-if="profile">
       <section class="profile-card">
         <div class="profile-head">
-          <div class="avatar-wrapper">
-            <button
-              class="profile-mark"
-              type="button"
-              :disabled="uploadingAvatar"
-              :aria-label="uploadingAvatar ? '正在上传头像' : '更换头像'"
-              @click="chooseAvatar"
-            >
+          <van-uploader class="avatar-uploader" accept="image/jpeg,image/png" :max-count="1" :preview-image="false" :disabled="uploadingAvatar" :after-read="handleAvatarRead">
+            <button class="profile-mark" type="button" :aria-label="uploadingAvatar ? '正在上传头像' : '更换头像'">
               <img v-if="profile.avatarUrl" :src="profile.avatarUrl" :alt="`${profile.username} 的头像`">
               <span v-else>{{ profile.username.slice(0, 1) }}</span>
             </button>
-            <input
-              ref="avatarInput"
-              class="avatar-input"
-              type="file"
-              accept="image/jpeg,image/png"
-              @change="handleAvatarChange"
-            >
-          </div>
+          </van-uploader>
           <div><h1>{{ profile.username }}</h1><p>已经留下 {{ profile.contentCount }} 条内容</p></div>
         </div>
         <div class="menu">
@@ -141,10 +117,10 @@ onMounted(loadProfile)
 .loading { margin-top: 80px; }
 .profile-card { padding: 20px 17px; border: 1px solid var(--color-border); border-radius: 20px; background: var(--color-card); box-shadow: 0 6px 16px rgb(31 33 33 / 3%); }
 .profile-head { display: flex; align-items: center; gap: 13px; }
-.profile-mark { display: grid; width: 54px; height: 54px; padding: 0; place-items: center; overflow: hidden; border: 0; border-radius: 18px; background: var(--color-brand); color: #fff; font: inherit; font-size: 20px; font-weight: 800; box-shadow: 0 6px 14px rgb(255 111 78 / 20%); }
+.avatar-uploader { display: block; flex: 0 0 54px; width: 54px; height: 54px; }.avatar-uploader :deep(.van-uploader__wrapper) { display: block; width: 54px; height: 54px; }.avatar-uploader :deep(.van-uploader__input) { width: 54px; height: 54px; }
+.profile-mark { position: relative; display: grid; box-sizing: border-box; width: 54px; height: 54px; padding: 0; place-items: center; overflow: hidden; border: 0; border-radius: 18px; background: var(--color-brand); color: #fff; font: inherit; font-size: 20px; font-weight: 800; box-shadow: 0 6px 14px rgb(255 111 78 / 20%); }
 .profile-mark:disabled { opacity: 0.75; }
-.profile-mark img { width: 100%; height: 100%; object-fit: cover; }
-.avatar-input { display: none; }
+.profile-mark img { position: absolute; inset: 0; display: block; width: 100% !important; height: 100% !important; max-width: none; object-fit: cover; }
 .profile-head h1 { margin: 0; color: var(--color-text-primary); font-size: 19px; }
 .profile-head p { margin: 5px 0 0; color: var(--color-muted); font-size: 12px; }
 .menu { overflow: hidden; margin-top: 21px; border: 1px solid var(--color-border); border-radius: 16px; }
