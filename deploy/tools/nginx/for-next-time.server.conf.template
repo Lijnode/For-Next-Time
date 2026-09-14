@@ -1,0 +1,52 @@
+# 域名确定后，将以下两个 server 块合并到 /data/zhizhi/tools/nginx/nginx.conf。
+# 同时在知止 Nginx 启动脚本中增加：
+# -v /data/for-next-time/pc:/usr/share/nginx/html/for-next-time-pc:ro
+# -v /data/for-next-time/h5:/usr/share/nginx/html/m:ro
+server {
+    listen 8080;
+    listen [::]:8080;
+
+    server_name __FOR_NEXT_TIME_DOMAIN__;
+
+    return 301 https://__FOR_NEXT_TIME_DOMAIN__$request_uri;
+}
+
+server {
+    listen 8443 ssl;
+    listen [::]:8443 ssl;
+
+    server_name __FOR_NEXT_TIME_DOMAIN__;
+
+    ssl_certificate /etc/nginx/ssl/__FOR_NEXT_TIME_DOMAIN___bundle.pem;
+    ssl_certificate_key /etc/nginx/ssl/__FOR_NEXT_TIME_DOMAIN__.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    client_max_body_size 2m;
+    root /usr/share/nginx/html/for-next-time-pc;
+    index index.html;
+
+    location /api/ {
+        proxy_pass http://for-next-time-app:6688;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /files/ {
+        proxy_pass http://for-next-time-app:6688;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /m/ {
+        root /usr/share/nginx/html;
+        try_files $uri $uri/ /m/index.html;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

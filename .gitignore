@@ -2,8 +2,11 @@
 .env.*
 !.env.example
 
+# 生产环境配置只允许提交不含真实凭据的模板文件。
 application-prod.yml
+!for-next-time-server/src/main/resources/application-prod.yml
 files/
+deploy/release/
 
 node_modules/
 dist/

@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    # 生产环境由 Docker Compose 注入，避免将真实凭据写入仓库。
+    url: jdbc:mysql://${MYSQL_HOST:mysql}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:for_next_time}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: ${MYSQL_USER:for_next_time}
+    password: ${MYSQL_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+server:
+  port: 6688
+
+app:
+  jwt:
+    # 由部署环境注入至少 32 字节的随机密钥。
+    secret: ${JWT_SECRET}
+    expiration-seconds: 604800

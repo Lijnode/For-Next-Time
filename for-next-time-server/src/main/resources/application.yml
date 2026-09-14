@@ -22,4 +22,4 @@ mybatis:
 
 app:
   file:
-    storage-dir: files
+    storage-dir: ${FILE_STORAGE_DIR:files}

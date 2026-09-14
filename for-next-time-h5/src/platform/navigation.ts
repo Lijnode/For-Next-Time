@@ -3,5 +3,5 @@ export function goBack() {
 }
 
 export function replaceWithLogin() {
-  window.location.replace('/login')
+  window.location.replace(`${import.meta.env.BASE_URL}login`)
 }

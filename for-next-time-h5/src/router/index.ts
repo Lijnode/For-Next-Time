@@ -12,7 +12,7 @@ import AboutView from '../views/user/AboutView.vue'
 import ProfileView from '../views/user/ProfileView.vue'
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',

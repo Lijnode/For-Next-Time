@@ -2,7 +2,7 @@
 
 “下次一定”是一款私人内容收藏与快速检索工具，围绕“先留下 → 找得到 → 用得上”构建。
 
-当前处于 V1.0 项目初始化阶段。产品、原型、UI、系统、数据库和 API 设计请见 [docs](docs)。
+V1.0 已完成 PC Web、移动 H5 与后端服务。产品、原型、UI、系统、数据库和 API 设计请见 [docs](docs)。
 
 ## 项目结构
 
@@ -22,4 +22,52 @@ docs/                   已评审的产品与设计文档
 
 ## 配置
 
-复制 `.env.example` 为 `.env`，再填写本地或部署环境的真实配置。`.env` 不应提交到版本控制。
+开发环境的后端配置位于 `for-next-time-server/src/main/resources/application-dev.yml`。生产环境不要修改或提交密码，统一通过 `deploy/.env` 注入。
+
+## 服务器部署
+
+本项目按服务器上“知止”的成熟方式部署：本地构建、上传发布包、执行启动脚本。服务器只需要 Docker；不需要安装 Java、Maven、Node.js 或第二个 Nginx。
+
+现有的知止 Nginx 是服务器唯一对外入口，继续占用 80/443。“下次一定”只新增两个容器：
+
+| 容器 | 作用 | 是否对公网开放 |
+| --- | --- | --- |
+| `for-next-time-mysql` | 保存账号、内容、标签等数据 | 否 |
+| `for-next-time-app` | 运行 Spring Boot、Flyway 与头像文件服务 | 否，仅由现有 Nginx 访问 |
+
+### 本地生成发布包
+
+在项目根目录的 PowerShell 执行：
+
+```powershell
+.\deploy\build-release.ps1
+```
+
+它会构建 PC、H5 和 Java JAR，并生成 `deploy/release/`。将 **release 目录内的内容** 上传到服务器 `/data/for-next-time/`。
+
+### 服务器首次启动
+
+```bash
+cd /data/for-next-time
+cp .env.example .env
+nano .env
+chmod +x start.sh backend/app.sh tools/mysql/start.sh
+./start.sh
+```
+
+`.env` 只需要填写：
+
+```env
+FOR_NEXT_TIME_DB_USERNAME=for_next_time_app
+FOR_NEXT_TIME_DB_PASSWORD=设置一个强密码
+```
+
+JWT 密钥由首次 `./start.sh` 自动生成并保存；MySQL root 初始化密码复用同一份数据库密码，无需重复填写。
+
+MySQL 数据位于 Docker 卷 `for-next-time_mysql-data`，头像文件位于 `/data/for-next-time/files/`；两者都应纳入服务器备份。
+
+### Nginx 接入
+
+域名确定前，不改动现有知止 Nginx。域名确定后，将 `tools/nginx/for-next-time.server.conf.template` 合并到知止 Nginx 配置，并在知止的 Nginx 启动脚本中增加 PC/H5 静态目录挂载；届时只会重启 Nginx 容器，Java 与 MySQL 容器无需变动。
+
+不要开放 MySQL 的 3306 或 Java 服务的 6688；只由现有 Nginx 暴露 HTTPS。
