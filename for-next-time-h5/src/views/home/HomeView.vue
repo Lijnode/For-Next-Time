@@ -122,7 +122,7 @@ onMounted(loadContents)
   <main class="home-page">
     <header class="home-head">
       <div class="brand-row">
-        <div class="brand-area"><span class="brand-mark" aria-hidden="true">次</span><div><h1>下次一定</h1><p>先留下，找得到，用得上。</p></div></div>
+        <div class="brand-area"><span class="brand-mark" aria-hidden="true">次</span><div><h1>下次一定</h1></div></div>
         <button class="search-entry" type="button" aria-label="搜索内容" @click="openSearchPage"><Search :size="21" /></button>
       </div>
       <div class="category-scroller" aria-label="按分类浏览">
@@ -140,7 +140,7 @@ onMounted(loadContents)
             <div class="card-footer"><span>{{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '还没用过' }}</span><van-button plain size="small" type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</van-button></div>
           </article>
         </van-list>
-        <p v-if="!contents.length" class="empty-state">这里还空着，先留下一句。</p>
+        <p v-if="!contents.length" class="empty-state">这里还空着，先留下一句</p>
       </section>
     </div>
   </main>

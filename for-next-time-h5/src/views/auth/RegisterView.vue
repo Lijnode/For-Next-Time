@@ -35,7 +35,7 @@ async function submit() {
 
 <template>
   <main class="auth-page">
-    <header><p>FOR NEXT TIME</p><h1>创建账号</h1><span>留住那些下次一定会用上的句子。</span></header>
+    <header><p>FOR NEXT TIME</p><h1>创建账号</h1><span>留住那些下次一定会用上的句子</span></header>
     <van-form @submit="submit">
       <van-cell-group inset>
         <van-field v-model="form.username" name="username" label="用户名" autocomplete="username" :rules="[{ required: true, message: '请填写用户名' }]" />

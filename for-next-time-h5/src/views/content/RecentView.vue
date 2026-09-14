@@ -109,7 +109,7 @@ onMounted(loadRecentContents)
     <section class="recent-content" aria-label="最近使用内容">
       <van-loading v-if="loading" class="loading-state" vertical>正在翻找最近用过的内容</van-loading>
       <template v-else>
-        <p v-if="!recentContents.length" class="empty-state">最近还没用上这里的内容。</p>
+        <p v-if="!recentContents.length" class="empty-state">最近还没用上这里的内容</p>
         <van-list v-else class="recent-list" v-model:loading="loadingMore" :finished="!hasMore" finished-text="" :offset="120" @load="loadMore">
           <article v-for="item in recentContents" :key="item.id" class="recent-item" @click="openDetail(item.id)">
             <div class="item-heading"><span class="item-time"><Clock3 :size="14" />{{ formatRecentTime(item.lastCopyTime) }}</span></div>

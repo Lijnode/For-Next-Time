@@ -20,7 +20,7 @@ async function backToProfile() {
       <div class="brand-mark" aria-hidden="true">次</div>
       <h2>下次一定</h2>
       <p class="english-name">FOR NEXT TIME</p>
-      <p class="slogan">这次先留着，下次一定用得上</p>
+<!--      <p class="slogan">这次先留着，下次一定用得上</p>-->
       <p class="intro">一个用于收藏、搜索和快速复用句子与内容素材的私人小工具</p>
       <p class="version">V1.0</p>
     </section>

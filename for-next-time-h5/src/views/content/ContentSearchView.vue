@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Search } from 'lucide-vue-next'
 import { recordCopy, searchContents, type ContentListItem } from '../../api/content'
@@ -9,6 +9,7 @@ import { showError, showSuccess } from '../../platform/feedback'
 const route = useRoute()
 const router = useRouter()
 const keyword = ref(typeof route.query.keyword === 'string' ? route.query.keyword : '')
+const searchedKeyword = ref('')
 const contents = ref<ContentListItem[]>([])
 const loading = ref(false)
 const copyingId = ref<number | null>(null)
@@ -16,7 +17,6 @@ const pageNum = ref(1)
 const hasMore = ref(false)
 const loadingMore = ref(false)
 const pageSize = 10
-let searchTimer: ReturnType<typeof setTimeout> | undefined
 
 /**
  * 立即请求当前关键词对应的搜索结果。
@@ -25,11 +25,13 @@ async function executeSearch() {
   // 1. 清理关键词；空关键词时清空结果而不请求接口。
   const normalizedKeyword = keyword.value.trim()
   if (!normalizedKeyword) {
+    searchedKeyword.value = ''
     contents.value = []
     hasMore.value = false
     return
   }
   // 2. 关键词变动后从第一页开始查询。
+  searchedKeyword.value = normalizedKeyword
   pageNum.value = 1
   await loadSearchPage(false)
 }
@@ -52,13 +54,12 @@ async function loadMore() {
  */
 async function loadSearchPage(append: boolean, targetPage = pageNum.value) {
   // 1. 空关键词不请求接口，保持搜索结果为空。
-  const normalizedKeyword = keyword.value.trim()
-  if (!normalizedKeyword) return
+  if (!searchedKeyword.value) return
   // 2. 调用统一搜索接口，并通过平台层反馈搜索失败原因。
   loading.value = !append
   loadingMore.value = append
   try {
-    const page = await searchContents(normalizedKeyword, targetPage, null, pageSize)
+    const page = await searchContents(searchedKeyword.value, targetPage, null, pageSize)
     contents.value = append ? [...contents.value, ...page.list] : page.list
     pageNum.value = page.pageNum
     hasMore.value = page.pageNum < page.pages
@@ -69,16 +70,6 @@ async function loadSearchPage(append: boolean, targetPage = pageNum.value) {
     loading.value = false
     loadingMore.value = false
   }
-}
-
-/**
- * 对关键词输入进行 400ms 防抖，减少连续输入产生的请求。
- */
-function scheduleSearch() {
-  // 1. 清除尚未执行的旧搜索任务。
-  if (searchTimer) clearTimeout(searchTimer)
-  // 2. 创建新的延迟搜索任务。
-  searchTimer = setTimeout(() => void executeSearch(), 400)
 }
 
 /**
@@ -116,20 +107,14 @@ async function copyContent(item: ContentListItem) {
   }
 }
 
-// 1. 关键词变化时统一走防抖搜索。
-watch(keyword, scheduleSearch)
-// 2. 带关键词进入页面时立即执行首次搜索。
-onMounted(() => void executeSearch())
-// 3. 页面离开时清理尚未执行的定时任务。
-onBeforeUnmount(() => { if (searchTimer) clearTimeout(searchTimer) })
 </script>
 
 <template>
   <main class="search-page">
     <header class="top-bar"><button type="button" aria-label="返回" @click="router.back()"><ArrowLeft :size="21" /></button><h1>找一句</h1><span aria-hidden="true"></span></header>
     <div class="search-box"><van-search v-model="keyword" class="search-input" placeholder="搜索正文、备注、标签或分类" shape="round" @search="executeSearch"><template #left-icon><Search :size="19" /></template></van-search><button class="search-button" type="button" aria-label="搜索" @click="executeSearch"><Search :size="18" /></button></div>
-    <van-loading v-if="loading" class="loading" vertical>正在翻找……</van-loading><p v-else-if="keyword.trim() && !contents.length" class="empty-message">这次没翻到合适的。</p>
-    <section class="content-list"><van-list v-model:loading="loadingMore" :finished="!hasMore" finished-text="" :offset="120" @load="loadMore"><article v-for="item in contents" :key="item.id" class="content-card" @click="openDetail(item.id)"><div class="card-top"><span v-if="item.pinned" class="pinned-mark">已置顶</span><span>{{ item.lastCopyTime ? '最近用过' : item.updateTime }}</span></div><p class="content-text">{{ item.content }}</p><div class="tag-row"><span v-if="item.categoryName" :class="['tag', 'category-tag', item.categoryCode ? 'category-' + item.categoryCode.toLowerCase() : '']">{{ item.categoryName }}</span><span v-for="tag in item.tags.slice(0, 3)" :key="tag.id" class="tag">#{{ tag.name }}</span></div><div class="card-footer"><span>{{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '还没用过' }}</span><van-button plain size="small" type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</van-button></div></article></van-list></section>
+    <van-loading v-if="loading" class="loading" vertical>正在翻找……</van-loading><p v-else-if="searchedKeyword && !contents.length" class="empty-message">这次没翻到合适的。</p>
+    <section v-if="searchedKeyword" class="content-list"><van-list v-model:loading="loadingMore" :finished="!hasMore" finished-text="" :offset="120" @load="loadMore"><article v-for="item in contents" :key="item.id" class="content-card" @click="openDetail(item.id)"><div class="card-top"><span v-if="item.pinned" class="pinned-mark">已置顶</span><span>{{ item.lastCopyTime ? '最近用过' : item.updateTime }}</span></div><p class="content-text">{{ item.content }}</p><div class="tag-row"><span v-if="item.categoryName" :class="['tag', 'category-tag', item.categoryCode ? 'category-' + item.categoryCode.toLowerCase() : '']">{{ item.categoryName }}</span><span v-for="tag in item.tags.slice(0, 3)" :key="tag.id" class="tag">#{{ tag.name }}</span></div><div class="card-footer"><span>{{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '还没用过' }}</span><van-button plain size="small" type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</van-button></div></article></van-list></section>
   </main>
 </template>
 
