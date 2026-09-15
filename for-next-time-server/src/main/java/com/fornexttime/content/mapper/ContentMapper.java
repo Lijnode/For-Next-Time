@@ -112,8 +112,20 @@ public interface ContentMapper {
      */
     List<Content> findRecent(@Param("userId") Long userId, @Param("offset") int offset, @Param("limit") int limit);
 
+    /**
+     * 按当前用户、筛选条件和已校验排序方式查询普通内容分页。
+     *
+     * @param userId       当前登录用户主键
+     * @param categoryCode 可选分类编码
+     * @param pinned       可选置顶筛选
+     * @param sortBy       已校验的时间或热度排序编码
+     * @param offset       分页偏移量
+     * @param pageSize     每页数量
+     * @return 当前页内容
+     */
     List<Content> findPage(@Param("userId") Long userId, @Param("categoryCode") String categoryCode,
-                           @Param("pinned") Boolean pinned, @Param("offset") int offset, @Param("pageSize") int pageSize);
+                           @Param("pinned") Boolean pinned, @Param("sortBy") String sortBy,
+                           @Param("offset") int offset, @Param("pageSize") int pageSize);
 
     long countPage(@Param("userId") Long userId, @Param("categoryCode") String categoryCode, @Param("pinned") Boolean pinned);
 }

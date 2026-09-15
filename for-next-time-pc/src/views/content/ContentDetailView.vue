@@ -130,10 +130,10 @@ onMounted(loadDetail)
       <p class="content-text">{{ detail.content }}</p>
       <div class="tag-row"><span v-if="detail.categoryName" class="tag category-tag">{{ detail.categoryName }}</span><span v-for="tag in detail.tags" :key="tag.id" class="tag">#{{ tag.name }}</span></div>
       <div class="detail-actions">
-        <el-button type="primary" :loading="copying" @click="copyContent"><Copy :size="16" />复制</el-button>
-        <el-button :loading="pinning" @click="togglePinned"><Pin :size="16" />{{ detail.pinned ? '取消置顶' : '置顶' }}</el-button>
-        <el-button @click="editContent"><Pencil :size="16" />编辑</el-button>
-        <el-popconfirm title="确定删除这句话吗？" confirm-button-text="删除" cancel-button-text="取消" @confirm="removeContent"><template #reference><el-button class="delete-button" text type="danger" :loading="deleting"><Trash2 :size="16" />删除</el-button></template></el-popconfirm>
+        <el-button type="primary" :loading="copying" @click="copyContent"><span class="action-content"><Copy :size="16" /><span>复制</span></span></el-button>
+        <el-button :loading="pinning" @click="togglePinned"><span class="action-content"><Pin :size="16" /><span>{{ detail.pinned ? '取消置顶' : '置顶' }}</span></span></el-button>
+        <el-button @click="editContent"><span class="action-content"><Pencil :size="16" /><span>编辑</span></span></el-button>
+        <el-popconfirm title="确定删除这句话吗？" confirm-button-text="删除" cancel-button-text="取消" @confirm="removeContent"><template #reference><el-button class="delete-button" text type="danger" :loading="deleting"><span class="action-content"><Trash2 :size="16" /><span>删除</span></span></el-button></template></el-popconfirm>
       </div>
       <p v-if="copyMessage" class="copy-message">{{ copyMessage }}</p>
       <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
@@ -151,18 +151,18 @@ onMounted(loadDetail)
 </template>
 
 <style scoped>
-.detail-page { width: min(760px, calc(100% - 64px)); margin: 0 auto; padding: 32px 0 72px; }
+.detail-page { width: min(760px, calc(100% - 64px)); margin: 0 auto; padding: 24px 0 16px; }
 .detail-card, .state-card { padding: 30px; border: 1px solid var(--color-border); border-radius: 22px; background: var(--color-surface); box-shadow: 0 10px 25px rgb(31 33 33 / 4%); }
 .state-card { color: var(--color-text-secondary); text-align: center; }
 .page-title-bar { display: grid; grid-template-columns: 42px 1fr 42px; align-items: center; margin-bottom: 18px; }
 .page-title-bar button { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid var(--color-border); border-radius: 12px; background: #fff; color: var(--color-text-primary); }
 .page-title-bar h1 { margin: 0; color: var(--color-text-primary); font-size: 20px; text-align: center; }
 .pinned-mark { display: flex; align-items: center; gap: 5px; margin: 0; color: var(--color-brand); font-size: 13px; font-weight: 700; }
-.content-text { margin: 16px 0 22px; color: var(--color-text-primary); font-size: 25px; line-height: 1.85; white-space: pre-wrap; }
+.content-text { max-height: 320px; margin: 16px 0 22px; padding-right: 12px; overflow-y: auto; color: var(--color-text-primary); font-size: 25px; line-height: 1.85; overflow-wrap: anywhere; white-space: pre-wrap; }
 .tag-row { display: flex; flex-wrap: wrap; gap: 8px; }.tag { padding: 6px 10px; border-radius: 999px; background: #f1f2ef; color: #737878; font-size: 12px; }.category-tag { background: #fff1ec; color: #cf5a41; }
-.detail-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 25px; }.detail-actions :deep(.el-button) { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; border-radius: 12px; font-weight: 700; }.detail-actions .delete-button { margin-left: auto; color: var(--color-text-tertiary); }
-.remark-block { margin-top: 16px; padding: 18px; border: 1px solid var(--color-border); border-radius: 16px; background: #fafaf8; }.remark-block p { margin: 0 0 8px; color: var(--color-text-tertiary); font-size: 12px; font-weight: 700; }.remark-block span { color: var(--color-text-secondary); line-height: 1.75; white-space: pre-wrap; }
+.detail-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 25px; }.detail-actions :deep(.el-button) { min-height: 40px; border-radius: 12px; font-weight: 700; }.action-content { display: inline-flex; align-items: center; gap: 8px; }.detail-actions .delete-button { margin-left: auto; color: var(--color-text-tertiary); }
+.remark-block { margin-top: 16px; padding: 18px; border: 1px solid var(--color-border); border-radius: 16px; background: #fafaf8; }.remark-block p { margin: 0 0 8px; color: var(--color-text-tertiary); font-size: 12px; font-weight: 700; }.remark-block span { color: var(--color-text-secondary); line-height: 1.75; overflow-wrap: anywhere; white-space: pre-wrap; }
 .error-message, .copy-message { margin: 16px 0 0; font-size: 14px; }.error-message { color: var(--color-danger); }.copy-message { color: var(--color-brand); }
 .info-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 24px; }.info-grid div { min-height: 76px; padding: 14px; border-radius: 15px; background: #f8f8f5; }.info-grid span, .info-grid strong { display: block; }.info-grid span { color: var(--color-text-tertiary); font-size: 11px; }.info-grid strong { margin-top: 6px; color: var(--color-text-secondary); font-size: 13px; font-weight: 500; line-height: 1.4; overflow-wrap: anywhere; }
-@media (max-width: 600px) { .detail-page { width: min(100% - 32px, 760px); }.detail-card { padding: 22px; }.content-text { font-size: 21px; }.info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .detail-page { width: min(100% - 32px, 760px); }.detail-card { padding: 22px; }.content-text { max-height: 280px; font-size: 21px; }.info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 </style>

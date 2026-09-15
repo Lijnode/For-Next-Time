@@ -267,6 +267,22 @@ public class ContentService {
     }
 
     /**
+     * 校验普通列表排序方式并统一为 Mapper 使用的小写编码。
+     */
+    private String normalizeSort(String sortBy) {
+        // 1. 将缺省排序统一为时间排序。
+        if (sortBy == null || sortBy.isBlank() || "time".equalsIgnoreCase(sortBy)) {
+            return "time";
+        }
+        // 2. 仅允许热度排序进入固定 SQL 分支，避免动态排序字段注入。
+        if ("hot".equalsIgnoreCase(sortBy)) {
+            return "hot";
+        }
+        // 3. 拒绝未定义的排序方式。
+        throw new BusinessException(ErrorCode.PARAM_ERROR, "排序方式仅支持 time 或 hot");
+    }
+
+    /**
      * 清洗标签集合、去重并校验 V1 标签上限。
      */
     private List<String> normalizeTagNames(List<String> tagNames) {
@@ -344,16 +360,17 @@ public class ContentService {
     }
 
     /**
-     * 分页查询当前用户内容，并按置顶、更新时间和 ID 排序。
+     * 分页查询当前用户内容，并按选定的时间或热度规则排序。
      */
-    public PageResult<ContentListRes> list(int pageNum, int pageSize, String categoryCode, Boolean pinned) {
-        // 1. 校验可选分类并计算分页偏移量。
+    public PageResult<ContentListRes> list(int pageNum, int pageSize, String categoryCode, Boolean pinned, String sortBy) {
+        // 1. 校验可选分类、排序方式并计算分页偏移量。
         String normalizedCategory = normalizeCategory(categoryCode);
+        String normalizedSort = normalizeSort(sortBy);
         Long userId = UserContext.requireUserId();
         long total = contentMapper.countPage(userId, normalizedCategory, pinned);
         // 2. 只查询当前用户未删除的当前页内容。
         List<Content> contents = contentMapper.findPage(userId, normalizedCategory, pinned,
-                (pageNum - 1) * pageSize, pageSize);
+                normalizedSort, (pageNum - 1) * pageSize, pageSize);
         // 3. 一次性查询当前页标签并组装列表响应，避免 N+1。
         return PageResult.of(pageNum, pageSize, total, toListRes(contents));
     }

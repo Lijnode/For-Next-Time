@@ -19,7 +19,7 @@ const initialLoading = ref(false)
 const errorMessage = ref('')
 const initialSnapshot = ref('')
 const allowLeave = ref(false)
-const categories = [['FUNNY', '搞笑'], ['ABSTRACT', '抽象'], ['EMOTION', '感情'], ['LITERARY', '文艺'], ['HEALING', '治愈'], ['SOBER', '清醒'], ['SARCASM', '阴阳'], ['OTHER', '其他']]
+const categories = [['ABSTRACT', '抽象'], ['CRITIQUE', '锐评'], ['SWEET', '嘴甜'], ['RELAXED', '松弛'], ['SOBER', '清醒'], ['ROMANTIC', '浪漫'], ['HEALING', '治愈'], ['FRAGILE', '破碎']]
 const categoryActions = [{ name: '不分类', value: null }, ...categories.map(([value, name]) => ({ name, value }))]
 const editingId = computed(() => route.name === 'content-edit' ? Number(route.params.id) : null)
 const isEditing = computed(() => editingId.value !== null)

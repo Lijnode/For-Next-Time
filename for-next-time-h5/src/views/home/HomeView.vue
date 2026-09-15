@@ -14,7 +14,7 @@ const pageNum = ref(1)
 const hasMore = ref(false)
 const loadingMore = ref(false)
 const pageSize = 10
-const categories: Array<[string, string]> = [['FUNNY', '搞笑'], ['ABSTRACT', '抽象'], ['EMOTION', '感情'], ['LITERARY', '文艺'], ['HEALING', '治愈'], ['SOBER', '清醒'], ['SARCASM', '阴阳'], ['OTHER', '其他']]
+const categories: Array<[string, string]> = [['ABSTRACT', '抽象'], ['CRITIQUE', '锐评'], ['SWEET', '嘴甜'], ['RELAXED', '松弛'], ['SOBER', '清醒'], ['ROMANTIC', '浪漫'], ['HEALING', '治愈'], ['FRAGILE', '破碎']]
 
 /**
  * 切换首页分类，并按当前用户范围重新加载内容。

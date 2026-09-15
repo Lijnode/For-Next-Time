@@ -28,12 +28,12 @@ public class TagController {
      * 获取当前用户的已有标签，可按名称关键词筛选。
      *
      * @param keyword 可选标签关键词
-     * @param limit   最大返回数量，默认二十条
+     * @param limit   最大返回数量，默认十条
      * @return 标签列表
      */
     @GetMapping
     public Result<List<TagRes>> list(@RequestParam(required = false) String keyword,
-                                     @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit) {
+                                     @RequestParam(defaultValue = "10") @Min(1) @Max(100) int limit) {
         // 1. 交由服务在当前用户数据范围内执行标签查询。
         return Result.success(tagService.list(keyword, limit));
     }

@@ -139,14 +139,22 @@ public class ContentController {
 
     /**
      * 分页获取当前用户内容列表。
+     *
+     * @param pageNum      页码
+     * @param pageSize     每页数量
+     * @param categoryCode 可选分类筛选
+     * @param pinned       是否只看置顶
+     * @param sortBy       排序方式，支持 time 与 hot
+     * @return 当前用户内容分页结果
      */
     @GetMapping
     public Result<PageResult<ContentListRes>> list(
             @RequestParam(defaultValue = "1") @Min(1) int pageNum,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int pageSize,
             @RequestParam(required = false) String categoryCode,
-            @RequestParam(required = false) Boolean pinned) {
+            @RequestParam(required = false) Boolean pinned,
+            @RequestParam(defaultValue = "time") String sortBy) {
         // 使用当前登录用户范围查询分页内容。
-        return Result.success(contentService.list(pageNum, pageSize, categoryCode, pinned));
+        return Result.success(contentService.list(pageNum, pageSize, categoryCode, pinned, sortBy));
     }
 }

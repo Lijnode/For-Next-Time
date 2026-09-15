@@ -3,7 +3,7 @@ import { ElMessage } from 'element-plus'
 import type { UploadProps, UploadRequestOptions } from 'element-plus'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ChevronRight, House, Info, KeyRound, LogOut } from 'lucide-vue-next'
+import { ChevronRight, House, Info, KeyRound, LogOut, SquarePen } from 'lucide-vue-next'
 import { getUserProfile, uploadAvatar, type UserProfile } from '../../api/user'
 import { useAuthStore } from '../../stores/auth'
 
@@ -118,6 +118,7 @@ onMounted(loadProfile)
             <span class="profile-mark" :class="{ 'is-uploading': uploadingAvatar }">
               <img v-if="profile.avatarUrl" :src="profile.avatarUrl" :alt="`${profile.username} 的头像`">
               <span v-else>{{ profile.username.slice(0, 1) }}</span>
+              <span class="avatar-edit" aria-hidden="true"><SquarePen :size="14" /></span>
             </span>
           </el-upload>
           <div>
@@ -139,7 +140,7 @@ onMounted(loadProfile)
         </div>
       </template>
     </section>
-    <el-dialog v-model="aboutDialogVisible" title="关于下次一定" width="440px" align-center class="about-dialog">
+    <el-dialog v-model="aboutDialogVisible" width="440px" align-center class="about-dialog">
       <section class="about-dialog-content">
         <div class="brand-mark" aria-hidden="true">次</div>
         <h2>下次一定</h2>
@@ -159,10 +160,12 @@ onMounted(loadProfile)
 .profile-head { display: flex; align-items: center; gap: 16px; }
 .avatar-uploader :deep(.el-upload) { display: block; border-radius: 20px; cursor: pointer; outline: none; }
 .avatar-uploader :deep(.el-upload:focus-visible) { outline: 2px solid var(--color-brand); outline-offset: 3px; }
-.profile-mark { display: grid; width: 62px; height: 62px; place-items: center; overflow: hidden; border-radius: 20px; background: var(--color-brand); color: #fff; font-size: 22px; font-weight: 800; box-shadow: 0 7px 15px rgb(255 111 78 / 18%); transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease; }
+.profile-mark { position: relative; display: grid; width: 62px; height: 62px; place-items: center; overflow: hidden; border-radius: 20px; background: var(--color-brand); color: #fff; font-size: 22px; font-weight: 800; box-shadow: 0 7px 15px rgb(255 111 78 / 18%); transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease; }
 .avatar-uploader:hover .profile-mark:not(.is-uploading) { transform: translateY(-1px); box-shadow: 0 10px 19px rgb(255 111 78 / 27%); }
 .profile-mark.is-uploading { cursor: wait; opacity: 0.75; }
 .profile-mark img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-edit { position: absolute; right: 4px; bottom: 4px; z-index: 1; display: grid; width: 18px; height: 18px; place-items: center; color: #24324A; font-size: 14px; }
+.avatar-uploader:hover .avatar-edit { color: #151D2B; }
 .profile-head h1 { margin: 0; color: var(--color-text-primary); font-size: 21px; }
 .profile-head p { margin: 6px 0 0; color: var(--color-text-tertiary); font-size: 13px; }
 .menu { overflow: hidden; margin-top: 26px; border: 1px solid var(--color-border); border-radius: 18px; }

@@ -10,7 +10,7 @@ export interface TagItem {
  */
 export async function getTagList(keyword = '') {
   // 1. 请求当前用户范围内的标签列表。
-  const response = await request.get<TagItem[]>('/tags', { params: { keyword, limit: 20 } })
+  const response = await request.get<TagItem[]>('/tags', { params: { keyword, limit: 10 } })
   // 2. 返回接口已解包的标签数据。
   return response.data
 }

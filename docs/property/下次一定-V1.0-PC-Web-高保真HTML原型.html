@@ -79,7 +79,7 @@ nav{display:flex;gap:8px}.nav{border:0;background:transparent;padding:10px 14px;
     <h1>这次先留着，下次一定用得上。</h1>
     <p>以前留下的那些句子，需要的时候，都应该找得回来。</p>
     <div class="search"><span class="sicon">⌕</span><input id="homeSearch" placeholder="找找现在用得上的。" onkeydown="if(event.key==='Enter')doSearch(this.value)"><button class="x" onclick="homeSearch.value=''">×</button></div>
-    <div class="cats"><button class="chip active">全部</button><button class="chip">搞笑</button><button class="chip">抽象</button><button class="chip">感情</button><button class="chip">文艺</button><button class="chip">治愈</button><button class="chip">清醒</button><button class="chip">阴阳</button><button class="chip">其他</button></div>
+    <div class="cats"><button class="chip active">全部</button><button class="chip">抽象</button><button class="chip">锐评</button><button class="chip">嘴甜</button><button class="chip">松弛</button><button class="chip">清醒</button><button class="chip">浪漫</button><button class="chip">治愈</button><button class="chip">破碎</button></div>
   </div>
   <section class="section">
     <div class="sh"><div><div class="st">最近使用</div><div class="sd">最近真正拿出去用过的内容</div></div></div>
@@ -106,7 +106,7 @@ nav{display:flex;gap:8px}.nav{border:0;background:transparent;padding:10px 14px;
 <header><div class="hin"><div class="brand" onclick="go('home')" style="cursor:pointer"><div class="mark">次</div><div><div class="bcn">下次一定</div><div class="ben">For Next Time</div></div></div><nav><button class="nav" onclick="go('home')">首页</button><button class="nav active">搜索</button></nav><div class="actions"><button class="btn primary" onclick="go('create')">＋ 先留一句</button><button class="avatar" onclick="go('account')">黑</button></div></div></header>
 <main class="wrap">
 <div class="search" style="margin-top:0"><span class="sicon">⌕</span><input id="searchInput" value="下雨" oninput="searchLabel.textContent=this.value?'“'+this.value+'”':'开始找一句'"><button class="x">×</button></div>
-<div class="cats"><button class="chip active">全部</button><button class="chip">搞笑</button><button class="chip">抽象</button><button class="chip">感情</button><button class="chip">文艺</button><button class="chip">治愈</button><button class="chip">清醒</button><button class="chip">阴阳</button><button class="chip">其他</button></div>
+<div class="cats"><button class="chip active">全部</button><button class="chip">抽象</button><button class="chip">锐评</button><button class="chip">嘴甜</button><button class="chip">松弛</button><button class="chip">清醒</button><button class="chip">浪漫</button><button class="chip">治愈</button><button class="chip">破碎</button></div>
 <div style="margin:30px 0 16px"><div id="searchLabel" style="font-size:22px;font-weight:700">“下雨”</div><div class="sd">找到 6 条相关内容</div></div>
 <div class="cards">
 <article class="card"><div class="ctop"><span class="pin">⌖ 已置顶</span><span>刚刚用过</span></div><div class="ctxt">下雨天和睡觉更配，可惜我和上班更配。</div><div class="tags"><span class="tag">#搞笑</span><span class="tag">#朋友圈</span></div><div class="cfoot"><span class="meta">已用 8 次</span><button class="copy" onclick="copyIt('下雨天和睡觉更配，可惜我和上班更配。')">复制</button></div></article>
@@ -120,7 +120,7 @@ nav{display:flex;gap:8px}.nav{border:0;background:transparent;padding:10px 14px;
 <main class="wrap narrow"><div class="titlebar"><button class="back" onclick="go('home')">‹</button><div class="pt">先留一句</div></div>
 <div class="panel">
 <div class="field"><div class="label">正文 *</div><textarea id="createText" class="textarea" placeholder="粘贴你想以后再用的内容……"></textarea></div>
-<div class="field"><div class="label">分类</div><select class="select"><option>不分类</option><option>搞笑</option><option>抽象</option><option>感情</option><option>文艺</option><option>治愈</option><option>清醒</option><option>阴阳</option><option>其他</option></select></div>
+<div class="field"><div class="label">分类</div><select class="select"><option>不分类</option><option>抽象</option><option>锐评</option><option>嘴甜</option><option>松弛</option><option>清醒</option><option>浪漫</option><option>治愈</option><option>破碎</option></select></div>
 <div class="field"><div class="label">标签</div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="tag">#朋友圈 ×</span><span class="tag">#评论 ×</span><input class="input" style="flex:1;min-width:220px" placeholder="搜索已有标签，或输入后回车创建"></div></div>
 <button class="nav" onclick="more.classList.toggle('open')">＋ 更多信息</button>
 <div id="more" class="more"><div class="field"><div class="label">备注</div><textarea class="textarea" style="min-height:120px" placeholder="比如：适合回复朋友一些离谱建议。"></textarea></div></div>
@@ -132,14 +132,14 @@ nav{display:flex;gap:8px}.nav{border:0;background:transparent;padding:10px 14px;
 <main class="wrap narrow"><div class="titlebar"><button class="back" onclick="go('home')">‹</button><div class="pt">内容详情</div></div>
 <div class="panel"><div class="pin">⌖ 已置顶</div><div id="detailText" class="detail" style="margin-top:14px">你的建议很好，下次不要建议了。</div><div class="tags"><span class="tag">#评论</span><span class="tag">#阴阳</span></div>
 <div class="form-actions" style="justify-content:flex-start"><button class="btn primary" onclick="copyIt(detailText.innerText)">复制</button><button class="btn secondary" onclick="toast('已取消置顶')">取消置顶</button><button class="btn secondary" onclick="go('edit')">编辑</button><button class="btn danger" onclick="showModal()">删除</button></div>
-<div class="info"><div class="ibox"><div class="ik">分类</div><div class="iv">阴阳</div></div><div class="ibox"><div class="ik">已用</div><div class="iv">12 次</div></div><div class="ibox"><div class="ik">最近使用</div><div class="iv">刚刚</div></div><div class="ibox"><div class="ik">创建时间</div><div class="iv">2026-09-02 22:18</div></div><div class="ibox"><div class="ik">修改时间</div><div class="iv">2026-09-08 20:46</div></div><div class="ibox"><div class="ik">状态</div><div class="iv">正常</div></div></div>
+<div class="info"><div class="ibox"><div class="ik">分类</div><div class="iv">锐评</div></div><div class="ibox"><div class="ik">已用</div><div class="iv">12 次</div></div><div class="ibox"><div class="ik">最近使用</div><div class="iv">刚刚</div></div><div class="ibox"><div class="ik">创建时间</div><div class="iv">2026-09-02 22:18</div></div><div class="ibox"><div class="ik">修改时间</div><div class="iv">2026-09-08 20:46</div></div><div class="ibox"><div class="ik">状态</div><div class="iv">正常</div></div></div>
 <div style="margin-top:16px;background:#FAFAF8;border:1px solid var(--line);border-radius:16px;padding:18px"><div class="ik">备注</div><div class="iv">适合回复朋友一些离谱建议。</div></div>
 </div></main></section>
 
 <section id="edit" class="page">
 <header><div class="hin"><div class="brand" onclick="go('home')" style="cursor:pointer"><div class="mark">次</div><div><div class="bcn">下次一定</div><div class="ben">For Next Time</div></div></div><nav><button class="nav" onclick="go('home')">首页</button></nav><div class="actions"><button class="avatar" onclick="go('account')">黑</button></div></div></header>
 <main class="wrap narrow"><div class="titlebar"><button class="back" onclick="go('detail')">‹</button><div class="pt">编辑</div></div>
-<div class="panel"><div class="field"><div class="label">正文 *</div><textarea class="textarea">你的建议很好，下次不要建议了。</textarea></div><div class="field"><div class="label">分类</div><select class="select"><option>阴阳</option><option>搞笑</option><option>抽象</option><option>感情</option><option>文艺</option><option>治愈</option><option>清醒</option><option>其他</option></select></div><div class="field"><div class="label">标签</div><div class="tags"><span class="tag">#评论 ×</span><span class="tag">#阴阳 ×</span></div></div><div class="field"><div class="label">备注</div><textarea class="textarea" style="min-height:120px">适合回复朋友一些离谱建议。</textarea></div><div class="form-actions"><button class="btn secondary" onclick="go('detail')">取消</button><button class="btn primary" onclick="toast('保存成功');setTimeout(()=>go('detail'),500)">保存</button></div></div>
+<div class="panel"><div class="field"><div class="label">正文 *</div><textarea class="textarea">你的建议很好，下次不要建议了。</textarea></div><div class="field"><div class="label">分类</div><select class="select"><option>锐评</option><option>抽象</option><option>嘴甜</option><option>松弛</option><option>清醒</option><option>浪漫</option><option>治愈</option><option>破碎</option></select></div><div class="field"><div class="label">标签</div><div class="tags"><span class="tag">#评论 ×</span><span class="tag">#锐评 ×</span></div></div><div class="field"><div class="label">备注</div><textarea class="textarea" style="min-height:120px">适合回复朋友一些离谱建议。</textarea></div><div class="form-actions"><button class="btn secondary" onclick="go('detail')">取消</button><button class="btn primary" onclick="toast('保存成功');setTimeout(()=>go('detail'),500)">保存</button></div></div>
 </main></section>
 
 <section id="account" class="page">

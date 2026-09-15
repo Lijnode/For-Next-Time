@@ -10,17 +10,17 @@ import java.util.List;
  */
 public enum CategoryCode {
 
-    /** 搞笑。 */
-    FUNNY("搞笑"),
-
     /** 抽象。 */
     ABSTRACT("抽象"),
 
-    /** 感情。 */
-    EMOTION("感情"),
+    /** 锐评。 */
+    CRITIQUE("锐评"),
 
-    /** 文艺。 */
-    LITERARY("文艺"),
+    /** 嘴甜。 */
+    SWEET("嘴甜"),
+
+    /** 松弛。 */
+    RELAXED("松弛"),
 
     /** 治愈。 */
     HEALING("治愈"),
@@ -28,11 +28,11 @@ public enum CategoryCode {
     /** 清醒。 */
     SOBER("清醒"),
 
-    /** 阴阳。 */
-    SARCASM("阴阳"),
+    /** 浪漫。 */
+    ROMANTIC("浪漫"),
 
-    /** 其他。 */
-    OTHER("其他");
+    /** 破碎。 */
+    FRAGILE("破碎");
 
     /** 与分类编码一一对应的中文展示名称。 */
     @Getter

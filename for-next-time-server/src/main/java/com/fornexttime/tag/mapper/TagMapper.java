@@ -15,7 +15,7 @@ public interface TagMapper {
     int insert(Tag tag);
 
     /**
-     * 查询当前用户可复用的标签，并按名称升序返回。
+     * 查询当前用户最近创建的可复用标签。
      *
      * @param userId  当前登录用户主键
      * @param keyword 可选标签关键词

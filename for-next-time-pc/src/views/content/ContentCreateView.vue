@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { ArrowLeft } from 'lucide-vue-next'
 import { createContent, getContentDetail, updateContent } from '../../api/content'
 import { getTagList, type TagItem } from '../../api/tag'
 
@@ -17,7 +18,7 @@ const initialLoading = ref(false)
 const errorMessage = ref('')
 const initialSnapshot = ref('')
 const allowLeave = ref(false)
-const categories = [['FUNNY', '搞笑'], ['ABSTRACT', '抽象'], ['EMOTION', '感情'], ['LITERARY', '文艺'], ['HEALING', '治愈'], ['SOBER', '清醒'], ['SARCASM', '阴阳'], ['OTHER', '其他']]
+const categories = [['ABSTRACT', '抽象'], ['CRITIQUE', '锐评'], ['SWEET', '嘴甜'], ['RELAXED', '松弛'], ['SOBER', '清醒'], ['ROMANTIC', '浪漫'], ['HEALING', '治愈'], ['FRAGILE', '破碎']]
 const editingId = computed(() => route.name === 'content-edit' ? Number(route.params.id) : null)
 const isEditing = computed(() => editingId.value !== null)
 
@@ -176,14 +177,14 @@ onBeforeRouteLeave(confirmDiscardChanges)
 
 <template>
   <main class="create-page">
-    <header class="page-title-bar"><button type="button" aria-label="返回" @click="router.back()">‹</button><h1>{{ isEditing ? '编辑' : '先留一句' }}</h1><span aria-hidden="true"></span></header>
+    <header class="page-title-bar"><button type="button" aria-label="返回" @click="router.back()"><ArrowLeft :size="20" /></button><h1>{{ isEditing ? '编辑' : '先留一句' }}</h1><span aria-hidden="true"></span></header>
     <section class="editor-card">
       <p v-if="initialLoading" class="loading-text">正在载入内容……</p>
       <el-form v-else @submit.prevent="submit">
         <div class="form-body">
           <div class="editor-field content-field"><label for="content">正文 <em>*</em></label><el-input id="content" v-model="form.content" type="textarea" :rows="9" maxlength="5000" show-word-limit placeholder="粘贴你想以后再用的内容……" /></div>
           <div class="editor-field"><label for="category">分类</label><el-select id="category" v-model="form.categoryCode" clearable placeholder="请选择 / 不分类"><el-option v-for="category in categories" :key="category[0]" :label="category[1]" :value="category[0]" /></el-select></div>
-          <div class="editor-field"><label for="tag-input">标签</label><div class="selected-tags"><el-tag v-for="tag in form.tagNames" :key="tag" closable @close="removeTag(tag)">#{{ tag }}</el-tag><el-input id="tag-input" v-model="tagInput" class="tag-input" placeholder="输入后回车添加" @focus="loadTags()" @input="loadTags(tagInput)" @keyup.enter="addTag" /><el-button text type="primary" native-type="button" @click="addTag">添加</el-button></div></div>
+          <div class="editor-field"><label for="tag-input">标签</label><div class="selected-tags"><el-tag v-for="tag in form.tagNames" :key="tag" closable @close="removeTag(tag)">#{{ tag }}</el-tag><el-input id="tag-input" v-model="tagInput" class="tag-input" placeholder="输入后回车添加" @focus="loadTags()" @input="loadTags(tagInput)" @keydown.enter.prevent="addTag" /><el-button text type="primary" native-type="button" @click="addTag">添加</el-button></div></div>
           <div v-if="suggestedTags.length || tagLoading" class="tag-suggestions"><span>已有标签</span><el-button v-for="tag in suggestedTags" :key="tag.id" text size="small" native-type="button" @click="selectSuggestedTag(tag.name)">#{{ tag.name }}</el-button><span v-if="tagLoading">加载中…</span></div>
           <button class="more-button" type="button" @click="showRemark = !showRemark">{{ showRemark ? '收起备注' : '＋ 添加备注' }}</button>
           <div v-if="showRemark" class="editor-field remark-field"><label for="remark">备注</label><el-input id="remark" v-model="form.remark" type="textarea" :rows="4" maxlength="1000" placeholder="这句适合什么时候用？" /></div>
@@ -197,7 +198,7 @@ onBeforeRouteLeave(confirmDiscardChanges)
 
 <style scoped>
 .create-page { display: flex; width: min(760px, calc(100% - 64px)); height: 100vh; flex-direction: column; margin: 0 auto; padding: 20px 0; overflow: hidden; }
-.page-title-bar { display: grid; flex: 0 0 38px; grid-template-columns: 42px 1fr 42px; align-items: center; margin-bottom: 14px; }.page-title-bar button { width: 38px; height: 38px; border: 1px solid var(--color-border); border-radius: 12px; background: #fff; color: var(--color-text-primary); font-size: 25px; line-height: 1; }.page-title-bar h1 { margin: 0; color: var(--color-text-primary); font-size: 20px; text-align: center; }
+.page-title-bar { display: grid; flex: 0 0 38px; grid-template-columns: 42px 1fr 42px; align-items: center; margin-bottom: 14px; }.page-title-bar button { display: grid; width: 38px; height: 38px; padding: 0; place-items: center; border: 1px solid var(--color-border); border-radius: 12px; background: #fff; color: var(--color-text-primary); }.page-title-bar button :deep(svg) { display: block; }.page-title-bar h1 { margin: 0; color: var(--color-text-primary); font-size: 20px; text-align: center; }
 .editor-card { display: flex; min-height: 0; flex: 1; flex-direction: column; padding: 24px 30px; border: 1px solid var(--color-border); border-radius: 22px; background: var(--color-surface); box-shadow: 0 10px 25px rgb(31 33 33 / 4%); }.editor-card :deep(.el-form) { display: flex; min-height: 0; height: 100%; flex: 1; flex-direction: column; }.form-body { display: flex; min-height: 0; flex: 1; flex-direction: column; overflow-y: auto; padding-right: 4px; }.editor-field { margin-bottom: 14px; }.editor-field label { display: block; margin-bottom: 7px; color: var(--color-text-primary); font-size: 13px; font-weight: 700; }.editor-field em { color: var(--color-brand); font-style: normal; }
 .editor-field :deep(.el-input__wrapper), .editor-field :deep(.el-textarea__inner) { border: 1px solid var(--color-border); border-radius: 14px; background: #fbfbf9; box-shadow: none; }.editor-field :deep(.el-input__wrapper) { min-height: 48px; }.editor-field :deep(.el-textarea__inner) { padding: 15px; color: var(--color-text-primary); font-size: 16px; line-height: 1.75; }.editor-field :deep(.el-input__wrapper.is-focus), .editor-field :deep(.el-textarea__inner:focus) { border-color: #ffb29f; box-shadow: 0 0 0 3px rgb(255 111 78 / 10%); }.editor-field :deep(.el-select) { width: 100%; }
 .content-field { display: flex; min-height: 180px; flex: 1; flex-direction: column; }.content-field :deep(.el-textarea) { min-height: 0; flex: 1; }.content-field :deep(.el-textarea__inner) { height: 100%; resize: none; }

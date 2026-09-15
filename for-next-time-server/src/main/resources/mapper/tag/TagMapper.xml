@@ -18,7 +18,7 @@
         FROM tag
         WHERE user_id = #{userId}
         <if test="keyword != null and keyword != ''">AND name LIKE CONCAT('%', #{keyword}, '%')</if>
-        ORDER BY name ASC
+        ORDER BY create_time DESC, id DESC
         LIMIT #{limit}
     </select>
     <select id="findByContentIds" resultType="com.fornexttime.content.res.ContentTagRes">

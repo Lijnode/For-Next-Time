@@ -377,14 +377,14 @@ source_url
 V1.0 固定分类：
 
 ```text
-FUNNY      搞笑
 ABSTRACT   抽象
-EMOTION    感情
-LITERARY   文艺
-HEALING    治愈
+CRITIQUE   锐评
+SWEET      嘴甜
+RELAXED    松弛
 SOBER      清醒
-SARCASM    阴阳
-OTHER      其他
+ROMANTIC   浪漫
+HEALING    治愈
+FRAGILE    破碎
 ```
 
 规则：
@@ -392,7 +392,6 @@ OTHER      其他
 - 一条内容最多一个分类
 - 可以不分类
 - 不分类使用 `NULL`
-- `OTHER` 表示明确选择“其他”
 
 不得：
 

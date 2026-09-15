@@ -276,14 +276,14 @@ body{min-width:320px}
 
         <div class="category-scroll">
           <button class="chip active">全部</button>
-          <button class="chip">搞笑</button>
           <button class="chip">抽象</button>
-          <button class="chip">感情</button>
-          <button class="chip">文艺</button>
-          <button class="chip">治愈</button>
+          <button class="chip">锐评</button>
+          <button class="chip">嘴甜</button>
+          <button class="chip">松弛</button>
           <button class="chip">清醒</button>
-          <button class="chip">阴阳</button>
-          <button class="chip">其他</button>
+          <button class="chip">浪漫</button>
+          <button class="chip">治愈</button>
+          <button class="chip">破碎</button>
         </div>
       </div>
 
@@ -370,7 +370,7 @@ body{min-width:320px}
         </div>
 
         <div class="category-scroll">
-          <button class="chip active">全部</button><button class="chip">搞笑</button><button class="chip">抽象</button><button class="chip">感情</button><button class="chip">文艺</button><button class="chip">治愈</button><button class="chip">清醒</button><button class="chip">阴阳</button><button class="chip">其他</button>
+          <button class="chip active">全部</button><button class="chip">抽象</button><button class="chip">锐评</button><button class="chip">嘴甜</button><button class="chip">松弛</button><button class="chip">清醒</button><button class="chip">浪漫</button><button class="chip">治愈</button><button class="chip">破碎</button>
         </div>
 
         <div id="resultCount" class="search-result-count">找到 6 条与“下雨”相关的内容</div>
@@ -447,7 +447,7 @@ body{min-width:320px}
           <button class="primary detail-copy" onclick="copyText(document.getElementById('detailText').innerText)">复制</button>
 
           <div class="info-list">
-            <div class="info-row"><div class="info-k">分类</div><div class="info-v">阴阳</div></div>
+            <div class="info-row"><div class="info-k">分类</div><div class="info-v">锐评</div></div>
             <div class="info-row"><div class="info-k">已经用过</div><div class="info-v">12 次</div></div>
             <div class="info-row"><div class="info-k">最近使用</div><div class="info-v">刚刚</div></div>
             <div class="info-row"><div class="info-k">创建时间</div><div class="info-v">2026-09-02 22:18</div></div>
@@ -480,7 +480,7 @@ body{min-width:320px}
       <main class="page">
         <div class="form-card">
           <div class="field"><div class="label">正文 *</div><textarea class="textarea">你的建议很好，下次不要建议了。</textarea></div>
-          <div class="field"><div class="label">分类</div><button class="select-row" onclick="showCategorySheet()"><span>阴阳</span><span>›</span></button></div>
+          <div class="field"><div class="label">分类</div><button class="select-row" onclick="showCategorySheet()"><span>锐评</span><span>›</span></button></div>
           <div class="field"><div class="label">标签</div><div class="selected-tags"><span class="tag-selected">#评论 ×</span><span class="tag-selected">#阴阳 ×</span><button class="chip" onclick="showTagSheet()">＋ 添加标签</button></div></div>
           <div class="field"><div class="label">备注</div><textarea class="textarea" style="min-height:110px">适合回复朋友一些离谱建议。</textarea></div>
           <button class="primary" onclick="toast('保存成功');setTimeout(()=>go('detail'),500)">保存</button>
@@ -575,14 +575,14 @@ body{min-width:320px}
       <div class="sheet-title">选择分类</div>
       <div class="sheet-list">
         <button class="sheet-option active" onclick="chooseCategory('不分类')"><span>不分类</span><span>✓</span></button>
-        <button class="sheet-option" onclick="chooseCategory('搞笑')">搞笑</button>
         <button class="sheet-option" onclick="chooseCategory('抽象')">抽象</button>
-        <button class="sheet-option" onclick="chooseCategory('感情')">感情</button>
-        <button class="sheet-option" onclick="chooseCategory('文艺')">文艺</button>
-        <button class="sheet-option" onclick="chooseCategory('治愈')">治愈</button>
+        <button class="sheet-option" onclick="chooseCategory('锐评')">锐评</button>
+        <button class="sheet-option" onclick="chooseCategory('嘴甜')">嘴甜</button>
+        <button class="sheet-option" onclick="chooseCategory('松弛')">松弛</button>
         <button class="sheet-option" onclick="chooseCategory('清醒')">清醒</button>
-        <button class="sheet-option" onclick="chooseCategory('阴阳')">阴阳</button>
-        <button class="sheet-option" onclick="chooseCategory('其他')">其他</button>
+        <button class="sheet-option" onclick="chooseCategory('浪漫')">浪漫</button>
+        <button class="sheet-option" onclick="chooseCategory('治愈')">治愈</button>
+        <button class="sheet-option" onclick="chooseCategory('破碎')">破碎</button>
       </div>
     </div>
   </div>

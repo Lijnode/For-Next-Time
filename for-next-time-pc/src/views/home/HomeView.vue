@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { CircleUserRound, Plus, Search } from 'lucide-vue-next'
-import { getContentList, getRecentContents, recordCopy, searchContents, type ContentListItem } from '../../api/content'
+import { ArrowUpDown, CircleUserRound, Plus, Search } from 'lucide-vue-next'
+import { getContentList, getRecentContents, recordCopy, searchContents, type ContentListItem, type ContentSort } from '../../api/content'
 import { getUserProfile, type UserProfile } from '../../api/user'
 
 const router = useRouter()
@@ -14,19 +14,23 @@ const keyword = ref('')
 const submittedKeyword = ref('')
 const categoryCode = ref<string | null>(null)
 const copyingId = ref<number | null>(null)
+const contentLoading = ref(false)
 const pageNum = ref(1)
 const total = ref(0)
 const pageSize = 10
-const categories: Array<[string, string]> = [['FUNNY', '搞笑'], ['ABSTRACT', '抽象'], ['EMOTION', '感情'], ['LITERARY', '文艺'], ['HEALING', '治愈'], ['SOBER', '清醒'], ['SARCASM', '阴阳'], ['OTHER', '其他']]
+const sortBy = ref<ContentSort>('time')
+const recentOffset = ref(0)
+const recentLoadingMore = ref(false)
+const recentHasMore = ref(true)
+const recentPageSize = 10
+const recentContentOverflow = ref<Record<number, boolean>>({})
+const categories: Array<[string, string]> = [['ABSTRACT', '抽象'], ['CRITIQUE', '锐评'], ['SWEET', '嘴甜'], ['RELAXED', '松弛'], ['SOBER', '清醒'], ['ROMANTIC', '浪漫'], ['HEALING', '治愈'], ['FRAGILE', '破碎']]
 const isSearching = computed(() => Boolean(submittedKeyword.value))
-
-/**
- * 进入新增内容页面。
- */
-async function createContent() {
-  // 1. 进入受保护的内容编辑页。
-  await router.push({ name: 'content-create' })
-}
+const activeCategoryName = computed(() => categories.find(([code]) => code === categoryCode.value)?.[1])
+const contentSectionTitle = computed(() => isSearching.value ? '搜索结果' : activeCategoryName.value ? activeCategoryName.value + '内容' : '全部内容')
+const contentSectionSummary = computed(() => isSearching.value
+  ? `“${submittedKeyword.value}”共翻到 ${total.value} 条。`
+  : activeCategoryName.value ? `“${activeCategoryName.value}”共留下 ${total.value} 条。` : `共留下 ${total.value} 条内容。`)
 
 /**
  * 切换首页分类，并按当前用户范围重新加载内容。
@@ -50,25 +54,41 @@ async function changePage(value: number) {
 }
 
 /**
+ * 在普通列表的时间与热度排序之间切换，并回到第一页重新加载。
+ */
+async function toggleSort() {
+  // 1. 切换到另一种固定排序方式。
+  sortBy.value = sortBy.value === 'time' ? 'hot' : 'time'
+  // 2. 回到第一页并请求对应排序的内容。
+  pageNum.value = 1
+  await loadContentPage()
+}
+
+/**
  * 加载当前分类与页码的内容分页结果。
  */
 async function loadContentPage() {
-  // 1. 按首页当前模式请求普通列表或关键词搜索结果。
+  // 1. 标记内容区请求中，避免排序按钮被重复触发。
+  contentLoading.value = true
   try {
+    // 2. 按首页当前模式请求普通列表或关键词搜索结果。
     const page = isSearching.value
       ? await searchContents(submittedKeyword.value, pageNum.value, categoryCode.value, pageSize)
-      : await getContentList(pageNum.value, categoryCode.value, pageSize)
-    // 2. 用接口分页结果更新首页卡片区域。
+      : await getContentList(pageNum.value, categoryCode.value, pageSize, sortBy.value)
+    // 3. 用接口分页结果更新首页卡片区域。
     contents.value = page.list
     total.value = page.total
   } catch (error) {
-    // 3. 请求失败时保留当前内容并提示用户。
+    // 4. 请求失败时保留当前内容并提示用户。
     ElMessage.error(error instanceof Error ? error.message : '加载内容失败，请稍后重试')
+  } finally {
+    // 5. 无论请求结果如何都恢复可交互状态。
+    contentLoading.value = false
   }
 }
 
 /**
- * 复制卡片正文成功后记录一次使用统计。
+ * 复制卡片正文成功后记录一次使用统计，并刷新最近使用排行榜。
  */
 async function copyContent(item: ContentListItem) {
   // 1. 在剪贴板写入成功前不更新后端统计。
@@ -80,16 +100,18 @@ async function copyContent(item: ContentListItem) {
     // 3. 统计接口失败不影响已经成功的复制操作。
     try {
       const stat = await recordCopy(item.id)
+      // 4. 先同步当前卡片统计，再刷新右侧最近使用排行榜。
       item.copyCount = stat.copyCount
       item.lastCopyTime = stat.lastCopyTime
+      await loadRecentContents()
     } catch {
-      // 4. 接受少量统计误差，避免自动重试导致重复计数。
+      // 5. 接受少量统计误差，避免自动重试导致重复计数。
     }
   } catch (error) {
-    // 5. 仅在浏览器复制失败时提示用户。
+    // 6. 仅在浏览器复制失败时提示用户。
     ElMessage.error(error instanceof Error ? error.message : '复制失败，请稍后重试')
   } finally {
-    // 6. 恢复当前卡片的复制按钮状态。
+    // 7. 恢复当前卡片的复制按钮状态。
     copyingId.value = null
   }
 }
@@ -148,15 +170,65 @@ async function clearSearch() {
 }
 
 /**
+ * 加载最近使用内容，并在滚动分页时追加下一批数据。
+ */
+async function loadRecentContents(append = false) {
+  // 1. 避免重复请求，且没有下一页时停止加载。
+  if (recentLoadingMore.value || (append && !recentHasMore.value)) return
+
+  // 2. 根据加载方式确定本次分页偏移量。
+  const offset = append ? recentOffset.value : 0
+  recentLoadingMore.value = true
+
+  try {
+    // 3. 请求固定十条最近使用内容，并同步分页状态。
+    const items = await getRecentContents(recentPageSize, offset)
+    recentContents.value = append ? [...recentContents.value, ...items] : items
+    recentOffset.value = offset + items.length
+    recentHasMore.value = items.length === recentPageSize
+  } finally {
+    // 4. 请求结束后恢复下一次滚动加载能力。
+    recentLoadingMore.value = false
+  }
+}
+
+/**
+ * 在最近使用列表滚动接近底部时加载下一页。
+ */
+function handleRecentScroll(event: Event) {
+  // 1. 仅在滚动到列表底部附近时继续请求数据。
+  const list = event.currentTarget as HTMLElement
+  if (list.scrollTop + list.clientHeight < list.scrollHeight - 24) return
+
+  // 2. 追加下一批十条最近使用内容。
+  void loadRecentContents(true)
+}
+
+/**
+ * 仅为被两行摘要截断的最近使用正文启用完整内容提示。
+ */
+async function refreshRecentContentOverflow() {
+  // 1. 等待列表 DOM 更新完成后读取实际文本高度。
+  await nextTick()
+
+  // 2. 根据每项真实溢出状态更新提示开关。
+  const overflow: Record<number, boolean> = {}
+  document.querySelectorAll<HTMLElement>('.recent-content[data-content-id]').forEach((element) => {
+    const id = Number(element.dataset.contentId)
+    overflow[id] = element.scrollHeight > element.clientHeight
+  })
+  recentContentOverflow.value = overflow
+}
+
+/**
  * 加载首页内容列表，失败时保留空状态。
  */
 async function loadContents() {
   // 1. 并行请求当前用户内容列表和最近成功复制内容。
-  const [page, recent] = await Promise.all([getContentList(pageNum.value, categoryCode.value, pageSize), getRecentContents()])
+  const [page] = await Promise.all([getContentList(pageNum.value, categoryCode.value, pageSize, sortBy.value), loadRecentContents()])
   // 2. 写入首页两个独立展示区域。
   contents.value = page.list
   total.value = page.total
-  recentContents.value = recent
 }
 
 /**
@@ -171,6 +243,11 @@ async function loadUserProfile() {
   }
 }
 
+// 1. 最近使用列表变更后，根据真实截断状态控制正文提示。
+watch(recentContents, () => {
+  void refreshRecentContentOverflow()
+}, { flush: 'post' })
+
 // 1. 进入首页后并行加载内容和当前用户资料。
 onMounted(() => {
   void loadContents()
@@ -184,6 +261,7 @@ onMounted(() => {
       <RouterLink class="create-link" to="/contents/new"><Plus :size="17" />先留一句</RouterLink>
       <RouterLink class="profile-link" to="/profile" aria-label="我的">
         <img v-if="userProfile?.avatarUrl" :src="userProfile.avatarUrl" :alt="`${userProfile.username} 的头像`">
+        <span v-else-if="userProfile" class="profile-initial">{{ userProfile.username.slice(0, 1) }}</span>
         <CircleUserRound v-else :size="21" />
       </RouterLink>
     </div>
@@ -203,31 +281,31 @@ onMounted(() => {
     </section>
     <div :class="['home-content-layout', { 'search-layout': isSearching }]">
       <section class="all-content-section">
-        <div class="section-heading"><div><h2>{{ isSearching ? '搜索结果' : '全部内容' }}</h2><p v-if="isSearching">“{{ submittedKeyword }}”共翻到 {{ total }} 条。</p></div><el-button v-if="isSearching" text type="primary" @click="clearSearch">返回全部</el-button></div>
+        <div class="section-heading"><div><h2>{{ contentSectionTitle }}</h2><p>{{ contentSectionSummary }}</p></div><el-button v-if="isSearching" text type="primary" @click="clearSearch">返回全部</el-button><el-button v-else class="sort-button" text :loading="contentLoading" :aria-label="sortBy === 'time' ? '切换为按热度' : '切换为按时间'" @click="toggleSort"><span class="sort-button-content"><ArrowUpDown :size="15" /><span>{{ sortBy === 'time' ? '按时间' : '按热度' }}</span></span></el-button></div>
         <div class="content-grid">
           <article v-for="item in contents" :key="item.id" class="content-card" tabindex="0" @click="openDetail(item.id)" @keydown.enter="openDetail(item.id)">
             <div class="card-top"><span v-if="item.pinned" class="pinned-mark">已置顶</span><span>{{ item.lastCopyTime ? '最近用过' : item.updateTime }}</span></div>
             <p class="content-text">{{ item.content }}</p>
             <div v-if="item.categoryName || item.tags.length" class="tag-row"><span v-if="item.categoryName" :class="['card-chip', 'category-chip', item.categoryCode ? 'category-' + item.categoryCode.toLowerCase() : '']">{{ item.categoryName }}</span><span v-for="tag in item.tags.slice(0, 3)" :key="tag.id" class="card-chip tag-chip">#{{ tag.name }}</span></div>
-            <div class="card-footer"><span>{{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '还没用过' }}</span><el-button text type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</el-button></div>
+            <div class="card-footer"><span>{{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '还没用过' }}</span><el-button class="copy-button" text type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</el-button></div>
           </article>
         </div>
-        <p v-if="!contents.length" class="empty-state">这里还空着，先留下一句。</p>
-        <el-button v-if="!contents.length" class="empty-create" type="primary" @click="createContent">先留一句</el-button>
+<!--        <el-button v-if="!contents.length" class="empty-create" type="primary" @click="createContent">先留一句</el-button>-->
         <el-pagination v-if="total > 0" class="pagination" background layout="prev, pager, next" :current-page="pageNum" :page-size="pageSize" :total="total" @current-change="changePage" />
       </section>
       <aside v-if="!isSearching" class="recent-panel">
         <div class="section-heading"><h2>最近使用</h2></div>
-        <div v-if="recentContents.length" class="recent-list" aria-label="最近使用内容">
-          <article v-for="(item, index) in recentContents.slice(0, 3)" :key="item.id" class="recent-quick-item" tabindex="0" @click="openDetail(item.id)" @keydown.enter="openDetail(item.id)">
+        <div v-if="recentContents.length" class="recent-list" aria-label="最近使用内容" @scroll.passive="handleRecentScroll">
+          <article v-for="(item, index) in recentContents" :key="item.id" class="recent-quick-item" tabindex="0" @click="openDetail(item.id)" @keydown.enter="openDetail(item.id)">
             <span class="recent-rank">{{ String(index + 1).padStart(2, '0') }}</span>
             <div class="recent-item-body">
-              <p class="recent-content">{{ item.content }}</p>
-              <div class="recent-item-footer"><span>{{ formatRecentTime(item.lastCopyTime) }} · {{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '刚刚用过' }}</span><div class="recent-item-actions"><el-button text type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</el-button></div></div>
+              <el-tooltip :content="item.content" effect="light" placement="top" :show-after="200" popper-class="recent-content-tooltip" :disabled="!recentContentOverflow[item.id]"><p class="recent-content" :data-content-id="item.id">{{ item.content }}</p></el-tooltip>
+              <div class="recent-item-footer"><span>{{ formatRecentTime(item.lastCopyTime) }} · {{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '刚刚用过' }}</span><div class="recent-item-actions"><el-button class="copy-button" text type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</el-button></div></div>
             </div>
           </article>
+          <p v-if="recentLoadingMore" class="recent-loading">加载中…</p>
         </div>
-        <p v-else class="recent-empty">最近还没用上这里的内容。</p>
+        <p v-else class="recent-empty">最近还没用上这里的内容</p>
       </aside>
     </div>
   </main>
@@ -277,6 +355,17 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.profile-initial {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  background: var(--color-brand);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
 }
 
 .hero {
@@ -413,6 +502,31 @@ h1 {
 
 .recent-list {
   margin-top: 14px;
+  height: 390px;
+  padding-right: 4px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.sort-button {
+  color: var(--color-text-secondary);
+}
+
+.sort-button-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.recent-list::-webkit-scrollbar {
+  display: none;
+}
+
+.recent-loading {
+  margin: 10px 0 2px;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
 }
 
 .recent-quick-item {
@@ -475,9 +589,36 @@ h1 {
   color: var(--color-text-primary);
   font-size: 15px;
   line-height: 1.5;
+  overflow-wrap: anywhere;
   white-space: pre-wrap;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
+  -webkit-line-clamp: 2;
+}
+
+:global(.el-popper.recent-content-tooltip) {
+  max-width: min(420px, calc(100vw - 32px));
+  max-height: min(320px, calc(100vh - 48px));
+  padding: 12px 14px;
+  overflow: auto;
+  border: 1px solid #f0dfd9;
+  border-radius: 12px;
+  background: #fffaf7;
+  box-shadow: 0 10px 28px rgb(72 48 40 / 14%);
+  color: var(--color-text-primary);
+  font-size: 14px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+  scrollbar-width: none;
+  white-space: pre-wrap;
+}
+
+:global(.el-popper.recent-content-tooltip::-webkit-scrollbar) {
+  display: none;
+}
+
+:global(.el-popper.recent-content-tooltip .el-popper__arrow::before) {
+  border-color: #f0dfd9;
+  background: #fffaf7;
 }
 
 .recent-item-actions {
@@ -488,8 +629,9 @@ h1 {
   white-space: nowrap;
 }
 
-.recent-item-footer :deep(.el-button) {
-  padding: 4px 0;
+.recent-item-footer :deep(.copy-button) {
+  padding: 5px 9px;
+  border-radius: 10px;
   font-weight: 700;
 }
 
@@ -536,6 +678,7 @@ h1 {
   color: var(--color-text-primary);
   font-size: 16px;
   line-height: 1.75;
+  overflow-wrap: anywhere;
   white-space: pre-wrap;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 4;
@@ -566,57 +709,62 @@ h1 {
   font-weight: 500;
 }
 
-.category-funny {
-  background: #fff4d8;
-  color: #9c6700;
-}
-
 .category-abstract {
-  background: #f1edff;
-  color: #715cac;
+  background: #fff8dc;
+  color: #d9a514;
 }
 
-.category-emotion {
-  background: #fff0f3;
-  color: #b85f74;
+.category-critique {
+  background: #fff0f0;
+  color: #e5484d;
 }
 
-.category-literary {
-  background: #edf1ff;
-  color: #556eae;
+.category-sweet {
+  background: #fff0f7;
+  color: #e46aa3;
+}
+
+.category-relaxed {
+  background: #eef8f2;
+  color: #4faf7b;
 }
 
 .category-healing {
-  background: #edf8f0;
-  color: #4d8662;
+  background: #fff3e8;
+  color: #ed8b4a;
 }
 
 .category-sober {
-  background: #edf5f8;
-  color: #4f7e91;
+  background: #eef4ff;
+  color: #4c78d0;
 }
 
-.category-sarcasm {
-  background: #f5effa;
-  color: #865d9a;
+.category-romantic {
+  background: #f4efff;
+  color: #8a63d2;
 }
 
-.category-other {
-  background: #f1f2ef;
-  color: #666d6d;
+.category-fragile {
+  background: #f1f0f3;
+  color: #514c59;
 }
 
 .card-footer {
   margin-top: 15px;
 }
 
-.card-footer :deep(.el-button) {
-  padding: 5px 0;
+.card-footer :deep(.copy-button) {
+  padding: 5px 9px;
+  border-radius: 10px;
   font-weight: 700;
 }
 
-.recent-empty,
-.empty-state {
+:deep(.copy-button:hover:not(.is-disabled)) {
+  background: #fff1ec;
+  color: #f55f3c;
+}
+
+.recent-empty {
   margin: 17px 0 0;
   color: var(--color-text-tertiary);
   font-size: 14px;

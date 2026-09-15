@@ -37,7 +37,13 @@
         FROM content WHERE user_id = #{userId} AND deleted = 0
         <if test="categoryCode != null">AND category_code = #{categoryCode}</if>
         <if test="pinned != null">AND is_pinned = #{pinned}</if>
-        ORDER BY is_pinned DESC, update_time DESC, id DESC
+        ORDER BY is_pinned DESC,
+        <choose>
+            <when test="sortBy == 'hot'">
+                copy_count DESC,
+            </when>
+        </choose>
+        update_time DESC, id DESC
         LIMIT #{offset}, #{pageSize}
     </select>
     <select id="searchPage" resultType="com.fornexttime.content.entity.Content">

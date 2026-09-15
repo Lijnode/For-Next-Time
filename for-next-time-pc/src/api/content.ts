@@ -30,6 +30,8 @@ export interface ContentCopyStat {
   lastCopyTime: string
 }
 
+export type ContentSort = 'time' | 'hot'
+
 export async function createContent(data: ContentCreateReq) {
   // 1. 提交新增内容请求。
   const response = await request.post<{ id: number }>('/contents', data)
@@ -40,10 +42,10 @@ export async function createContent(data: ContentCreateReq) {
 /**
  * 获取当前用户指定分类的分页内容。
  */
-export async function getContentList(pageNum = 1, categoryCode: string | null = null, pageSize = 20) {
+export async function getContentList(pageNum = 1, categoryCode: string | null = null, pageSize = 20, sortBy: ContentSort = 'time') {
   // 1. 请求首页所需的默认分页与可选分类数据。
   const response = await request.get<PageResult<ContentListItem>>('/contents', {
-    params: { pageNum, pageSize, categoryCode: categoryCode ?? undefined },
+    params: { pageNum, pageSize, categoryCode: categoryCode ?? undefined, sortBy },
   })
   // 2. 返回带总数和页码信息的统一分页结果。
   return response.data
