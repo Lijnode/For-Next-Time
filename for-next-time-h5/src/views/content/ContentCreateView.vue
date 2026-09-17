@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
+import { ArrowLeft } from 'lucide-vue-next'
 import { createContent, getContentDetail, updateContent } from '../../api/content'
 import { getTagList, type TagItem } from '../../api/tag'
 import { confirm as confirmDialog, showError, showSuccess } from '../../platform/feedback'
@@ -191,7 +192,7 @@ onBeforeRouteLeave(confirmDiscardChanges)
 
 <template>
   <main class="create-page">
-    <header><button type="button" aria-label="返回" @click="router.back()">‹</button><h1>{{ isEditing ? '编辑' : '先留一句' }}</h1><span aria-hidden="true"></span></header>
+    <header><button type="button" aria-label="返回" @click="router.back()"><ArrowLeft :size="21" /></button><h1>{{ isEditing ? '编辑' : '先留一句' }}</h1><span aria-hidden="true"></span></header>
     <van-loading v-if="initialLoading" class="loading" vertical>正在载入内容……</van-loading>
     <van-form v-else @submit="submit">
       <section class="editor-card">

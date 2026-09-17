@@ -15,6 +15,8 @@ const deleting = ref(false)
 const copying = ref(false)
 const pinning = ref(false)
 const errorMessage = ref('')
+const contentExpanded = ref(false)
+const contentCanExpand = ref(false)
 
 /**
  * 加载路由指定的当前用户内容详情。
@@ -29,14 +31,28 @@ async function loadDetail() {
   }
   // 2. 请求详情并通过平台反馈层展示失败原因。
   try {
+    // 3. 重置正文折叠状态并加载详情数据。
+    contentExpanded.value = false
+    contentCanExpand.value = false
     detail.value = await getContentDetail(id)
+
+    // 4. ponytail: 以 120 字符或六行换行判定超长，字体布局变更时再改为离屏精确测量。
+    contentCanExpand.value = detail.value.content.length > 120 || detail.value.content.split(/\r?\n/).length > 5
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '加载内容失败，请稍后重试'
     showError(errorMessage.value)
   } finally {
-    // 3. 请求结束后关闭加载状态。
+    // 5. 请求结束后关闭加载状态。
     loading.value = false
   }
+}
+
+/**
+ * 切换超长正文的折叠状态，仅在用户主动操作时展示完整内容。
+ */
+function toggleContentExpanded() {
+  // 1. 切换当前正文的展开状态。
+  contentExpanded.value = !contentExpanded.value
 }
 
 /**
@@ -126,9 +142,22 @@ onMounted(loadDetail)
     <van-empty v-else-if="errorMessage" :description="errorMessage"><van-button type="primary" round @click="router.replace({ name: 'home' })">回到首页</van-button></van-empty>
     <article v-else-if="detail" class="detail-card">
       <p v-if="detail.pinned" class="pinned-mark"><Pin :size="14" fill="currentColor" />已置顶</p>
-      <p class="content-text">{{ detail.content }}</p>
+      <p
+        class="content-text"
+        :class="{ 'content-collapsed': !contentExpanded }"
+      >
+        {{ detail.content }}
+      </p>
+      <button
+        v-if="contentCanExpand"
+        type="button"
+        class="expand-content"
+        @click="toggleContentExpanded"
+      >
+        {{ contentExpanded ? '收起' : '展开全部' }}
+      </button>
       <div class="tag-row"><span v-if="detail.categoryName" :class="['tag', 'category-tag', detail.categoryCode ? 'category-' + detail.categoryCode.toLowerCase() : '']">{{ detail.categoryName }}</span><span v-for="tag in detail.tags" :key="tag.id" class="tag">#{{ tag.name }}</span></div>
-      <div class="detail-actions"><van-button type="primary" :loading="copying" @click="copyContent"><Copy :size="16" />复制</van-button><van-button plain :loading="pinning" @click="togglePinned"><Pin :size="16" />{{ detail.pinned ? '取消置顶' : '置顶' }}</van-button><van-button plain @click="editContent"><Pencil :size="16" />编辑</van-button><button class="delete-button" type="button" :disabled="deleting" @click="removeContent"><Trash2 :size="15" />删除</button></div>
+      <div class="detail-actions"><van-button type="primary" :loading="copying" @click="copyContent"><span class="action-content"><Copy :size="16" /><span>复制</span></span></van-button><van-button plain :loading="pinning" @click="togglePinned"><span class="action-content"><Pin :size="16" /><span>{{ detail.pinned ? '取消置顶' : '置顶' }}</span></span></van-button><van-button plain @click="editContent"><span class="action-content"><Pencil :size="16" /><span>编辑</span></span></van-button><button class="delete-button" type="button" :disabled="deleting" @click="removeContent"><Trash2 :size="15" />删除</button></div>
       <div class="info-list"><div><span>分类</span><strong>{{ detail.categoryName ?? '未分类' }}</strong></div><div><span>已用</span><strong>{{ detail.copyCount }} 次</strong></div><div><span>最近使用</span><strong>{{ detail.lastCopyTime ?? '还没有复制过' }}</strong></div><div><span>创建时间</span><strong>{{ detail.createTime }}</strong></div><div><span>修改时间</span><strong>{{ detail.updateTime }}</strong></div></div>
       <section v-if="detail.remark" class="remark-block"><p>备注</p><span>{{ detail.remark }}</span></section>
     </article>
@@ -136,5 +165,5 @@ onMounted(loadDetail)
 </template>
 
 <style scoped>
-.detail-page { min-height: 100vh; padding: calc(12px + env(safe-area-inset-top)) 16px 32px; }.top-bar { display: grid; grid-template-columns: 42px 1fr 42px; align-items: center; margin-bottom: 16px; }.top-bar button { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid var(--color-border); border-radius: 12px; background: #fff; color: var(--color-text-primary); }.top-bar h1 { margin: 0; color: var(--color-text-primary); font-size: 18px; text-align: center; }.loading { padding: 80px 0; }.detail-card { padding: 20px 17px; border: 1px solid var(--color-border); border-radius: 20px; background: var(--color-card); box-shadow: 0 6px 16px rgb(31 33 33 / 3%); }.pinned-mark { display: flex; align-items: center; gap: 5px; margin: 0; color: var(--color-brand); font-size: 12px; font-weight: 700; }.content-text { margin: 14px 0 18px; color: var(--color-text-primary); font-size: 20px; line-height: 1.82; white-space: pre-wrap; }.tag-row { display: flex; flex-wrap: wrap; gap: 7px; }.tag { padding: 5px 8px; border-radius: 999px; background: #f1f2ef; color: #737878; font-size: 11px; }.detail-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 21px; }.detail-actions :deep(.van-button) { display: inline-flex; align-items: center; gap: 5px; height: 40px; border-radius: 12px; font-weight: 700; }.delete-button { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; padding: 8px 0; border: 0; background: transparent; color: var(--color-muted); font: inherit; font-size: 12px; }.info-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 22px; }.info-list div { min-height: 67px; padding: 12px; border-radius: 14px; background: #f8f8f5; }.info-list span, .info-list strong { display: block; }.info-list span { color: var(--color-muted); font-size: 10px; }.info-list strong { margin-top: 5px; color: var(--color-text-secondary); font-size: 12px; font-weight: 500; line-height: 1.35; overflow-wrap: anywhere; }.remark-block { margin-top: 12px; padding: 15px; border: 1px solid var(--color-border); border-radius: 15px; background: #fafaf8; }.remark-block p { margin: 0 0 8px; color: var(--color-muted); font-size: 11px; font-weight: 700; }.remark-block span { color: var(--color-text-secondary); font-size: 13px; line-height: 1.7; white-space: pre-wrap; }
+.detail-page { min-height: 100vh; padding: calc(12px + env(safe-area-inset-top)) 16px 32px; }.top-bar { display: grid; grid-template-columns: 42px 1fr 42px; align-items: center; margin-bottom: 16px; }.top-bar button { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid var(--color-border); border-radius: 12px; background: #fff; color: var(--color-text-primary); }.top-bar h1 { margin: 0; color: var(--color-text-primary); font-size: 18px; text-align: center; }.loading { padding: 80px 0; }.detail-card { padding: 20px 17px; border: 1px solid var(--color-border); border-radius: 20px; background: var(--color-card); box-shadow: 0 6px 16px rgb(31 33 33 / 3%); }.pinned-mark { display: flex; align-items: center; gap: 5px; margin: 0; color: var(--color-brand); font-size: 12px; font-weight: 700; }.content-text { margin: 14px 0 18px; color: var(--color-text-primary); font-size: 20px; line-height: 1.82; white-space: pre-wrap; }.content-text.content-collapsed { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 5; }.expand-content { display: block; margin: -8px 0 18px; padding: 0; border: 0; background: transparent; color: var(--color-brand); font: inherit; font-size: 13px; font-weight: 700; }.tag-row { display: flex; flex-wrap: wrap; gap: 7px; }.tag { padding: 5px 8px; border-radius: 999px; background: #f1f2ef; color: #737878; font-size: 11px; }.detail-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 21px; }.detail-actions :deep(.van-button) { height: 40px; border-radius: 12px; font-weight: 700; }.detail-actions :deep(.van-button__content) { display: flex; align-items: center; justify-content: center; height: 100%; line-height: 1; }.action-content { display: flex; align-items: center; justify-content: center; gap: 6px; height: 100%; line-height: 1; }.delete-button { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; padding: 8px 0; border: 0; background: transparent; color: var(--color-muted); font: inherit; font-size: 12px; }.info-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 22px; }.info-list div { min-height: 67px; padding: 12px; border-radius: 14px; background: #f8f8f5; }.info-list span, .info-list strong { display: block; }.info-list span { color: var(--color-muted); font-size: 10px; }.info-list strong { margin-top: 5px; color: var(--color-text-secondary); font-size: 12px; font-weight: 500; line-height: 1.35; overflow-wrap: anywhere; }.remark-block { margin-top: 12px; padding: 15px; border: 1px solid var(--color-border); border-radius: 15px; background: #fafaf8; }.remark-block p { margin: 0 0 8px; color: var(--color-muted); font-size: 11px; font-weight: 700; }.remark-block span { color: var(--color-text-secondary); font-size: 13px; line-height: 1.7; white-space: pre-wrap; }
 </style>

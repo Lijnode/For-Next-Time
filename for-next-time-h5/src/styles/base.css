@@ -24,6 +24,15 @@ textarea {
   font: inherit;
 }
 
+/* 长正文可能不存在空格，必须在可用宽度内断行，避免撑开移动端页面。 */
+.content-text,
+.item-content,
+.remark-block span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,

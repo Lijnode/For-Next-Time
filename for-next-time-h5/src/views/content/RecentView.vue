@@ -21,8 +21,8 @@ const pageSize = 10
  * @param append 是否在已有列表后继续加载
  */
 async function loadRecentContents(append = false) {
-  // 1. 首屏和后续滚动使用各自的加载状态，避免重复请求。
-  if (append && (!hasMore.value || loadingMore.value)) return
+  // 1. 没有下一页时停止请求；Vant List 已通过 loading 状态避免重复触发。
+  if (append && !hasMore.value) return
   if (append) loadingMore.value = true
   else loading.value = true
   try {
@@ -124,7 +124,7 @@ onMounted(loadRecentContents)
 
 <style scoped>
 .recent-page { min-height: 100vh; background: var(--color-page); }
-.recent-header { padding: 18px 16px 14px; border-bottom: 1px solid var(--color-border); background: #fffaf7; }
+.recent-header { padding: 18px 16px 14px; background: #fffaf7; }
 h1 { margin: 0; color: var(--color-text-primary); font-size: 20px; letter-spacing: .02em; }
 .recent-content { padding: 20px 16px 30px; }.loading-state { padding-top: 88px; color: var(--color-muted); }.empty-state { margin: 48px 0; color: var(--color-muted); font-size: 14px; text-align: center; }
 .recent-list { border-top: 1px solid var(--color-border); }.recent-item { padding: 17px 0 16px; border-bottom: 1px solid var(--color-border); cursor: pointer; }.item-heading, .item-footer { display: flex; align-items: center; }.item-time, .item-footer { color: var(--color-muted); font-size: 11px; }.item-time { display: inline-flex; gap: 4px; align-items: center; }.item-content { display: -webkit-box; overflow: hidden; margin: 11px 0; color: var(--color-text-primary); font-size: 16px; line-height: 1.65; white-space: pre-wrap; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }.item-footer { justify-content: space-between; margin-top: 13px; }.item-footer :deep(.van-button) { min-width: 68px; height: 38px; border-radius: 12px; font-weight: 700; }
