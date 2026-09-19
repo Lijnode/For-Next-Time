@@ -140,7 +140,9 @@ onMounted(loadContents)
             <div class="card-footer"><span>{{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '还没用过' }}</span><van-button plain size="small" type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</van-button></div>
           </article>
         </van-list>
-        <p v-if="!contents.length" class="empty-state">这里还空着，先留下一句</p>
+        <div v-if="!loadingMore && !contents.length" class="empty-state">
+          <van-empty image="/empty-state-illustration.png" image-size="180" :description="categoryCode ? '该分类暂时还没有内容' : '暂无内容，先留下一句吧'" />
+        </div>
       </section>
     </div>
   </main>
@@ -199,9 +201,9 @@ h1 { margin: 0; color: var(--color-text-primary); font-size: 22px; letter-spacin
 }
 
 .category-scroller button.active {
-  border-color: #1f2121;
-  background: #1f2121;
-  color: #fff;
+  border-color: #ffb29f;
+  background: #fff1ec;
+  color: var(--color-brand);
 }
 
 .home-content {
@@ -281,9 +283,14 @@ h1 { margin: 0; color: var(--color-text-primary); font-size: 22px; letter-spacin
 }
 
 .empty-state {
-  margin: 13px 0 0;
-  color: var(--color-muted);
-  font-size: 13px;
+  display: grid;
+  min-height: calc(100dvh - 226px);
+  place-items: center;
+  padding: 24px;
+}
+
+.empty-state :deep(.van-empty) {
+  padding: 0;
 }
 
 </style>

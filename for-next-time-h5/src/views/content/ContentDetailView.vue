@@ -113,7 +113,7 @@ async function togglePinned() {
 async function removeContent() {
   // 1. 先通过 Vant 确认弹层避免误删除。
   try {
-    await showConfirmDialog({ title: '删除这句话？', message: '删除后暂时无法在列表中找到。', confirmButtonText: '删除' })
+    await showConfirmDialog({ title: '删除这句话？', message: '删除后暂时无法在列表中找到', confirmButtonText: '删除' })
   } catch {
     return
   }

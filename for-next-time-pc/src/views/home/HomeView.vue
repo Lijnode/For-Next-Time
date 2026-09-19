@@ -296,6 +296,9 @@ onMounted(() => {
             <div class="card-footer"><span>{{ item.copyCount ? '已用 ' + item.copyCount + ' 次' : '还没用过' }}</span><el-button class="copy-button" text type="primary" :loading="copyingId === item.id" @click.stop="copyContent(item)">复制</el-button></div>
           </article>
         </div>
+        <div v-if="!contentLoading && !contents.length" class="empty-state">
+          <el-empty image="/empty-state-illustration.png" :image-size="220" :description="categoryCode ? '该分类暂时还没有内容' : '暂无内容，先留下一句吧'" />
+        </div>
 <!--        <el-button v-if="!contents.length" class="empty-create" type="primary" @click="createContent">先留一句</el-button>-->
         <el-pagination v-if="total > 0" class="pagination" background layout="prev, pager, next" :current-page="pageNum" :page-size="pageSize" :total="total" @current-change="changePage" />
       </section>
@@ -470,9 +473,9 @@ h1 {
 
 .category-filter button:hover,
 .category-filter button.active {
-  border-color: #1f2121;
-  background: #1f2121;
-  color: #fff;
+  border-color: #ffb29f;
+  background: #fff1ec;
+  color: var(--color-brand);
 }
 
 .home-content-layout {
@@ -521,6 +524,18 @@ h1 {
 
 .search-layout .content-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.empty-state {
+  display: grid;
+  min-height: clamp(280px, 38vh, 420px);
+  place-items: center;
+  margin-top: 17px;
+  padding: 24px;
+}
+
+.empty-state :deep(.el-empty) {
+  padding: 0;
 }
 
 .recent-panel {

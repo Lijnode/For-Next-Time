@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ElMessageBox } from 'element-plus'
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { deleteContent, getContentDetail, recordCopy, setPinned, type ContentDetail } from '../../api/content'
@@ -108,6 +109,28 @@ async function removeContent() {
   }
 }
 
+/**
+ * 在桌面端模态确认后删除当前内容。
+ */
+async function confirmRemoveContent() {
+  // 1. 没有详情或正在删除时不重复打开确认框。
+  if (!detail.value || deleting.value) return
+  // 2. 使用居中模态框明确提示删除不可恢复。
+  try {
+    await ElMessageBox.confirm('删除后无法恢复，确定删除这句话吗？', '删除内容', {
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      type: 'warning',
+      customClass: 'delete-confirm-dialog',
+    })
+  } catch {
+    // 3. 用户取消时不执行任何删除操作。
+    return
+  }
+  // 4. 用户确认后复用现有删除流程。
+  await removeContent()
+}
+
 // 1. 页面首次进入时读取当前内容详情。
 onMounted(loadDetail)
 </script>
@@ -133,7 +156,7 @@ onMounted(loadDetail)
         <el-button type="primary" :loading="copying" @click="copyContent"><span class="action-content"><Copy :size="16" /><span>复制</span></span></el-button>
         <el-button :loading="pinning" @click="togglePinned"><span class="action-content"><Pin :size="16" /><span>{{ detail.pinned ? '取消置顶' : '置顶' }}</span></span></el-button>
         <el-button @click="editContent"><span class="action-content"><Pencil :size="16" /><span>编辑</span></span></el-button>
-        <el-popconfirm title="确定删除这句话吗？" confirm-button-text="删除" cancel-button-text="取消" @confirm="removeContent"><template #reference><el-button class="delete-button" text type="danger" :loading="deleting"><span class="action-content"><Trash2 :size="16" /><span>删除</span></span></el-button></template></el-popconfirm>
+        <el-button class="delete-button" text type="danger" :loading="deleting" @click="confirmRemoveContent"><span class="action-content"><Trash2 :size="16" /><span>删除</span></span></el-button>
       </div>
       <p v-if="copyMessage" class="copy-message">{{ copyMessage }}</p>
       <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>

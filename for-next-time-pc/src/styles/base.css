@@ -32,3 +32,23 @@ button {
   outline: 3px solid rgb(255 111 78 / 24%);
   outline-offset: 2px;
 }
+
+.delete-confirm-dialog {
+  font-family: var(--font-family-base);
+}
+
+.delete-confirm-dialog .el-message-box__title {
+  color: var(--color-text-primary);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: -.02em;
+}
+
+.delete-confirm-dialog .el-message-box__message p {
+  color: var(--color-text-secondary);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.7;
+}
