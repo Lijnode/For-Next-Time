@@ -1,41 +1,67 @@
-# 将以下 location 块合并到现有知止 Nginx 的 HTTPS server 中；下次一定暂不需要独立域名。
-# 同时在知止 Nginx 启动脚本中增加：
-# -v /data/for-next-time/pc:/usr/share/nginx/html/time:ro
-# -v /data/for-next-time/h5:/usr/share/nginx/html/time/m:ro
-#
-# 约定：知止使用 /zhizhi/，下次一定 PC 使用 /time/，移动 H5 使用 /time/m/。
-# 下次一定全部入口均位于 /time/ 下，避免与知止的根路径 /api/ 规则冲突。
+# 该文件应作为现有 Nginx 的独立 conf 挂载到 /etc/nginx/conf.d/for-next-time-ip.conf。
+# 只处理通过服务器 IP 访问的请求，不要把这些 location 加入 zhizhiyike.art 的 HTTPS server。
+# 现有知止 HTTP server 需要移除 listen 行上的 default_server，保留其域名到 HTTPS 的跳转。
+# 启动脚本额外挂载：
+# -v /data/for-next-time/pc:/usr/share/nginx/html/for-next-time-pc:ro
+# -v /data/for-next-time/h5:/usr/share/nginx/html/for-next-time-h5:ro
 
-location = /time {
-    return 301 /time/;
-}
+server {
+    listen 8080 default_server;
+    listen [::]:8080 default_server;
+    server_name _;
 
-location = /time/m {
-    return 301 /time/m/;
-}
+    # 直接访问 IP 根目录不暴露任何应用。
+    location = / {
+        return 404;
+    }
 
-location ^~ /time/m/ {
-    root /usr/share/nginx/html;
-    try_files $uri $uri/ /time/m/index.html;
-}
+    # 知止仍使用自己的 HTTPS 域名，不与下次一定混用。
+    location = /zhizhi {
+        return 301 https://zhizhiyike.art/;
+    }
 
-location ^~ /time/ {
-    root /usr/share/nginx/html;
-    try_files $uri $uri/ /time/index.html;
-}
+    location ^~ /zhizhi/ {
+        rewrite ^/zhizhi/(.*)$ https://zhizhiyike.art/$1 permanent;
+    }
 
-location ^~ /time/api/ {
-    proxy_pass http://for-next-time-app:6688/api/;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-}
+    location = /time {
+        return 301 /time/;
+    }
 
-location ^~ /time/files/ {
-    proxy_pass http://for-next-time-app:6688/files/;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
+    location = /time/m {
+        return 301 /time/m/;
+    }
+
+    # H5 必须先于 PC 路由匹配。
+    location ^~ /time/m/ {
+        alias /usr/share/nginx/html/for-next-time-h5/;
+        try_files $uri $uri/ /time/m/index.html;
+    }
+
+    location ^~ /time/api/ {
+        rewrite ^/time/(.*)$ /$1 break;
+        proxy_pass http://for-next-time-app:6688;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location ^~ /time/files/ {
+        rewrite ^/time/(.*)$ /$1 break;
+        proxy_pass http://for-next-time-app:6688;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location ^~ /time/ {
+        alias /usr/share/nginx/html/for-next-time-pc/;
+        try_files $uri $uri/ /time/index.html;
+    }
+
+    location / {
+        return 404;
+    }
 }

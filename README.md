@@ -55,14 +55,15 @@ chmod +x start.sh backend/app.sh tools/mysql/start.sh
 ./start.sh
 ```
 
-`.env` 只需要填写：
+`.env` 需要填写：
 
 ```env
 FOR_NEXT_TIME_DB_USERNAME=for_next_time_app
-FOR_NEXT_TIME_DB_PASSWORD=设置一个强密码
+FOR_NEXT_TIME_DB_PASSWORD=设置应用账号强密码
+FOR_NEXT_TIME_DB_ROOT_PASSWORD=设置不同的MySQLRoot强密码
 ```
 
-JWT 密钥由首次 `./start.sh` 自动生成并保存；MySQL root 初始化密码复用同一份数据库密码，无需重复填写。
+JWT 密钥由首次 `./start.sh` 自动生成并保存；MySQL root 与应用账号分别使用独立密码。
 
 MySQL 数据位于 Docker 卷 `for-next-time_mysql-data`，头像文件位于 `/data/for-next-time/files/`；两者都应纳入服务器备份。
 

@@ -11,7 +11,7 @@ sudo docker network inspect for-next-time_data >/dev/null 2>&1 || sudo docker ne
 sudo docker volume create for-next-time_mysql-data >/dev/null
 sudo docker rm -f for-next-time-mysql >/dev/null 2>&1 || true
 
-# 2. 启动 MySQL；root 初始化密码复用同一份数据库密码，无需额外配置。
+# 2. 启动 MySQL；root 与应用账号使用独立初始化密码。
 echo "正在启动 for-next-time-mysql..."
 sudo docker run -d \
   --name for-next-time-mysql \
@@ -25,7 +25,7 @@ sudo docker run -d \
   --health-retries=30 \
   --health-start-period=20s \
   -e TZ=Asia/Shanghai \
-  -e "MYSQL_ROOT_PASSWORD=$FOR_NEXT_TIME_DB_PASSWORD" \
+  -e "MYSQL_ROOT_PASSWORD=$FOR_NEXT_TIME_DB_ROOT_PASSWORD" \
   -e MYSQL_DATABASE=for_next_time \
   -e "MYSQL_USER=$FOR_NEXT_TIME_DB_USERNAME" \
   -e "MYSQL_PASSWORD=$FOR_NEXT_TIME_DB_PASSWORD" \
