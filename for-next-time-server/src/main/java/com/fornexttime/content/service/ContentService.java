@@ -25,8 +25,13 @@ import jakarta.annotation.Resource;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.stream.Collectors;
 import com.fornexttime.content.res.ContentTagRes;
+import com.fornexttime.content.ContentExportField;
+import com.fornexttime.content.res.ContentExportFile;
 
 @Service
 public class ContentService {
@@ -196,6 +201,26 @@ public class ContentService {
     }
 
     /**
+     * 导出当前登录用户选定字段的全部未删除内容。
+     *
+     * @param fields 逗号分隔的固定导出字段
+     * @return 包含文件名和 TXT 文本内容的导出文件数据
+     */
+    public ContentExportFile export(String fields) {
+        // 1. 校验客户端仅选择固定白名单中的字段，并保留其选择顺序。
+        List<ContentExportField> exportFields = normalizeExportFields(fields);
+        Long userId = UserContext.requireUserId();
+
+        // 2. 只读取当前用户未删除的全部内容，并批量查询关联标签。
+        List<Content> contents = contentMapper.findAllForExport(userId);
+        Map<Long, List<ContentTagRes>> tagsByContentId = findTagsByContentId(contents);
+
+        // 3. 按固定 TXT 模板生成内容，并返回带日期的 UTF-8 下载文件名。
+        String fileName = "下次一定-内容导出-" + LocalDate.now(ZoneId.of("Asia/Shanghai")) + ".txt";
+        return new ContentExportFile(fileName, renderExportText(contents, tagsByContentId, exportFields));
+    }
+
+    /**
      * 设置当前用户内容的置顶状态，不修改内容修改时间。
      */
     public ContentPinRes setPinned(Long id, boolean pinned) {
@@ -205,6 +230,127 @@ public class ContentService {
         }
         // 2. 返回与请求一致的最终状态。
         return new ContentPinRes(pinned);
+    }
+
+    /**
+     * 校验并解析逗号分隔的导出字段。
+     *
+     * @param fields 原始导出字段参数
+     * @return 保持用户选择顺序的固定字段列表
+     */
+    private List<ContentExportField> normalizeExportFields(String fields) {
+        // 1. 拒绝空字段，确保导出文件至少有一列业务数据。
+        if (fields == null || fields.isBlank()) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, "请至少选择一个导出字段");
+        }
+
+        // 2. 逐项解析固定字段并拒绝空白、未知或重复字段。
+        LinkedHashSet<ContentExportField> exportFields = new LinkedHashSet<>();
+        for (String rawField : fields.split(",", -1)) {
+            if (rawField.isBlank()) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR, "导出字段无效");
+            }
+            ContentExportField exportField = ContentExportField.fromCode(rawField.trim());
+            if (!exportFields.add(exportField)) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR, "导出字段不能重复");
+            }
+        }
+
+        // 3. 返回不可变列表，避免后续渲染过程中被修改。
+        return List.copyOf(exportFields);
+    }
+
+    /**
+     * 按所选字段将用户内容渲染为 UTF-8 TXT 文本。
+     *
+     * @param contents          当前用户全部未删除内容
+     * @param tagsByContentId   按内容主键分组的标签
+     * @param exportFields      已校验的导出字段
+     * @return 完整 TXT 文本
+     */
+    private String renderExportText(List<Content> contents, Map<Long, List<ContentTagRes>> tagsByContentId,
+                                    List<ContentExportField> exportFields) {
+        // 1. 输出文件标题和本次导出的内容数量。
+        StringBuilder text = new StringBuilder("下次一定 · 内容导出\n")
+                .append("导出日期：")
+                .append(LocalDate.now(ZoneId.of("Asia/Shanghai")))
+                .append("\n内容数量：")
+                .append(contents.size())
+                .append(" 条\n");
+
+        // 2. 依次输出每条内容的已选字段，并以分隔线保证移动端阅读清晰。
+        for (int index = 0; index < contents.size(); index++) {
+            Content content = contents.get(index);
+            text.append("\n────────────────\n")
+                    .append(String.format("%02d", index + 1))
+                    .append("\n");
+            for (ContentExportField field : exportFields) {
+                appendExportField(text, field, content,
+                        tagsByContentId.getOrDefault(content.getId(), List.of()));
+            }
+        }
+
+        // 3. 返回完成的纯文本，不包含用户身份或内部状态。
+        return text.toString();
+    }
+
+    /**
+     * 将一条内容的指定字段追加到导出文本。
+     *
+     * @param text    正在构建的导出文本
+     * @param field   已校验的字段类型
+     * @param content 当前内容实体
+     * @param tags    当前内容关联标签
+     */
+    private void appendExportField(StringBuilder text, ContentExportField field, Content content,
+                                   List<ContentTagRes> tags) {
+        // 1. 按固定字段白名单转换业务值，避免将实体内部字段写入文件。
+        switch (field) {
+            case CONTENT -> text.append(field.getLabel()).append("：")
+                    .append(content.getContent().replaceAll("\\R+", " ")).append("\n");
+            case CATEGORY -> text.append(field.getLabel()).append("：")
+                    .append(exportCategoryName(content.getCategoryCode())).append("\n");
+            case TAGS -> text.append(field.getLabel()).append("：")
+                    .append(tags.isEmpty() ? "未填写" : tags.stream().map(tag -> "#" + tag.name())
+                            .collect(Collectors.joining(" "))).append("\n");
+            case REMARK -> text.append(field.getLabel()).append("：")
+                    .append(content.getRemark() == null || content.getRemark().isBlank() ? "未填写" : content.getRemark())
+                    .append("\n");
+            case PINNED -> text.append(field.getLabel()).append("：")
+                    .append(content.isPinned() ? "已置顶" : "未置顶").append("\n");
+            case COPY_COUNT -> text.append(field.getLabel()).append("：")
+                    .append(content.getCopyCount()).append(" 次\n");
+            case LAST_COPY_TIME -> text.append(field.getLabel()).append("：")
+                    .append(formatExportTime(content.getLastCopyTime(), "从未使用")).append("\n");
+            case CREATE_TIME -> text.append(field.getLabel()).append("：")
+                    .append(formatExportTime(content.getCreateTime(), "未填写")).append("\n");
+            case UPDATE_TIME -> text.append(field.getLabel()).append("：")
+                    .append(formatExportTime(content.getUpdateTime(), "未填写")).append("\n");
+        }
+    }
+
+    /**
+     * 将分类编码转换为导出文件使用的中文名称。
+     *
+     * @param categoryCode 固定分类编码
+     * @return 中文分类名称或未填写
+     */
+    private String exportCategoryName(String categoryCode) {
+        // 1. 解析固定分类编码，并为未分类内容保留明确的文本占位。
+        CategoryCode category = CategoryCode.fromCode(categoryCode);
+        return category == null ? "未填写" : category.getLabel();
+    }
+
+    /**
+     * 按统一协议格式化可空时间字段。
+     *
+     * @param time        内容时间字段
+     * @param emptyValue  时间为空时的展示文本
+     * @return 用于 TXT 的时间或占位文本
+     */
+    private String formatExportTime(LocalDateTime time, String emptyValue) {
+        // 1. 统一空时间的文案，非空时间沿用接口标准格式。
+        return time == null ? emptyValue : time.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
     }
 
     /**
@@ -383,9 +529,7 @@ public class ContentService {
      */
     private List<ContentListRes> toListRes(List<Content> contents) {
         // 1. 一次性查询当前页全部标签并按内容主键分组。
-        Map<Long, List<ContentTagRes>> tagsByContentId = contents.isEmpty() ? Map.of() : tagMapper
-                .findByContentIds(contents.stream().map(Content::getId).toList()).stream()
-                .collect(Collectors.groupingBy(ContentTagRes::contentId));
+        Map<Long, List<ContentTagRes>> tagsByContentId = findTagsByContentId(contents);
         // 2. 解析分类中文名称，并移除标签关系中的内部 contentId。
         List<ContentListRes> list = contents.stream()
                 .map(content -> {
@@ -399,5 +543,22 @@ public class ContentService {
                 })
                 .toList();
         return list;
+    }
+
+    /**
+     * 批量查询内容关联标签并按内容主键分组。
+     *
+     * @param contents 待组装的内容实体
+     * @return 以内容主键为键的标签分组结果
+     */
+    private Map<Long, List<ContentTagRes>> findTagsByContentId(List<Content> contents) {
+        // 1. 空内容直接返回空映射，避免生成空的 IN 查询。
+        if (contents.isEmpty()) {
+            return Map.of();
+        }
+
+        // 2. 一次性查询全部内容标签并按内容主键分组，避免 N+1 查询。
+        return tagMapper.findByContentIds(contents.stream().map(Content::getId).toList()).stream()
+                .collect(Collectors.groupingBy(ContentTagRes::contentId));
     }
 }

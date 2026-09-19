@@ -23,7 +23,14 @@ import jakarta.validation.constraints.Min;
 import jakarta.annotation.Resource;
 import com.fornexttime.common.model.PageResult;
 import com.fornexttime.content.res.ContentListRes;
+import com.fornexttime.content.res.ContentExportFile;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @RestController
@@ -53,6 +60,27 @@ public class ContentController {
     public Result<ContentDetailRes> detail(@PathVariable @Min(1) Long id) {
         // 1. 交由服务在当前用户数据范围内查询详情。
         return Result.success(contentService.getDetail(id));
+    }
+
+    /**
+     * 将当前登录用户选定字段的全部未删除内容导出为 UTF-8 TXT 文件。
+     *
+     * @param fields 逗号分隔的固定导出字段
+     * @return 带下载文件名的文本流响应
+     */
+    @GetMapping("/export")
+    public ResponseEntity<StreamingResponseBody> export(@RequestParam String fields) {
+        // 1. 在服务层校验字段并生成当前用户范围内的导出文本。
+        ContentExportFile exportFile = contentService.export(fields);
+        // 2. 使用 UTF-8 文件名和文本流返回，避免按 JSON 结构包装下载内容。
+        ContentDisposition disposition = ContentDisposition.attachment()
+                .filename(exportFile.fileName(), StandardCharsets.UTF_8)
+                .build();
+        StreamingResponseBody body = outputStream -> outputStream.write(exportFile.text().getBytes(StandardCharsets.UTF_8));
+        return ResponseEntity.ok()
+                .contentType(new MediaType("text", "plain", StandardCharsets.UTF_8))
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .body(body);
     }
 
     /**

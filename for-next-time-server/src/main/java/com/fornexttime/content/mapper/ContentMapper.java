@@ -113,6 +113,14 @@ public interface ContentMapper {
     List<Content> findRecent(@Param("userId") Long userId, @Param("offset") int offset, @Param("limit") int limit);
 
     /**
+     * 查询当前用户全部未删除内容，用于生成个人导出文件。
+     *
+     * @param userId 当前登录用户主键
+     * @return 按内容列表默认规则排序的全部个人内容
+     */
+    List<Content> findAllForExport(@Param("userId") Long userId);
+
+    /**
      * 按当前用户、筛选条件和已校验排序方式查询普通内容分页。
      *
      * @param userId       当前登录用户主键

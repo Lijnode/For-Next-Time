@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Camera, ChevronRight, Info, KeyRound, LogOut } from 'lucide-vue-next'
+import { Camera, Check, ChevronRight, Download, Info, KeyRound, LogOut } from 'lucide-vue-next'
 import type { UploaderAfterRead, UploaderFileListItem } from 'vant'
 import { getUserProfile, uploadAvatar, type UserProfile } from '../../api/user'
+import { exportContents } from '../../api/content'
+import { downloadFile } from '../../platform/download'
 import { showError, showSuccess } from '../../platform/feedback'
 import { useAuthStore } from '../../stores/auth'
 
@@ -23,6 +25,20 @@ const cropDragMode = ref<'move' | 'resize' | null>(null)
 const cropDragStart = ref({ x: 0, y: 0, cropX: 0, cropY: 0, cropSize: 0 })
 const cropViewportSize = 280
 const cropMinSize = 88
+const exportSheetVisible = ref(false)
+const exporting = ref(false)
+const exportFields = ref(['content', 'category', 'tags'])
+const exportFieldOptions = [
+  { value: 'content', label: '正文' },
+  { value: 'category', label: '分类' },
+  { value: 'tags', label: '标签' },
+  { value: 'remark', label: '备注' },
+  { value: 'pinned', label: '置顶状态' },
+  { value: 'copyCount', label: '复制次数' },
+  { value: 'lastCopyTime', label: '最近使用时间' },
+  { value: 'createTime', label: '创建时间' },
+  { value: 'updateTime', label: '修改时间' },
+]
 
 /**
  * 加载当前登录用户的个人资料。
@@ -243,6 +259,53 @@ async function openAboutPage() {
 }
 
 /**
+ * 打开内容导出底部面板。
+ */
+function openExportSheet() {
+  // 1. 仅切换面板状态，保留用户上次调整过的字段。
+  exportSheetVisible.value = true
+}
+
+/**
+ * 切换一个固定导出字段的选择状态。
+ *
+ * @param field 需要切换的字段编码
+ */
+function toggleExportField(field: string) {
+  // 1. 已选择时移除字段，未选择时按固定列表顺序追加字段。
+  if (exportFields.value.includes(field)) {
+    exportFields.value = exportFields.value.filter((item) => item !== field)
+    return
+  }
+  exportFields.value = exportFieldOptions.filter((item) => [...exportFields.value, field].includes(item.value)).map((item) => item.value)
+}
+
+/**
+ * 请求导出文件并通过移动端平台层保存文件。
+ */
+async function downloadContentExport() {
+  // 1. 阻止空字段导出，确保用户能得到有意义的 TXT 文件。
+  if (!exportFields.value.length) {
+    showError('请至少选择一个导出字段')
+    return
+  }
+  exporting.value = true
+  try {
+    // 2. 请求当前用户的导出文件，再通过平台层触发设备下载。
+    const file = await exportContents(exportFields.value)
+    downloadFile(file.blob, file.fileName)
+    showSuccess('内容已导出')
+    exportSheetVisible.value = false
+  } catch (error) {
+    // 3. 失败时保留字段选择，便于用户直接调整或重试。
+    showError(error instanceof Error ? error.message : '导出失败，请稍后重试')
+  } finally {
+    // 4. 恢复导出按钮，避免下载失败后页面不可操作。
+    exporting.value = false
+  }
+}
+
+/**
  * 清除当前账户登录状态并返回登录页。
  */
 async function logout() {
@@ -279,6 +342,7 @@ onMounted(loadProfile)
       </section>
       <section class="profile-group" aria-label="账户设置">
         <button class="profile-row settings-row" type="button" @click="openPasswordForm"><span><KeyRound :size="18" />修改密码</span><ChevronRight :size="18" /></button>
+        <button class="profile-row settings-row" type="button" @click="openExportSheet"><span><Download :size="18" />导出内容</span><ChevronRight :size="18" /></button>
         <button class="profile-row settings-row" type="button" @click="openAboutPage"><span><Info :size="18" />关于下次一定</span><ChevronRight :size="18" /></button>
       </section>
       <section class="profile-group logout-group" aria-label="账户操作">
@@ -298,6 +362,19 @@ onMounted(loadProfile)
         <button class="crop-confirm" type="button" :disabled="uploadingAvatar" @click="confirmAvatarCrop">{{ uploadingAvatar ? '正在保存…' : '使用此头像' }}</button>
       </section>
     </div>
+    <van-action-sheet v-model:show="exportSheetVisible" title="导出内容">
+      <section class="export-sheet">
+        <p>选择要导出的字段</p>
+        <div class="export-field-list">
+          <button v-for="field in exportFieldOptions" :key="field.value" class="export-field" :class="{ 'is-selected': exportFields.includes(field.value) }" type="button" :aria-pressed="exportFields.includes(field.value)" @click="toggleExportField(field.value)">
+            <span class="export-checkbox" aria-hidden="true"><Check v-if="exportFields.includes(field.value)" :size="12" :stroke-width="3" /></span>
+            <span>{{ field.label }}</span>
+          </button>
+        </div>
+<!--        <div class="export-format"><span>文件格式</span><strong>TXT 文本文件</strong></div>-->
+        <button class="export-confirm" type="button" :disabled="exporting" @click="downloadContentExport">{{ exporting ? '正在导出…' : '导出 TXT' }}</button>
+      </section>
+    </van-action-sheet>
   </main>
 </template>
 
@@ -320,4 +397,7 @@ onMounted(loadProfile)
 .crop-selection { position: absolute; box-sizing: border-box; border: 2px solid #fff; cursor: move; box-shadow: 0 0 0 200vmax rgb(20 28 26 / 46%); }.crop-selection::before, .crop-selection::after { position: absolute; top: 50%; left: 50%; width: 1px; height: 100%; background: rgb(255 255 255 / 58%); content: ''; transform: translate(-50%, -50%); pointer-events: none; }.crop-selection::after { width: 100%; height: 1px; }
 .crop-resize-handle { position: absolute; right: -12px; bottom: -12px; width: 24px; height: 24px; border: 3px solid #fff; border-radius: 50%; background: var(--color-brand); cursor: nwse-resize; }
 .crop-confirm { display: block; width: min(100%, 360px); min-height: 48px; margin: 22px auto 0; border: 0; border-radius: 14px; background: var(--color-brand); color: #fff; font: inherit; font-weight: 700; }.crop-confirm:disabled { opacity: .68; }
+.export-sheet { padding: 0 16px calc(18px + env(safe-area-inset-bottom)); }.export-sheet > p { margin: 0; color: var(--color-muted); font-size: 13px; line-height: 1.65; }
+.export-field-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 18px; }.export-field { display: inline-flex; min-height: 46px; align-items: center; gap: 9px; padding: 0 12px; border: 1px solid var(--color-border); border-radius: 13px; background: #fff; color: var(--color-text-secondary); font: inherit; font-size: 14px; text-align: left; }.export-field.is-selected { border-color: rgb(255 111 78 / 45%); background: #fff4ef; color: var(--color-text-primary); }.export-checkbox { display: grid; width: 17px; height: 17px; flex: 0 0 17px; place-items: center; border: 1px solid #c6c9c6; border-radius: 5px; color: transparent; }.export-field.is-selected .export-checkbox { border-color: var(--color-brand); background: var(--color-brand); color: #fff; }.export-checkbox :deep(svg) { display: block; }
+.export-format { display: flex; align-items: center; justify-content: space-between; margin-top: 18px; padding-top: 15px; border-top: 1px solid #efefeb; color: var(--color-muted); font-size: 13px; }.export-format strong { color: var(--color-text-secondary); font-weight: 600; }.export-confirm { display: block; width: 100%; min-height: 48px; margin-top: 20px; border: 0; border-radius: 14px; background: var(--color-brand); color: #fff; font: inherit; font-weight: 700; }.export-confirm:disabled { opacity: .68; }
 </style>

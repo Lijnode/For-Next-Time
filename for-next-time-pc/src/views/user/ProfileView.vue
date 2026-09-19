@@ -3,8 +3,9 @@ import { ElMessage } from 'element-plus'
 import type { UploadFile, UploadInstance } from 'element-plus'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ChevronRight, House, Info, KeyRound, LogOut, SquarePen } from 'lucide-vue-next'
+import { ChevronRight, Download, House, Info, KeyRound, LogOut, SquarePen } from 'lucide-vue-next'
 import { getUserProfile, uploadAvatar, type UserProfile } from '../../api/user'
+import { exportContents } from '../../api/content'
 import { useAuthStore } from '../../stores/auth'
 
 const router = useRouter()
@@ -13,6 +14,20 @@ const profile = ref<UserProfile>()
 const loading = ref(false)
 const uploadingAvatar = ref(false)
 const aboutDialogVisible = ref(false)
+const exportDialogVisible = ref(false)
+const exporting = ref(false)
+const exportFields = ref(['content', 'category', 'tags'])
+const exportFieldOptions = [
+  { value: 'content', label: '正文' },
+  { value: 'category', label: '分类' },
+  { value: 'tags', label: '标签' },
+  { value: 'remark', label: '备注' },
+  { value: 'pinned', label: '置顶状态' },
+  { value: 'copyCount', label: '复制次数' },
+  { value: 'lastCopyTime', label: '最近使用时间' },
+  { value: 'createTime', label: '创建时间' },
+  { value: 'updateTime', label: '修改时间' },
+]
 const avatarUploader = ref<UploadInstance>()
 const cropDialogVisible = ref(false)
 const cropPreviewUrl = ref('')
@@ -260,6 +275,46 @@ function openAboutDialog() {
 }
 
 /**
+ * 打开内容导出面板并保留本次已勾选字段。
+ */
+function openExportDialog() {
+  // 1. 切换导出弹窗状态，默认字段仅在首次进入时初始化。
+  exportDialogVisible.value = true
+}
+
+/**
+ * 请求导出文件并交由浏览器保存到本地。
+ */
+async function downloadContentExport() {
+  // 1. 在发起下载前阻止空字段导出，避免无内容的文件。
+  if (!exportFields.value.length) {
+    ElMessage.warning('请至少选择一个导出字段')
+    return
+  }
+  exporting.value = true
+  try {
+    // 2. 请求当前用户的 TXT 文件，并通过临时链接触发浏览器保存。
+    const file = await exportContents(exportFields.value)
+    const objectUrl = URL.createObjectURL(file.blob)
+    const anchor = document.createElement('a')
+    anchor.href = objectUrl
+    anchor.download = file.fileName
+    document.body.append(anchor)
+    anchor.click()
+    anchor.remove()
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0)
+    ElMessage.success('内容已导出')
+    exportDialogVisible.value = false
+  } catch (error) {
+    // 3. 下载失败时保留字段选择，便于用户直接重试。
+    ElMessage.error(error instanceof Error ? error.message : '导出失败，请稍后重试')
+  } finally {
+    // 4. 无论结果如何都恢复导出按钮可用状态。
+    exporting.value = false
+  }
+}
+
+/**
  * 返回内容首页继续浏览已保存的内容。
  */
 async function backHome() {
@@ -309,6 +364,7 @@ onMounted(loadProfile)
         <div class="menu">
           <div class="menu-item"><span>内容总数</span><strong>{{ profile.contentCount }}</strong></div>
           <button class="menu-item" type="button" @click="openPasswordForm"><span>修改密码</span><KeyRound :size="17" /></button>
+          <button class="menu-item" type="button" @click="openExportDialog"><span>导出内容</span><Download :size="17" /></button>
           <div class="menu-item"><span>加入时间</span><strong>{{ profile.createTime }}</strong></div>
         </div>
         <section class="about-menu" aria-label="产品信息">
@@ -330,6 +386,17 @@ onMounted(loadProfile)
         <p class="version">V1.0</p>
       </section>
       <template #footer><el-button type="primary" @click="aboutDialogVisible = false">知道了</el-button></template>
+    </el-dialog>
+    <el-dialog v-model="exportDialogVisible" width="440px" align-center class="export-dialog">
+      <template #header><h2 class="export-dialog-title">导出内容</h2></template>
+      <section class="export-dialog-content">
+        <p>选择要写入文件的字段</p>
+        <el-checkbox-group v-model="exportFields" class="export-fields">
+          <el-checkbox v-for="field in exportFieldOptions" :key="field.value" :value="field.value">{{ field.label }}</el-checkbox>
+        </el-checkbox-group>
+<!--        <div class="export-format"><span>文件格式</span><strong>TXT 文本文件</strong></div>-->
+      </section>
+      <template #footer><el-button :disabled="exporting" @click="exportDialogVisible = false">取消</el-button><el-button type="primary" :loading="exporting" @click="downloadContentExport">导出 TXT</el-button></template>
     </el-dialog>
     <el-dialog v-model="cropDialogVisible" width="520px" align-center :close-on-click-modal="false" :close-on-press-escape="!uploadingAvatar" class="avatar-crop-dialog" @closed="closeCropDialog">
       <template #header><h2 class="crop-dialog-title">裁剪头像</h2></template>
@@ -383,6 +450,17 @@ onMounted(loadProfile)
 :global(.about-dialog .el-dialog__body) { padding: 0 24px; }
 :global(.about-dialog .el-dialog__footer) { padding: 8px 24px 22px; text-align: center; }
 :global(.about-dialog .el-dialog__footer .el-button) { min-width: 106px; height: 40px; border-radius: 12px; font-weight: 700; }
+.export-dialog-title { margin: 0; color: var(--color-text-primary); font-size: 18px; font-weight: 600; }
+.export-dialog-content > p { margin: 0; color: var(--color-text-tertiary); font-size: 13px; line-height: 1.7; }
+.export-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 10px; margin-top: 22px; }
+.export-fields :deep(.el-checkbox) { margin-right: 0; color: var(--color-text-secondary); }
+.export-fields :deep(.el-checkbox__label) { font-size: 14px; }
+.export-format { display: flex; align-items: center; justify-content: space-between; margin-top: 22px; padding-top: 16px; border-top: 1px solid #efefeb; color: var(--color-text-tertiary); font-size: 13px; }.export-format strong { color: var(--color-text-secondary); font-weight: 600; }
+:global(.export-dialog) { border-radius: 20px; }
+:global(.export-dialog .el-dialog__header) { margin-right: 0; padding: 22px 24px 0; }
+:global(.export-dialog .el-dialog__body) { padding: 16px 24px 0; }
+:global(.export-dialog .el-dialog__footer) { padding: 22px 24px; }
+:global(.export-dialog .el-dialog__footer .el-button) { min-width: 92px; height: 40px; border-radius: 12px; font-weight: 700; }
 .crop-dialog-title { margin: 0; color: var(--color-text-primary); font-size: 19px; }
 .crop-dialog-content > p { margin: 0 0 18px; color: var(--color-text-tertiary); font-size: 13px; }
 .crop-viewport { position: relative; max-width: 300px; max-height: 300px; margin: 0 auto; overflow: hidden; border-radius: 20px; touch-action: none; user-select: none; }

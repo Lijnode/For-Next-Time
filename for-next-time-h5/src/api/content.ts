@@ -30,6 +30,11 @@ export interface ContentCopyStat {
   lastCopyTime: string
 }
 
+export interface ContentExportFile {
+  fileName: string
+  blob: Blob
+}
+
 export async function createContent(data: ContentCreateReq) {
   // 1. 提交新增内容请求。
   const response = await request.post<{ id: number }>('/contents', data)
@@ -115,4 +120,22 @@ export async function setPinned(id: number, pinned: boolean) {
   const response = await request.put<{ pinned: boolean }>(`/contents/${id}/pin`, { pinned })
   // 2. 返回最终置顶状态。
   return response.data
+}
+
+/**
+ * 下载当前用户勾选字段的 TXT 内容导出文件。
+ */
+export async function exportContents(fields: string[]): Promise<ContentExportFile> {
+  // 1. 使用固定字段编码请求非 JSON 的下载响应。
+  const response = await request.get<Blob>('/contents/export', {
+    params: { fields: fields.join(',') },
+    responseType: 'blob',
+  })
+  // 2. 从服务端下载响应头解析 UTF-8 文件名，并返回文件二进制内容。
+  const disposition = response.headers['content-disposition'] as string | undefined
+  const matchedName = disposition?.match(/filename\*=UTF-8''([^;]+)/i)?.[1]
+  return {
+    fileName: matchedName ? decodeURIComponent(matchedName) : '下次一定-内容导出.txt',
+    blob: response.data,
+  }
 }
