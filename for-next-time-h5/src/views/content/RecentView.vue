@@ -73,7 +73,7 @@ async function copyContent(item: ContentListItem) {
   try {
     await copyText(item.content)
     // 2. 告知用户复制成功，再异步同步本次使用统计。
-    showSuccess('就是这句')
+    showSuccess('复制成功')
     try {
       const stat = await recordCopy(item.id)
       item.copyCount = stat.copyCount
