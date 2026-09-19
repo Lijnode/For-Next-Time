@@ -9,6 +9,8 @@ server {
     listen 8080 default_server;
     listen [::]:8080 default_server;
     server_name _;
+    # 容器内部监听 8080；用相对地址重定向，避免向浏览器泄露内部端口。
+    absolute_redirect off;
 
     # 直接访问 IP 根目录不暴露任何应用。
     location = / {
