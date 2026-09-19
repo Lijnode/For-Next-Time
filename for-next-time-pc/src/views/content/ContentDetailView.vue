@@ -54,7 +54,7 @@ async function copyContent() {
   copyMessage.value = ''
   try {
     await navigator.clipboard.writeText(detail.value.content)
-    copyMessage.value = '就是这句'
+    copyMessage.value = '复制成功'
     // 2. 复制成功后才记录统计；统计失败不影响复制成功反馈。
     try {
       const stat = await recordCopy(detail.value.id)

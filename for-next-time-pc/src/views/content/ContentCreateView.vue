@@ -5,6 +5,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft } from 'lucide-vue-next'
 import { createContent, getContentDetail, updateContent } from '../../api/content'
 import { getTagList, type TagItem } from '../../api/tag'
+import { useRequiredFormValidation } from '../../composables/useRequiredFormValidation'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,6 +17,7 @@ const showRemark = ref(false)
 const loading = ref(false)
 const initialLoading = ref(false)
 const errorMessage = ref('')
+const { validationMessage, validateRequired } = useRequiredFormValidation()
 const initialSnapshot = ref('')
 const allowLeave = ref(false)
 const categories = [['ABSTRACT', '抽象'], ['CRITIQUE', '锐评'], ['SWEET', '嘴甜'], ['RELAXED', '松弛'], ['SOBER', '清醒'], ['ROMANTIC', '浪漫'], ['HEALING', '治愈'], ['FRAGILE', '破碎']]
@@ -141,11 +143,13 @@ function removeTag(tag: string) {
  * 新增或更新内容；失败时保持当前表单数据不变。
  */
 async function submit() {
-  // 1. 清理旧错误并启用提交状态。
+  // 1. 缺少正文时在表单顶部显示提示。
+  if (!validateRequired([{ value: form.content, message: '请填写正文' }])) return
+  // 2. 清理非校验错误并启用提交状态。
   errorMessage.value = ''
   loading.value = true
   try {
-    // 2. 按当前模式提交同一份内容表单数据。
+    // 3. 按当前模式提交同一份内容表单数据。
     const payload = { ...form, remark: form.remark.trim() || null }
     if (isEditing.value) {
       await updateContent(editingId.value!, payload)
@@ -157,10 +161,10 @@ async function submit() {
       await router.replace({ name: 'home' })
     }
   } catch (error) {
-    // 3. 用 Element Plus 消息提示保存错误，并保留用户输入。
+    // 4. 用 Element Plus 消息提示保存错误，并保留用户输入。
     ElMessage.error(error instanceof Error ? error.message : '保存失败，请稍后重试')
   } finally {
-    // 4. 恢复提交按钮状态。
+    // 5. 恢复提交按钮状态。
     loading.value = false
   }
 }
@@ -181,6 +185,7 @@ onBeforeRouteLeave(confirmDiscardChanges)
     <section class="editor-card">
       <p v-if="initialLoading" class="loading-text">正在载入内容……</p>
       <el-form v-else @submit.prevent="submit">
+        <p v-if="validationMessage" class="form-validation-message" role="alert">{{ validationMessage }}</p>
         <div class="form-body">
           <div class="editor-field content-field"><label for="content">正文 <em>*</em></label><el-input id="content" v-model="form.content" type="textarea" :rows="9" maxlength="5000" show-word-limit placeholder="粘贴你想以后再用的内容……" /></div>
           <div class="editor-field"><label for="category">分类</label><el-select id="category" v-model="form.categoryCode" clearable placeholder="请选择 / 不分类"><el-option v-for="category in categories" :key="category[0]" :label="category[1]" :value="category[0]" /></el-select></div>
@@ -203,7 +208,7 @@ onBeforeRouteLeave(confirmDiscardChanges)
 .editor-field :deep(.el-input__wrapper), .editor-field :deep(.el-textarea__inner) { border: 1px solid var(--color-border); border-radius: 14px; background: #fbfbf9; box-shadow: none; }.editor-field :deep(.el-input__wrapper) { min-height: 48px; }.editor-field :deep(.el-textarea__inner) { padding: 15px; color: var(--color-text-primary); font-size: 16px; line-height: 1.75; }.editor-field :deep(.el-input__wrapper.is-focus), .editor-field :deep(.el-textarea__inner:focus) { border-color: #ffb29f; box-shadow: 0 0 0 3px rgb(255 111 78 / 10%); }.editor-field :deep(.el-select) { width: 100%; }
 .content-field { display: flex; min-height: 180px; flex: 1; flex-direction: column; }.content-field :deep(.el-textarea) { min-height: 0; flex: 1; }.content-field :deep(.el-textarea__inner) { height: 100%; resize: none; }
 .selected-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }.selected-tags :deep(.el-tag) { border-radius: 999px; }.tag-input { width: 190px; }.tag-suggestions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: -6px 0 12px; color: var(--color-text-tertiary); font-size: 13px; }.tag-suggestions :deep(.el-button) { padding: 4px; }
-.more-button { margin: 0 0 12px; padding: 0; border: 0; background: transparent; color: var(--color-text-secondary); font: inherit; font-size: 13px; }.remark-field { padding-top: 14px; border-top: 1px dashed var(--color-border); }.actions { display: flex; flex: 0 0 auto; justify-content: flex-end; gap: 10px; margin-top: 16px; }.actions :deep(.el-button) { min-width: 88px; min-height: 42px; border-radius: 12px; font-weight: 700; }.loading-text, .error { margin: 0; color: var(--color-text-secondary); }.error { margin-top: 12px; color: var(--color-danger); }
+.more-button { margin: 0 0 12px; padding: 0; border: 0; background: transparent; color: var(--color-text-secondary); font: inherit; font-size: 13px; }.remark-field { padding-top: 14px; border-top: 1px dashed var(--color-border); }.form-validation-message { flex: 0 0 auto; margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; background: #fff1ed; color: var(--color-danger); font-size: 13px; line-height: 1.45; }.actions { display: flex; flex: 0 0 auto; justify-content: flex-end; gap: 10px; margin-top: 16px; }.actions :deep(.el-button) { min-width: 88px; min-height: 42px; border-radius: 12px; font-weight: 700; }.loading-text, .error { margin: 0; color: var(--color-text-secondary); }.error { margin-top: 12px; color: var(--color-danger); }
 @media (max-height: 760px) { .create-page { padding: 12px 0; }.editor-card { padding: 18px 24px; }.content-field { min-height: 150px; } }
 @media (max-width: 600px) { .create-page { width: min(100% - 32px, 760px); }.editor-card { padding: 22px; } }
 </style>

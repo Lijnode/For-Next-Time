@@ -29,8 +29,8 @@ const isSearching = computed(() => Boolean(submittedKeyword.value))
 const activeCategoryName = computed(() => categories.find(([code]) => code === categoryCode.value)?.[1])
 const contentSectionTitle = computed(() => isSearching.value ? '搜索结果' : activeCategoryName.value ? activeCategoryName.value + '内容' : '全部内容')
 const contentSectionSummary = computed(() => isSearching.value
-  ? `“${submittedKeyword.value}”共翻到 ${total.value} 条。`
-  : activeCategoryName.value ? `“${activeCategoryName.value}”共留下 ${total.value} 条。` : `共留下 ${total.value} 条内容。`)
+  ? `“${submittedKeyword.value}”共翻到 ${total.value} 条`
+  : activeCategoryName.value ? `“${activeCategoryName.value}”共留下 ${total.value} 条` : `共留下 ${total.value} 条内容`)
 
 /**
  * 切换首页分类，并按当前用户范围重新加载内容。
@@ -96,7 +96,7 @@ async function copyContent(item: ContentListItem) {
   try {
     await navigator.clipboard.writeText(item.content)
     // 2. 复制完成后显示品牌化成功反馈。
-    ElMessage.success('就是这句')
+    ElMessage.success('复制成功')
     // 3. 统计接口失败不影响已经成功的复制操作。
     try {
       const stat = await recordCopy(item.id)
@@ -257,16 +257,22 @@ onMounted(() => {
 
 <template>
   <main class="home-shell">
-    <div class="home-actions">
-      <RouterLink class="create-link" to="/contents/new"><Plus :size="17" />先留一句</RouterLink>
-      <RouterLink class="profile-link" to="/profile" aria-label="我的">
-        <img v-if="userProfile?.avatarUrl" :src="userProfile.avatarUrl" :alt="`${userProfile.username} 的头像`">
-        <span v-else-if="userProfile" class="profile-initial">{{ userProfile.username.slice(0, 1) }}</span>
-        <CircleUserRound v-else :size="21" />
+    <header class="home-header">
+      <RouterLink class="brand-lockup" to="/" aria-label="下次一定首页">
+        <img src="/brand-mark.png?v=4" alt="">
+        <span>下次一定</span>
       </RouterLink>
-    </div>
+      <div class="home-actions">
+        <RouterLink class="create-link" to="/contents/new"><Plus :size="17" />先留一句</RouterLink>
+        <RouterLink class="profile-link" to="/profile" aria-label="我的">
+          <img v-if="userProfile?.avatarUrl" :src="userProfile.avatarUrl" :alt="`${userProfile.username} 的头像`">
+          <span v-else-if="userProfile" class="profile-initial">{{ userProfile.username.slice(0, 1) }}</span>
+          <CircleUserRound v-else :size="21" />
+        </RouterLink>
+      </div>
+    </header>
     <section class="hero">
-      <h1>这次先留着，下次一定用得上。</h1>
+      <h1>这次先留着，下次一定用得上</h1>
       <div class="search-entry">
         <el-input v-model="keyword" size="large" placeholder="找找现在用得上的" clearable :prefix-icon="Search" @clear="clearSearch" @keyup.enter="searchOnHome">
           <template #suffix>
@@ -318,9 +324,34 @@ onMounted(() => {
   padding: 24px 0 72px;
 }
 
+.home-header,
 .home-actions {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+}
+
+.home-header {
+  justify-content: space-between;
+}
+
+.brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--color-text-primary);
+  font-size: 20px;
+  font-weight: 750;
+  letter-spacing: .03em;
+  text-decoration: none;
+}
+
+.brand-lockup img {
+  display: block;
+  width: 48px;
+  height: 48px;
+}
+
+.home-actions {
   gap: 18px;
 }
 

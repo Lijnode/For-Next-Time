@@ -122,7 +122,7 @@ onMounted(loadContents)
   <main class="home-page">
     <header class="home-head">
       <div class="brand-row">
-        <div class="brand-area"><span class="brand-mark" aria-hidden="true">次</span><div><h1>下次一定</h1></div></div>
+        <div class="brand-area"><img class="brand-mark" src="/brand-mark.png?v=3" alt=""><div><h1>下次一定</h1></div></div>
         <button class="search-entry" type="button" aria-label="搜索内容" @click="openSearchPage"><Search :size="21" /></button>
       </div>
       <div class="category-scroller" aria-label="按分类浏览">
@@ -171,7 +171,7 @@ onMounted(loadContents)
   justify-content: space-between;
 }
 .brand-area { gap: 11px; }
-.brand-mark { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 14px; background: var(--color-brand); color: #fff; font-size: 18px; font-weight: 800; box-shadow: 0 5px 12px rgb(255 111 78 / 22%); }
+.brand-mark { display: block; width: 38px; height: 38px; }
 h1 { margin: 0; color: var(--color-text-primary); font-size: 22px; letter-spacing: .04em; }.brand-area p { margin: 4px 0 0; color: var(--color-muted); font-size: 12px; }
 .search-entry { display: grid; width: 44px; height: 44px; padding: 0; place-items: center; border: 1px solid #f0dfd9; border-radius: 15px; background: #fff1ec; color: var(--color-brand); }
 

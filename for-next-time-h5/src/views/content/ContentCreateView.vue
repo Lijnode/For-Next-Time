@@ -4,6 +4,7 @@ import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { ArrowLeft } from 'lucide-vue-next'
 import { createContent, getContentDetail, updateContent } from '../../api/content'
 import { getTagList, type TagItem } from '../../api/tag'
+import { useRequiredFormValidation } from '../../composables/useRequiredFormValidation'
 import { confirm as confirmDialog, showError, showSuccess } from '../../platform/feedback'
 
 const route = useRoute()
@@ -18,6 +19,7 @@ const showTagSheet = ref(false)
 const loading = ref(false)
 const initialLoading = ref(false)
 const errorMessage = ref('')
+const { validationMessage, clearRequiredValidation, handleValidationFailed } = useRequiredFormValidation()
 const initialSnapshot = ref('')
 const allowLeave = ref(false)
 const categories = [['ABSTRACT', '抽象'], ['CRITIQUE', '锐评'], ['SWEET', '嘴甜'], ['RELAXED', '松弛'], ['SOBER', '清醒'], ['ROMANTIC', '浪漫'], ['HEALING', '治愈'], ['FRAGILE', '破碎']]
@@ -155,10 +157,12 @@ function removeTag(tag: string) {
  * 新增或更新内容，失败时保留页面的全部输入。
  */
 async function submit() {
-  // 1. 锁定保存按钮避免重复提交。
+  // 1. 清理已处理的必填提示后再进入保存流程。
+  clearRequiredValidation()
+  // 2. 锁定保存按钮避免重复提交。
   loading.value = true
   try {
-    // 2. 按当前模式提交同一份内容表单数据。
+    // 3. 按当前模式提交同一份内容表单数据。
     const payload = { ...form, remark: form.remark.trim() || null }
     if (isEditing.value) {
       await updateContent(editingId.value!, payload)
@@ -172,10 +176,10 @@ async function submit() {
       await router.replace({ name: 'home' })
     }
   } catch (error) {
-    // 3. 失败时通过平台反馈层提示原因。
+    // 4. 失败时通过平台反馈层提示原因。
     showError(error instanceof Error ? error.message : '保存失败，请稍后重试')
   } finally {
-    // 4. 恢复保存按钮状态。
+    // 5. 恢复保存按钮状态。
     loading.value = false
   }
 }
@@ -194,8 +198,9 @@ onBeforeRouteLeave(confirmDiscardChanges)
   <main class="create-page">
     <header><button type="button" aria-label="返回" @click="router.back()"><ArrowLeft :size="21" /></button><h1>{{ isEditing ? '编辑' : '先留一句' }}</h1><span aria-hidden="true"></span></header>
     <van-loading v-if="initialLoading" class="loading" vertical>正在载入内容……</van-loading>
-    <van-form v-else @submit="submit">
+    <van-form v-else :show-error-message="false" @submit="submit" @failed="handleValidationFailed">
       <section class="editor-card">
+        <p v-if="validationMessage" class="form-validation-message" role="alert">{{ validationMessage }}</p>
         <div class="editor-field"><label for="content">正文 <em>*</em></label><van-field id="content" v-model="form.content" type="textarea" rows="8" maxlength="5000" show-word-limit placeholder="粘贴你想以后再用的内容……" :rules="[{ required: true, message: '请填写正文' }]" /></div>
         <div class="editor-field"><label>分类</label><button class="field-picker" type="button" @click="showCategorySheet = true"><span>{{ categories.find((item) => item[0] === form.categoryCode)?.[1] ?? '不分类' }}</span><b>›</b></button></div>
         <div class="editor-field"><label>标签</label><button class="field-picker" type="button" @click="openTagSheet"><span>{{ form.tagNames.length ? form.tagNames.length + ' 个标签' : '添加标签' }}</span><b>›</b></button><div v-if="form.tagNames.length" class="tags"><van-tag v-for="tag in form.tagNames" :key="tag" closeable @close="removeTag(tag)">#{{ tag }}</van-tag></div></div>
@@ -211,5 +216,5 @@ onBeforeRouteLeave(confirmDiscardChanges)
 </template>
 
 <style scoped>
-.create-page { min-height: 100vh; padding: calc(12px + env(safe-area-inset-top)) 16px 32px; }.create-page header { display: grid; grid-template-columns: 42px 1fr 42px; align-items: center; margin-bottom: 16px; }.create-page h1 { margin: 0; color: var(--color-text-primary); font-size: 18px; text-align: center; }.create-page header button { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid var(--color-border); border-radius: 12px; background: #fff; color: var(--color-text-primary); font-size: 26px; line-height: 1; }.editor-card { padding: 20px 17px; border: 1px solid var(--color-border); border-radius: 20px; background: var(--color-card); box-shadow: 0 6px 16px rgb(31 33 33 / 3%); }.editor-field { margin-bottom: 20px; }.editor-field label { display: block; margin-bottom: 8px; color: var(--color-text-primary); font-size: 13px; font-weight: 700; }.editor-field em { color: var(--color-brand); font-style: normal; }.editor-field :deep(.van-cell) { padding: 0; background: #fbfbf9; border: 1px solid var(--color-border); border-radius: 14px; }.editor-field :deep(.van-field__control) { min-height: 168px; padding: 13px; color: var(--color-text); font-size: 16px; line-height: 1.72; }.editor-field :deep(.van-field__word-limit) { padding: 0 13px 8px; }.field-picker { display: flex; width: 100%; min-height: 48px; align-items: center; justify-content: space-between; padding: 0 14px; border: 1px solid var(--color-border); border-radius: 14px; background: #fbfbf9; color: var(--color-text-secondary); font: inherit; font-size: 14px; text-align: left; }.field-picker b { color: var(--color-muted); font-size: 22px; font-weight: 400; }.tags { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 10px; }.tags :deep(.van-tag) { border-radius: 999px; }.more { margin: -2px 0 18px; padding: 0; border: 0; background: transparent; color: var(--color-text-secondary); font: inherit; font-size: 13px; }.remark-field { padding-top: 18px; border-top: 1px dashed var(--color-border); }.remark-field :deep(.van-field__control) { min-height: 92px; }.save { margin-top: 25px; }.save :deep(.van-button) { height: 48px; border-radius: 14px; font-weight: 700; }.tag-sheet { padding: 16px; }.tag-sheet :deep(.van-field) { margin-bottom: 12px; border: 1px solid var(--color-border); border-radius: 12px; }.tag-sheet :deep(.van-button) { border-radius: 12px; }.suggestion-title { margin: 16px 0 0; color: var(--color-muted); font-size: 13px; }.suggestions { padding-left: 0; padding-right: 0; }.loading { padding: 80px 0; }.error { margin: 16px 0; color: var(--color-danger); }
+.create-page { min-height: 100vh; padding: calc(12px + env(safe-area-inset-top)) 16px 32px; }.create-page header { display: grid; grid-template-columns: 42px 1fr 42px; align-items: center; margin-bottom: 16px; }.create-page h1 { margin: 0; color: var(--color-text-primary); font-size: 18px; text-align: center; }.create-page header button { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid var(--color-border); border-radius: 12px; background: #fff; color: var(--color-text-primary); font-size: 26px; line-height: 1; }.editor-card { padding: 20px 17px; border: 1px solid var(--color-border); border-radius: 20px; background: var(--color-card); box-shadow: 0 6px 16px rgb(31 33 33 / 3%); }.form-validation-message { margin: 0 0 16px; padding: 10px 12px; border-radius: 12px; background: #fff1ed; color: var(--color-danger); font-size: 13px; line-height: 1.45; }.editor-field { margin-bottom: 20px; }.editor-field label { display: block; margin-bottom: 8px; color: var(--color-text-primary); font-size: 13px; font-weight: 700; }.editor-field em { color: var(--color-brand); font-style: normal; }.editor-field :deep(.van-cell) { padding: 0; background: #fbfbf9; border: 1px solid var(--color-border); border-radius: 14px; }.editor-field :deep(.van-field__control) { min-height: 168px; padding: 13px; color: var(--color-text); font-size: 16px; line-height: 1.72; }.editor-field :deep(.van-field__word-limit) { padding: 0 13px 8px; }.field-picker { display: flex; width: 100%; min-height: 48px; align-items: center; justify-content: space-between; padding: 0 14px; border: 1px solid var(--color-border); border-radius: 14px; background: #fbfbf9; color: var(--color-text-secondary); font: inherit; font-size: 14px; text-align: left; }.field-picker b { color: var(--color-muted); font-size: 22px; font-weight: 400; }.tags { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 10px; }.tags :deep(.van-tag) { border-radius: 999px; }.more { margin: -2px 0 18px; padding: 0; border: 0; background: transparent; color: var(--color-text-secondary); font: inherit; font-size: 13px; }.remark-field { padding-top: 18px; border-top: 1px dashed var(--color-border); }.remark-field :deep(.van-field__control) { min-height: 92px; }.save { margin-top: 25px; }.save :deep(.van-button) { height: 48px; border-radius: 14px; font-weight: 700; }.tag-sheet { padding: 16px; }.tag-sheet :deep(.van-field) { margin-bottom: 12px; border: 1px solid var(--color-border); border-radius: 12px; }.tag-sheet :deep(.van-button) { border-radius: 12px; }.suggestion-title { margin: 16px 0 0; color: var(--color-muted); font-size: 13px; }.suggestions { padding-left: 0; padding-right: 0; }.loading { padding: 80px 0; }.error { margin: 16px 0; color: var(--color-danger); }
 </style>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ElMessage } from 'element-plus'
-import type { UploadProps, UploadRequestOptions } from 'element-plus'
+import type { UploadFile, UploadInstance } from 'element-plus'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ChevronRight, House, Info, KeyRound, LogOut, SquarePen } from 'lucide-vue-next'
@@ -13,6 +13,17 @@ const profile = ref<UserProfile>()
 const loading = ref(false)
 const uploadingAvatar = ref(false)
 const aboutDialogVisible = ref(false)
+const avatarUploader = ref<UploadInstance>()
+const cropDialogVisible = ref(false)
+const cropPreviewUrl = ref('')
+const cropImage = ref<HTMLImageElement>()
+const cropNaturalWidth = ref(0)
+const cropNaturalHeight = ref(0)
+const cropBox = ref({ x: 0, y: 0, size: 0 })
+const cropDragMode = ref<'move' | 'resize' | null>(null)
+const cropDragStart = ref({ x: 0, y: 0, cropX: 0, cropY: 0, cropSize: 0 })
+const cropViewportSize = 300
+const cropMinSize = 96
 
 /**
  * 加载当前登录用户的个人资料。
@@ -29,9 +40,9 @@ async function loadProfile() {
 }
 
 /**
- * 在 Element Plus 提交前校验头像格式和大小。
+ * 校验用户选择的原始头像格式和大小。
  */
-const beforeAvatarUpload: UploadProps['beforeUpload'] = (file) => {
+function validateAvatar(file: File) {
   // 1. 检查文件是否符合后端允许的 JPEG、PNG 与 2MB 限制。
   const valid = ['image/jpeg', 'image/png'].includes(file.type) && file.size <= 2 * 1024 * 1024
   // 2. 阻止不合格文件进入上传流程并展示一致的错误提示。
@@ -42,26 +53,194 @@ const beforeAvatarUpload: UploadProps['beforeUpload'] = (file) => {
 }
 
 /**
- * 通过 Element Plus 的自定义请求钩子上传头像并刷新页面资料。
+ * 接收选中的原始头像，并打开裁剪面板而不立即上传。
  *
- * @param options Element Plus 提供的本次上传文件与回调信息
+ * @param file Element Plus 提供的本次文件信息
  */
-async function uploadAvatarRequest(options: UploadRequestOptions) {
-  // 1. 锁定头像入口，避免用户在前一次上传未完成时重复提交。
+function selectAvatar(file: UploadFile) {
+  // 1. 取出原始文件并在打开裁剪面板前校验约束。
+  const rawFile = file.raw
+  if (!rawFile || !validateAvatar(rawFile)) {
+    avatarUploader.value?.clearFiles()
+    return
+  }
+  // 2. 释放旧预览并创建本次图片的本地预览地址。
+  revokeCropPreviewUrl()
+  cropPreviewUrl.value = URL.createObjectURL(rawFile)
+  cropDialogVisible.value = true
+}
+
+/**
+ * 计算图片在裁剪面板中的等比完整预览比例。
+ */
+function getCropPreviewScale() {
+  // 1. 宽高未加载前不计算比例，避免出现无效样式。
+  if (!cropNaturalWidth.value || !cropNaturalHeight.value) {
+    return 0
+  }
+  // 2. 取较小比例，确保整张图片完整显示在裁剪面板中。
+  return Math.min(cropViewportSize / cropNaturalWidth.value, cropViewportSize / cropNaturalHeight.value)
+}
+
+/**
+ * 获取完整预览图在裁剪面板中的左上角坐标。
+ */
+function getCropImageBounds() {
+  // 1. 根据等比预览尺寸计算图片自身的可操作边界。
+  const scale = getCropPreviewScale()
+  const width = cropNaturalWidth.value * scale
+  const height = cropNaturalHeight.value * scale
+  return { left: 0, top: 0, width, height }
+}
+
+/**
+ * 在预览图加载后初始化位于图片中央的方形裁剪框。
+ *
+ * @param event 预览图加载事件
+ */
+function initializeCrop(event: Event) {
+  // 1. 读取浏览器已解析的图片原始尺寸。
+  const image = event.target as HTMLImageElement
+  cropNaturalWidth.value = image.naturalWidth
+  cropNaturalHeight.value = image.naturalHeight
+  // 2. 让初始裁剪框以正方形形式居中覆盖图片可选区域。
+  const bounds = getCropImageBounds()
+  const size = Math.min(bounds.width, bounds.height) * 0.78
+  cropBox.value = { x: bounds.left + (bounds.width - size) / 2, y: bounds.top + (bounds.height - size) / 2, size }
+}
+
+/**
+ * 记录裁剪框拖动或缩放开始时的状态。
+ *
+ * @param event 指针按下事件
+ * @param mode 当前操作是移动框选区域还是拉角缩放
+ */
+function startCropBoxDrag(event: PointerEvent, mode: 'move' | 'resize') {
+  // 1. 未加载图片时不允许操作裁剪框。
+  if (!cropNaturalWidth.value || !cropNaturalHeight.value) {
+    return
+  }
+  // 2. 记录起点并捕获指针，保证越出裁剪框仍可连续操作。
+  cropDragMode.value = mode
+  cropDragStart.value = { x: event.clientX, y: event.clientY, cropX: cropBox.value.x, cropY: cropBox.value.y, cropSize: cropBox.value.size }
+  ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+}
+
+/**
+ * 按指针移动裁剪框，或通过右下角调整方形裁剪框的尺寸。
+ *
+ * @param event 指针移动事件
+ */
+function moveCropBoxDrag(event: PointerEvent) {
+  // 1. 没有激活操作时保持当前框选状态。
+  if (!cropDragMode.value) {
+    return
+  }
+  // 2. 获取图片边界，以确保裁剪框始终位于有效图片区域内。
+  const bounds = getCropImageBounds()
+  const deltaX = event.clientX - cropDragStart.value.x
+  const deltaY = event.clientY - cropDragStart.value.y
+  if (cropDragMode.value === 'move') {
+    cropBox.value.x = Math.min(bounds.left + bounds.width - cropBox.value.size, Math.max(bounds.left, cropDragStart.value.cropX + deltaX))
+    cropBox.value.y = Math.min(bounds.top + bounds.height - cropBox.value.size, Math.max(bounds.top, cropDragStart.value.cropY + deltaY))
+    return
+  }
+  // 3. 从右下角缩放，保持正方形并限制在图片边界和最小可用尺寸内。
+  const maxSize = Math.min(bounds.left + bounds.width - cropDragStart.value.cropX, bounds.top + bounds.height - cropDragStart.value.cropY)
+  const nextSize = cropDragStart.value.cropSize + Math.max(deltaX, deltaY)
+  const minSize = Math.min(cropMinSize, maxSize)
+  cropBox.value.size = Math.min(maxSize, Math.max(minSize, nextSize))
+}
+
+/**
+ * 结束当前裁剪框拖动或缩放操作。
+ */
+function endCropBoxDrag() {
+  // 1. 清除操作状态，保留最后一次有效的裁剪框位置与尺寸。
+  cropDragMode.value = null
+}
+
+/**
+ * 将裁剪区域绘制为固定尺寸的 JPEG 文件。
+ */
+function createCroppedAvatar() {
+  // 1. 确认预览图已加载，才能取得可绘制的图像数据。
+  if (!cropImage.value) {
+    throw new Error('图片尚未加载完成')
+  }
+  // 2. 将当前框选区域映射回原图坐标，并绘制为统一的 512 像素头像。
+  const scale = getCropPreviewScale()
+  const bounds = getCropImageBounds()
+  const sourceSize = cropBox.value.size / scale
+  const sourceX = (cropBox.value.x - bounds.left) / scale
+  const sourceY = (cropBox.value.y - bounds.top) / scale
+  const canvas = document.createElement('canvas')
+  canvas.width = 512
+  canvas.height = 512
+  const context = canvas.getContext('2d')
+  if (!context) {
+    throw new Error('无法创建头像画布')
+  }
+  context.drawImage(cropImage.value, sourceX, sourceY, sourceSize, sourceSize, 0, 0, canvas.width, canvas.height)
+  // 3. 输出较小的 JPEG 文件，保证仍符合现有上传大小限制。
+  return new Promise<File>((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        reject(new Error('头像裁剪失败'))
+        return
+      }
+      resolve(new File([blob], 'avatar.jpg', { type: 'image/jpeg' }))
+    }, 'image/jpeg', 0.9)
+  })
+}
+
+/**
+ * 确认裁剪结果并上传生成后的头像文件。
+ */
+async function confirmAvatarCrop() {
+  // 1. 生成当前裁剪框中的方形头像并锁定交互。
   uploadingAvatar.value = true
   try {
-    // 2. 复用 API 层上传方法，并使用后端返回的资料更新页面。
-    profile.value = await uploadAvatar(options.file)
+    const croppedAvatar = await createCroppedAvatar()
+    // 2. 复用现有接口上传裁剪结果，并刷新页面资料。
+    profile.value = await uploadAvatar(croppedAvatar)
     ElMessage.success('头像已更新')
   } catch (error) {
-    // 3. 将后端的可读错误交给 Element Plus 的失败状态处理。
+    // 3. 将可读错误反馈给用户，并保留裁剪面板以便重新调整。
     const message = error instanceof Error ? error.message : '头像上传失败，请稍后重试'
     ElMessage.error(message)
-    throw new Error(message)
+    return
   } finally {
     // 4. 上传完成后恢复头像入口的交互能力。
     uploadingAvatar.value = false
   }
+  // 5. 仅在上传成功后关闭裁剪面板并清理临时资源。
+  closeCropDialog()
+}
+
+/**
+ * 释放当前图片预览地址，避免重复选择图片时保留浏览器内存。
+ */
+function revokeCropPreviewUrl() {
+  // 1. 有旧地址时释放对应的浏览器对象 URL。
+  if (cropPreviewUrl.value) {
+    URL.revokeObjectURL(cropPreviewUrl.value)
+  }
+  // 2. 重置地址与原始尺寸，避免下次选择图片沿用旧状态。
+  cropPreviewUrl.value = ''
+  cropNaturalWidth.value = 0
+  cropNaturalHeight.value = 0
+}
+
+/**
+ * 关闭裁剪面板并清除本次选择的临时图片。
+ */
+function closeCropDialog() {
+  // 1. 关闭面板并复位上传组件，允许再次选择相同文件。
+  cropDialogVisible.value = false
+  avatarUploader.value?.clearFiles()
+  // 2. 释放预览资源，避免本地对象 URL 泄漏。
+  revokeCropPreviewUrl()
 }
 
 /**
@@ -108,12 +287,13 @@ onMounted(loadProfile)
       <template v-if="profile">
         <div class="profile-head">
           <el-upload
+            ref="avatarUploader"
             class="avatar-uploader"
             action="#"
             :show-file-list="false"
+            :auto-upload="false"
             :disabled="uploadingAvatar"
-            :before-upload="beforeAvatarUpload"
-            :http-request="uploadAvatarRequest"
+            :on-change="selectAvatar"
           >
             <span class="profile-mark" :class="{ 'is-uploading': uploadingAvatar }">
               <img v-if="profile.avatarUrl" :src="profile.avatarUrl" :alt="`${profile.username} 的头像`">
@@ -142,7 +322,7 @@ onMounted(loadProfile)
     </section>
     <el-dialog v-model="aboutDialogVisible" width="440px" align-center class="about-dialog">
       <section class="about-dialog-content">
-        <div class="brand-mark" aria-hidden="true">次</div>
+        <img class="brand-mark" src="/brand-mark.png?v=3" alt="">
         <h2>下次一定</h2>
         <p class="english-name">FOR NEXT TIME</p>
         <p class="slogan">这次先留着，下次一定用得上</p>
@@ -150,6 +330,19 @@ onMounted(loadProfile)
         <p class="version">V1.0</p>
       </section>
       <template #footer><el-button type="primary" @click="aboutDialogVisible = false">知道了</el-button></template>
+    </el-dialog>
+    <el-dialog v-model="cropDialogVisible" width="520px" align-center :close-on-click-modal="false" :close-on-press-escape="!uploadingAvatar" class="avatar-crop-dialog" @closed="closeCropDialog">
+      <template #header><h2 class="crop-dialog-title">裁剪头像</h2></template>
+      <section class="crop-dialog-content">
+        <p>拖动框选区域，或拉动右下角调整裁剪范围</p>
+        <div class="crop-viewport" :style="{ width: `${getCropImageBounds().width}px`, height: `${getCropImageBounds().height}px` }" @pointermove="moveCropBoxDrag" @pointerup="endCropBoxDrag" @pointercancel="endCropBoxDrag">
+          <img v-if="cropPreviewUrl" ref="cropImage" class="crop-source-image" :src="cropPreviewUrl" :style="{ width: `${getCropImageBounds().width}px`, height: `${getCropImageBounds().height}px`, left: `${getCropImageBounds().left}px`, top: `${getCropImageBounds().top}px` }" draggable="false" alt="待裁剪头像" @load="initializeCrop">
+          <div v-if="cropBox.size" class="crop-selection" :class="{ 'is-resizing': cropDragMode === 'resize' }" :style="{ width: `${cropBox.size}px`, height: `${cropBox.size}px`, left: `${cropBox.x}px`, top: `${cropBox.y}px` }" @pointerdown.stop="startCropBoxDrag($event, 'move')">
+            <span class="crop-resize-handle" aria-label="调整裁剪范围" @pointerdown.stop="startCropBoxDrag($event, 'resize')"></span>
+          </div>
+        </div>
+      </section>
+      <template #footer><el-button :disabled="uploadingAvatar" @click="closeCropDialog">取消</el-button><el-button type="primary" :loading="uploadingAvatar" @click="confirmAvatarCrop">使用此头像</el-button></template>
     </el-dialog>
   </main>
 </template>
@@ -182,7 +375,7 @@ onMounted(loadProfile)
 .action-content { display: inline-flex; align-items: center; gap: 9px; }
 .logout-button { margin-left: auto; color: var(--color-text-tertiary); }
 .about-dialog-content { padding: 20px 16px 8px; text-align: center; }
-.brand-mark { display: grid; width: 68px; height: 68px; margin: 0 auto 17px; place-items: center; border-radius: 23px; background: var(--color-brand); color: #fff; font-size: 27px; font-weight: 800; box-shadow: 0 9px 20px rgb(255 111 78 / 22%); }
+.brand-mark { display: block; width: 68px; height: 68px; margin: 0 auto 17px; }
 .about-dialog-content h2 { margin: 0; color: var(--color-text-primary); font-size: 24px; }.english-name { margin: 7px 0 30px; color: var(--color-brand); font-size: 11px; font-weight: 750; letter-spacing: .16em; }.slogan { margin: 0; color: var(--color-text-primary); font-size: 16px; font-weight: 600; }.intro { max-width: 270px; margin: 16px auto 0; color: var(--color-text-tertiary); font-size: 13px; line-height: 1.75; }.version { display: inline-block; margin: 30px 0 0; padding: 5px 10px; border-radius: 999px; background: #fff0eb; color: var(--color-brand); font-size: 12px; font-weight: 700; }
 :global(.about-dialog) { border-radius: 20px; }
 :global(.about-dialog .el-dialog__header) { margin-right: 0; padding: 20px 24px 0; }
@@ -190,4 +383,17 @@ onMounted(loadProfile)
 :global(.about-dialog .el-dialog__body) { padding: 0 24px; }
 :global(.about-dialog .el-dialog__footer) { padding: 8px 24px 22px; text-align: center; }
 :global(.about-dialog .el-dialog__footer .el-button) { min-width: 106px; height: 40px; border-radius: 12px; font-weight: 700; }
+.crop-dialog-title { margin: 0; color: var(--color-text-primary); font-size: 19px; }
+.crop-dialog-content > p { margin: 0 0 18px; color: var(--color-text-tertiary); font-size: 13px; }
+.crop-viewport { position: relative; max-width: 300px; max-height: 300px; margin: 0 auto; overflow: hidden; border-radius: 20px; touch-action: none; user-select: none; }
+.crop-source-image { position: absolute; display: block; border-radius: inherit; }
+.crop-selection { position: absolute; box-sizing: border-box; border: 2px solid #fff; cursor: move; box-shadow: 0 0 0 200vmax rgb(20 28 26 / 46%); }
+.crop-selection::before, .crop-selection::after { position: absolute; top: 50%; left: 50%; width: 1px; height: 100%; background: rgb(255 255 255 / 58%); content: ''; transform: translate(-50%, -50%); pointer-events: none; }
+.crop-selection::after { width: 100%; height: 1px; }
+.crop-resize-handle { position: absolute; right: -7px; bottom: -7px; width: 14px; height: 14px; border: 2px solid #fff; border-radius: 50%; background: var(--color-brand); cursor: nwse-resize; }
+:global(.avatar-crop-dialog) { border-radius: 20px; }
+:global(.avatar-crop-dialog .el-dialog__header) { margin-right: 0; padding: 22px 24px 0; }
+:global(.avatar-crop-dialog .el-dialog__body) { padding: 20px 24px 4px; }
+:global(.avatar-crop-dialog .el-dialog__footer) { padding: 14px 24px 22px; text-align: center; }
+:global(.avatar-crop-dialog .el-dialog__footer .el-button) { min-width: 106px; height: 40px; border-radius: 12px; font-weight: 700; }
 </style>
