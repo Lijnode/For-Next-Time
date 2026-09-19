@@ -2,7 +2,7 @@ import axios from 'axios'
 import type { ApiResult } from '../types/api'
 
 const request = axios.create({
-  baseURL: '/api/v1',
+  baseURL: import.meta.env.DEV ? '/api/v1' : '/time/api/v1',
   timeout: 10_000,
 })
 
@@ -33,8 +33,8 @@ request.interceptors.response.use((response) => {
   // 1. 认证失效时清除本地令牌并返回登录页。
   if (error.response?.status === 401) {
     localStorage.removeItem('for-next-time-token')
-    if (window.location.pathname !== '/login') {
-      window.location.assign('/login')
+    if (window.location.pathname !== `${import.meta.env.BASE_URL}login`) {
+      window.location.assign(`${import.meta.env.BASE_URL}login`)
     }
   }
   // 2. 优先使用后端返回的可读错误信息。

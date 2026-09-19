@@ -9,7 +9,8 @@ import ChangePasswordView from '../views/user/ChangePasswordView.vue'
 import ProfileView from '../views/user/ProfileView.vue'
 
 const router = createRouter({
-  history: createWebHistory(),
+  // 1. 根据 Vite 基路径生成 History 路由，支持生产环境部署到 /time/。
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',

@@ -3,8 +3,8 @@ import vue from '@vitejs/plugin-vue'
 
 // https://vite.dev/config/
 export default defineConfig(({ command }) => ({
-  // 1. 开发环境保留根路径，生产构建由 Nginx 挂载到 /m/。
-  base: command === 'build' ? '/m/' : '/',
+  // 1. 开发环境保留根路径，生产构建由 Nginx 挂载到 /time/m/。
+  base: command === 'build' ? '/time/m/' : '/',
   plugins: [vue()],
   server: {
     proxy: {

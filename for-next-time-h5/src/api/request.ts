@@ -4,7 +4,7 @@ import { getToken, removeToken } from '../platform/storage'
 import type { ApiResult } from '../types/api'
 
 const request = axios.create({
-  baseURL: '/api/v1',
+  baseURL: import.meta.env.DEV ? '/api/v1' : '/time/api/v1',
   timeout: 10_000,
 })
 

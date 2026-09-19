@@ -47,6 +47,10 @@ public class UserService {
     @Value("${app.file.storage-dir:files}")
     private String fileStorageDir;
 
+    /** 前端访问头像文件的同源路径前缀，不暴露服务器磁盘目录。 */
+    @Value("${app.file.public-url-prefix:/files}")
+    private String filePublicUrlPrefix;
+
     /**
      * 查询当前登录用户的公开资料与有效内容数量。
      *
@@ -181,7 +185,7 @@ public class UserService {
         if (avatarPath == null || avatarPath.isBlank()) {
             return null;
         }
-        // 2. 使用同源静态路径，避免将服务器磁盘目录暴露给前端。
-        return "/files/" + avatarPath;
+        // 2. 使用部署环境提供的同源路径，避免将服务器磁盘目录暴露给前端。
+        return filePublicUrlPrefix + "/" + avatarPath;
     }
 }

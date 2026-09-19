@@ -68,6 +68,13 @@ MySQL 数据位于 Docker 卷 `for-next-time_mysql-data`，头像文件位于 `/
 
 ### Nginx 接入
 
-域名确定前，不改动现有知止 Nginx。域名确定后，将 `tools/nginx/for-next-time.server.conf.template` 合并到知止 Nginx 配置，并在知止的 Nginx 启动脚本中增加 PC/H5 静态目录挂载；届时只会重启 Nginx 容器，Java 与 MySQL 容器无需变动。
+下次一定暂未配置独立域名，先复用知止现有的 HTTPS 域名，以路径区分应用：知止使用 `/zhizhi/`，下次一定 PC 使用 `/time/`，移动 H5 使用 `/time/m/`。将 `tools/nginx/for-next-time.server.conf.template` 中的 location 块合并到知止现有的 HTTPS server，并在知止的 Nginx 启动脚本中增加：
+
+```bash
+-v /data/for-next-time/pc:/usr/share/nginx/html/time:ro
+-v /data/for-next-time/h5:/usr/share/nginx/html/time/m:ro
+```
+
+下次一定的 API 与头像文件入口分别为 `/time/api/`、`/time/files/`，由同一 Nginx 去除 `/time` 前缀后反向代理到后端，因此不会与知止根路径的 `/api/` 规则冲突。届时只会重启 Nginx 容器，Java 与 MySQL 容器无需变动。
 
 不要开放 MySQL 的 3306 或 Java 服务的 6688；只由现有 Nginx 暴露 HTTPS。
