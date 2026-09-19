@@ -7,6 +7,7 @@ import { getContentList, getRecentContents, recordCopy, searchContents, type Con
 import { getUserProfile, type UserProfile } from '../../api/user'
 
 const router = useRouter()
+const publicBaseUrl = import.meta.env.BASE_URL
 const contents = ref<ContentListItem[]>([])
 const recentContents = ref<ContentListItem[]>([])
 const userProfile = ref<UserProfile>()
@@ -259,7 +260,7 @@ onMounted(() => {
   <main class="home-shell">
     <header class="home-header">
       <RouterLink class="brand-lockup" to="/" aria-label="下次一定首页">
-        <img src="/brand-mark.png?v=4" alt="">
+        <img :src="`${publicBaseUrl}brand-mark.png?v=4`" alt="">
         <span>下次一定</span>
       </RouterLink>
       <div class="home-actions">
@@ -297,7 +298,7 @@ onMounted(() => {
           </article>
         </div>
         <div v-if="!contentLoading && !contents.length" class="empty-state">
-          <el-empty image="/empty-state-illustration.png" :image-size="220" :description="categoryCode ? '该分类暂时还没有内容' : '暂无内容，先留下一句吧'" />
+          <el-empty :image="`${publicBaseUrl}empty-state-illustration.png`" :image-size="220" :description="categoryCode ? '该分类暂时还没有内容' : '暂无内容，先留下一句吧'" />
         </div>
 <!--        <el-button v-if="!contents.length" class="empty-create" type="primary" @click="createContent">先留一句</el-button>-->
         <el-pagination v-if="total > 0" class="pagination" background layout="prev, pager, next" :current-page="pageNum" :page-size="pageSize" :total="total" @current-change="changePage" />

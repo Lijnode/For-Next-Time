@@ -9,6 +9,7 @@ import { exportContents } from '../../api/content'
 import { useAuthStore } from '../../stores/auth'
 
 const router = useRouter()
+const publicBaseUrl = import.meta.env.BASE_URL
 const authStore = useAuthStore()
 const profile = ref<UserProfile>()
 const loading = ref(false)
@@ -378,7 +379,7 @@ onMounted(loadProfile)
     </section>
     <el-dialog v-model="aboutDialogVisible" width="440px" align-center class="about-dialog">
       <section class="about-dialog-content">
-        <img class="brand-mark" src="/brand-mark.png?v=3" alt="">
+        <img class="brand-mark" :src="`${publicBaseUrl}brand-mark.png?v=3`" alt="">
         <h2>下次一定</h2>
         <p class="english-name">FOR NEXT TIME</p>
         <p class="slogan">这次先留着，下次一定用得上</p>

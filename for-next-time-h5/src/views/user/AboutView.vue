@@ -3,6 +3,7 @@ import { useRouter } from 'vue-router'
 import { ArrowLeft } from 'lucide-vue-next'
 
 const router = useRouter()
+const publicBaseUrl = import.meta.env.BASE_URL
 
 /**
  * 返回个人页，继续查看账户设置。
@@ -17,7 +18,7 @@ async function backToProfile() {
   <main class="about-page">
     <header class="top-bar"><button type="button" aria-label="返回个人页" @click="backToProfile"><ArrowLeft :size="21" /></button><h1>关于下次一定</h1><span aria-hidden="true"></span></header>
     <section class="about-content">
-      <img class="brand-mark" src="/brand-mark.png?v=3" alt="">
+      <img class="brand-mark" :src="`${publicBaseUrl}brand-mark.png?v=3`" alt="">
       <h2>下次一定</h2>
       <p class="english-name">FOR NEXT TIME</p>
 <!--      <p class="slogan">这次先留着，下次一定用得上</p>-->

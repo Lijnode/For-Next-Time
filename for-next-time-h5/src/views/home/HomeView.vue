@@ -7,6 +7,7 @@ import { copyText } from '../../platform/clipboard'
 import { showError, showSuccess } from '../../platform/feedback'
 
 const router = useRouter()
+const publicBaseUrl = import.meta.env.BASE_URL
 const contents = ref<ContentListItem[]>([])
 const categoryCode = ref<string | null>(null)
 const copyingId = ref<number | null>(null)
@@ -122,7 +123,7 @@ onMounted(loadContents)
   <main class="home-page">
     <header class="home-head">
       <div class="brand-row">
-        <div class="brand-area"><img class="brand-mark" src="/brand-mark.png?v=3" alt=""><div><h1>下次一定</h1></div></div>
+        <div class="brand-area"><img class="brand-mark" :src="`${publicBaseUrl}brand-mark.png?v=3`" alt=""><div><h1>下次一定</h1></div></div>
         <button class="search-entry" type="button" aria-label="搜索内容" @click="openSearchPage"><Search :size="21" /></button>
       </div>
       <div class="category-scroller" aria-label="按分类浏览">
@@ -141,7 +142,7 @@ onMounted(loadContents)
           </article>
         </van-list>
         <div v-if="!loadingMore && !contents.length" class="empty-state">
-          <van-empty image="/empty-state-illustration.png" image-size="180" :description="categoryCode ? '该分类暂时还没有内容' : '暂无内容，先留下一句吧'" />
+          <van-empty :image="`${publicBaseUrl}empty-state-illustration.png`" image-size="180" :description="categoryCode ? '该分类暂时还没有内容' : '暂无内容，先留下一句吧'" />
         </div>
       </section>
     </div>
