@@ -3,6 +3,7 @@ import { ElMessageBox } from 'element-plus'
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { deleteContent, getContentDetail, recordCopy, setPinned, type ContentDetail } from '../../api/content'
+import { copyText } from '../../platform/clipboard'
 import { ArrowLeft, Copy, Pencil, Pin, Trash2 } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -54,7 +55,7 @@ async function copyContent() {
   copying.value = true
   copyMessage.value = ''
   try {
-    await navigator.clipboard.writeText(detail.value.content)
+    await copyText(detail.value.content)
     copyMessage.value = '复制成功'
     // 2. 复制成功后才记录统计；统计失败不影响复制成功反馈。
     try {

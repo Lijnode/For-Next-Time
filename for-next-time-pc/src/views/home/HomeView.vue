@@ -5,6 +5,7 @@ import { ElMessage } from 'element-plus'
 import { ArrowUpDown, CircleUserRound, Plus, Search } from 'lucide-vue-next'
 import { getContentList, getRecentContents, recordCopy, searchContents, type ContentListItem, type ContentSort } from '../../api/content'
 import { getUserProfile, type UserProfile } from '../../api/user'
+import { copyText } from '../../platform/clipboard'
 
 const router = useRouter()
 const publicBaseUrl = import.meta.env.BASE_URL
@@ -95,7 +96,7 @@ async function copyContent(item: ContentListItem) {
   // 1. 在剪贴板写入成功前不更新后端统计。
   copyingId.value = item.id
   try {
-    await navigator.clipboard.writeText(item.content)
+    await copyText(item.content)
     // 2. 复制完成后显示品牌化成功反馈。
     ElMessage.success('复制成功')
     // 3. 统计接口失败不影响已经成功的复制操作。
