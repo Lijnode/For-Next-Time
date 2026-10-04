@@ -1,0 +1,26 @@
+name: for-next-time
+services:
+  for-next-time-backend:
+    container_name: for-next-time-backend
+    image: eclipse-temurin:21.0.11_10-jre-noble
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      MYSQL_HOST: mysql
+      MYSQL_PORT: "3306"
+      MYSQL_DATABASE: for_next_time
+      MYSQL_USER: ${FOR_NEXT_TIME_DB_USERNAME}
+      MYSQL_PASSWORD: ${FOR_NEXT_TIME_DB_PASSWORD}
+      JWT_SECRET: ${FOR_NEXT_TIME_JWT_SECRET}
+      FILE_STORAGE_DIR: /app/files
+      FILE_PUBLIC_URL_PREFIX: /time/files
+    command: ["java", "-jar", "/app/app.jar", "--server.address=0.0.0.0"]
+    volumes:
+      - ./backend/app.jar:/app/app.jar:ro
+      - ./files:/app/files
+    networks:
+      - app-network
+networks:
+  app-network:
+    external: true

@@ -7,6 +7,11 @@ application-prod.yml
 !for-next-time-server/src/main/resources/application-prod.yml
 files/
 deploy/release/
+deploy/backend/app.jar
+deploy/pc/
+deploy/h5/
+deploy/files/*
+!deploy/files/.gitkeep
 
 node_modules/
 dist/
